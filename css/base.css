@@ -2,3 +2,19 @@
     text-align: center;
      
 }
+.fonteh1
+{
+    color: #1f1f55;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    
+}
+     
+label.fontelabel {
+    display: block;
+    color: #1f1f55;
+    font-weight: 500;
+    text-align: left;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding-bottom: 10px;
+    }
