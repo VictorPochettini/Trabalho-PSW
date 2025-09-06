@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title> Músicas </title>
+    <link rel="icon" href="artBeat2.png">
+    <link rel="stylesheet" href="musicas.css">
+    <!--link para conseguir usar os icons do site font awesome-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <div class="topo">
+        <header>
+            <nav>
+                <div class="imagemLogo">
+                    <img src="ArtBeat.png" class="logo" alt="logo art beat">
+                </div>
+            
+                <ul class="menu">
+                    <!-- icones ainda nao tem funcionalidade-->
+                    <li class="dropdown">
+                         <a href="musicas.html"><u> Música</u></a>
+                        <button class="dropbtn">
+                            <i class="fa-solid fa-chevron-down fa-2xs" style="color: #ffffff;"></i>
+                        </button>
+                        <ul class="submenu">
+                            <li><a href="#">Blues</a></li>
+                            <li><a href="#">Bossa nova</a></li>
+                            <li><a href="#">Classica</a></li>
+                            <li><a href="#">Eletronica</a></li>
+                            <li><a href="#">Forró</a></li>
+                            <li><a href="#">Funk</a></li>
+                            <li><a href="#">Gospel</a></li>
+                            <li><a href="#">Hip-hop</a></li>
+                            <li><a href="#">Jazz</a></li>
+                            <li><a href="#">K-pop</a></li>
+                            <li><a href="#">MPB</a></li>
+                            <li><a href="#">Pagode</a></li>
+                            <li><a href="#">Pop</a></li>
+                            <li><a href="#">R&B</a></li>
+                            <li><a href="#">Reggae</a></li>
+                            <li><a href="#">Reggaeton</a></li>
+                            <li><a href="#">Rock</a></li>
+                            <li><a href="#">Samba</a></li>
+                            <li><a href="#">Sertanejo</a></li>
+                            <li><a href="#">Trap</a></li>
+                        </ul>
+                        
+                    </li>
+                    <li class="dropdown">
+                        <a href="#">Letra</a>
+                        <button class="dropbtn">
+                            <i class="fa-solid fa-chevron-down fa-2xs" style="color: #ffffff;"></i>
+                        </button>
+                        <ul class="submenu">
+                                <li><a href="#">Blues</a></li>
+                                <li><a href="#">Bossa nova</a></li>
+                                <li><a href="#">Classica</a></li>
+                                <li><a href="#">Eletronica</a></li>
+                                <li><a href="#">Forró</a></li>
+                                <li><a href="#">Funk</a></li>
+                                <li><a href="#">Gospel</a></li>
+                                <li><a href="#">Hip-hop</a></li>
+                                <li><a href="#">Jazz</a></li>
+                                <li><a href="#">K-pop</a></li>
+                                <li><a href="#">MPB</a></li>
+                                <li><a href="#">Pagode</a></li>
+                                <li><a href="#">Pop</a></li>
+                                <li><a href="#">R&B</a></li>
+                                <li><a href="#">Reggae</a></li>
+                                <li><a href="#">Reggaeton</a></li>
+                                <li><a href="#">Rock</a></li>
+                                <li><a href="#">Samba</a></li>
+                                <li><a href="#">Sertanejo</a></li>
+                                <li><a href="#">Trap</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown"> 
+                        <a href="#">Arte</a>
+                        <button class="dropbtn">
+                            <i class="fa-solid fa-chevron-down fa-2xs" style="color: #ffffff;"></i>
+                        </button>
+                        <ul class="submenu">
+                                <li><a href="#">Fotografia</a></li>
+                                <li><a href="#">Ilustração digital</a></li>
+                                <li><a href="#">Ilustração manual</a></li>
+                                <li><a href="#">Minimalismo</a></li>
+                                <li><a href="#">Arte gráfica</a></li>
+                                <li><a href="#">Surrealismo</a></li>
+                                <li><a href="#">Pop-art</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown"><a href="#"><i class="fa-solid fa-circle-user fa-xl" style="color: #ffffff;"></i></a></li>
+                </ul>
+            </nav>
+
+        </header>
+    </div>
+
+    <script>
+        document.querySelectorAll(".dropbtn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                let submenu = btn.nextElementSibling; // pega o submenu
+                let icon = btn.querySelector("i");    // pega o ícone dentro do botão
+
+                // Pega o display atual do submenu
+                let displayStyle = window.getComputedStyle(submenu).display;
+
+                if (displayStyle === "block") {
+                    submenu.style.display = "none";
+                    icon.classList.remove("fa-chevron-up");
+                    icon.classList.add("fa-chevron-down");
+                } else {
+                    submenu.style.display = "block";
+                    icon.classList.remove("fa-chevron-down");
+                    icon.classList.add("fa-chevron-up");
+                }
+            });
+        });
+    </script>
+</body>
+</html>
