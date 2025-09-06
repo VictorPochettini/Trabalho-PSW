@@ -1,0 +1,49 @@
+<!DOCTYPE html >
+<html lang = "pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <title>Criação de conta</title>
+        <link rel="icon"  type = "imagens.png" href = "assets/favicon.ico">
+
+        <link rel="stylesheet" href="css/base.css">
+        <link rel="stylesheet" href="css/components.css">
+
+        <style>
+               
+            .logo {
+                margin-bottom: 50px;
+                display: flex;
+                justify-content: center;
+            }
+            .logo-img {
+            max-width: 300px;
+            height: auto;
+            }
+        </style>
+         
+
+    </head>
+    <body>
+        <div class = logo>
+            <img src="images/logoArtBeat.png" alt="Logo Site ArtBEat" class = "logo-img">
+        </div>
+        <div>
+            <h1 class="h1">Criação De Conta</h1>
+            <form>
+                <label for="nome">Nome:</label><br><br>
+                <input type="text" id="nome" placeholder = "João da Silva"><br><br>
+                <label for="email">Email:</label><br><br>
+                <input type="text" id="email" placeholder = "joaodasilva@gmail.com"><br><br>
+                <label for="senha">Senha:</label><br><br>
+                <input type="text" id="senha" ><br><br>
+                <label for="confSenha">Confirmação de Senha:</label><br><br>
+                <input type="text" id="confSenha"><br><br>
+                
+            </form>
+        </div>
+         <input type="checkbox"> Eu aceito os termos de uso e politicas de  privacidade<br></br>
+         <div class = "buttons">
+             <button class = " btn btn-primary" type = "submit">Criar Conta</button>
+         </div>
+    </body>
+</html>
