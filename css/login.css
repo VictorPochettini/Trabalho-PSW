@@ -1,0 +1,13 @@
+*{ /*seletor universal*/
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    text-decoration: none;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+:root{ /*classe mae, cria variaveis*/
+    --azul: #050225;
+    --roxo: #5e17eb;
+
+}
