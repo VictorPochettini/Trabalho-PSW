@@ -232,8 +232,8 @@ nav{
 .morebtn{
     padding: 10px 10px;
     border-radius: 100%;
-    font-size: 25px;
     cursor: pointer;
+    font-size: 28px;
     width: 50px;
     border: none;
     background: var(--roxo);
