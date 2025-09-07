@@ -53,6 +53,10 @@ nav{
     color: white;
 }
 
+.enfase{
+    text-decoration: underline;
+}
+
 .dropbtn {
   background: none;
   border: none;
