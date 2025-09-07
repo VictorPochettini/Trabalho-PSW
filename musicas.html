@@ -146,7 +146,36 @@
             <li><button class="commentbtn"><i class="fa-regular fa-comment-dots" style="color: #000000;"></i></button></li>
         </ul>
     </div>
+
+    <script>
+        const stars = document.querySelectorAll(".starbtn");
+
+        stars.forEach((btn, index) => {
+            btn.addEventListener("click", () => {
+                // Primeiro, limpa todas as estrelas
+                stars.forEach(star => {
+                    let icon = star.querySelector("i");
+                    icon.classList.remove("fa-solid");
+                    icon.classList.add("fa-regular");
+                    icon.style.color = "#000000"; // cor apagada
+                });
+
+                // Agora pinta até a estrela clicada
+                for (let i = 0; i <= index; i++) {
+                    let icon = stars[i].querySelector("i");
+                    icon.classList.remove("fa-regular");
+                    icon.classList.add("fa-solid");
+                    icon.style.color = "#FFD43B"; // dourado
+                }
+            });
+        });
+    </script>
+
     <hr>
     <!--end publicação-->
+
+    <!--botao publicação-->
+    <button class="morebtn">+</button>
+    <!--end botao publicação-->
 </body>
 </html>
