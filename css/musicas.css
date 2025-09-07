@@ -77,7 +77,6 @@ nav{
   min-width: 250px;
   z-index: 100;
   gap: 5px;
-  box-shadow: yellow;
 }
 
 .submenu li {
@@ -133,6 +132,80 @@ nav{
     }
 
 }
-
 /*end menu responsivo*/
+
+/*publicação*/
+.publicacao{
+    margin-top: 30px;
+    margin-left: 20%;
+}
+
+.publicacao a{
+    padding: 0 30px;
+    color: black;
+    font-size: 17px;
+}
+
+.seguir{
+    padding: 10px 20px;
+    border-radius: 40px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    width: 100px;
+    border: none;
+    background: var(--roxo);
+    color: white;
+}
+
+.seguir:hover {
+    box-shadow: 0 5px 15px rgb(119, 118, 123);
+}
+
+.descricao{
+    border: 2px solid var(--azul);
+    border-radius: 5px;
+    margin-top: 15px;
+    margin-left: 40px;
+    padding: 10px 10px;
+    width: 800px;
+}
+
+.audio{
+    margin-left: 40px;
+    margin-top: 15px;
+}
+
+.estrelas{
+    display: flex;
+    list-style: none;
+    margin-top: 15px;
+    margin-left: 40px;
+    margin-bottom: 15px;
+}
+
+.starbtn{
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  padding: 0 3px;
+}
+
+.starbtn :hover{
+    box-shadow: 0 5px 15px rgb(0, 0, 0);
+}
+
+.commentbtn{
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  padding: 0 20px;
+}
+/*end publicação*/
 
