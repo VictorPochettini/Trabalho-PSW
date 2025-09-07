@@ -225,3 +225,34 @@ nav{
 }
 /*end publicação responsiva*/
 
+/*botão mais*/
+.morebtn{
+    padding: 10px 10px;
+    border-radius: 100%;
+    cursor: pointer;
+    font-size: 28px;
+    width: 50px;
+    border: none;
+    background: var(--roxo);
+    color: white;
+    align-items: center;
+    margin-top: 2.5%;
+    margin-left: 10px;
+    margin-bottom: 10px;
+    transition: all 0.4s ease;
+    position: absolute;
+}
+
+.morebtn:hover {
+    box-shadow: 0 5px 15px rgb(119, 118, 123);
+}
+
+/*end botão mais*/
+
+/*botão mais responsivo*/
+@media (max-width: 768px){
+    .morebtn{
+        margin-top: 37%;
+    }
+}
+/*end botão mais responsivo*/

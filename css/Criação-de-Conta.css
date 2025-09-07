@@ -60,7 +60,7 @@
 
 .fundo{
     margin: 0;
-    background: linear-gradient(to top, #1f1f55, #4b2ab6); /* de baixo (#1f1f55) para cima (#6a3ff8) */
+    background: linear-gradient(to top, #050225, #4713af); /* de baixo (#1f1f55) para cima (#6a3ff8) */
     display: flex;
     justify-content: center;
     align-items: center;

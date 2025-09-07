@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title> Músicas </title>
+    <title> Artes </title>
     <link rel="icon" href="images/artBeat.png">
     <link rel="stylesheet" href="css/capas.css">
     <!--link para conseguir usar os icons do site font awesome-->
@@ -143,5 +143,37 @@
     </div>
     <hr>
     <!--end publicação-->
+    
+    <script>
+        const stars = document.querySelectorAll(".starbtn");
+
+        stars.forEach((btn, index) => {
+            btn.addEventListener("click", () => {
+                // Primeiro, limpa todas as estrelas
+                stars.forEach(star => {
+                    let icon = star.querySelector("i");
+                    icon.classList.remove("fa-solid");
+                    icon.classList.add("fa-regular");
+                    icon.style.color = "#000000"; // cor apagada
+                });
+
+                // Agora pinta até a estrela clicada
+                for (let i = 0; i <= index; i++) {
+                    let icon = stars[i].querySelector("i");
+                    icon.classList.remove("fa-regular");
+                    icon.classList.add("fa-solid");
+                    icon.style.color = "#FFD43B"; // dourado
+                }
+            });
+        });
+    </script>
+
+    <hr style="border:none">
+    <!--end publicação-->
+
+    <!--botao publicação-->
+    <button class="morebtn">+</button>
+    <!--end botao publicação-->
+
 </body>
 </html>
