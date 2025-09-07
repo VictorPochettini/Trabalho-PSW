@@ -1,0 +1,227 @@
+*{ /*seletor universal*/
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    text-decoration: none;
+}
+
+body{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+:root{ /*classe mae, cria variaveis*/
+    --azul: #050225;
+    --roxo: #5e17eb;
+
+}
+
+/*menu*/
+.topo{ /*essa classe cria uma delimitação de margem*/
+    background-color: var(--azul);
+    margin: 0 auto; /*(esp externo) */
+    padding: 0 5%; /*0px: em cima, embaixo 5% direita, esquerda (esp interno)*/
+    width: 100%;
+    height: 110px;
+}
+
+.logo{
+    width: 90px;
+    height: 90px;
+    margin-top: 8px;
+}
+
+nav{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.menu{
+    color: white;
+    font-size: 20px;
+    display: flex;
+    list-style: none;
+    margin-top: 45px;
+}
+
+.menu li{
+    margin-left: 110px;
+}
+
+.menu li a{
+    color: white;
+}
+
+.dropbtn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.dropdown {
+  position: relative; 
+}
+
+.submenu {
+  display: none;
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background: var(--azul);
+  list-style: none;
+  padding: 10px;
+  border-radius: 5px;
+  min-width: 250px;
+  z-index: 100;
+  gap: 5px;
+}
+
+.submenu li {
+  padding: 8px 20px;
+  margin-right: 20px;
+  margin-left: 20px;
+}
+
+.submenu li a {
+  color: white;
+  text-decoration: none;
+  padding: 5px 10px;
+  display: block;
+  border-radius: 3px;
+}
+
+.submenu li a:hover {
+    background-color: var(--roxo); /* destaque ao passar o mouse */
+}
+/*end menu*/
+
+/*menu responsivo*/
+@media (max-width: 768px) { /*@media condição para aplicar CSS dependendo do tamanho*/
+    .topo {
+        height: auto; 
+        padding: 0 3%;
+    }
+
+    .logo {
+        width: 70px;
+        height: 70px;
+        margin-top: 0;
+    }
+
+    .menu {
+        font-size: 16px;
+        margin-top: 35px;
+    }
+
+    .menu li {
+        margin-left: 40px; 
+    }
+
+    .submenu {
+        min-width: 200px;
+        display: none;  
+        transform: translateX(-50%);
+        padding: 0 auto;
+    }
+
+    .submenu li {
+        padding: 5px 10px;                
+    }
+
+}
+/*end menu responsivo*/
+
+/*publicação*/
+.publicacao{
+    margin-top: 30px;
+    margin-left: 20%;
+}
+
+.publicacao a{
+    padding: 0 30px;
+    color: black;
+    font-size: 17px;
+}
+
+.seguir{
+    padding: 10px 20px;
+    border-radius: 40px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    width: 100px;
+    border: none;
+    background: var(--roxo);
+    color: white;
+}
+
+.seguir:hover {
+    box-shadow: 0 5px 15px rgb(119, 118, 123);
+}
+
+.descricao{
+    border: 2px solid var(--azul);
+    border-radius: 5px;
+    margin-top: 15px;
+    margin-left: 40px;
+    padding: 10px 10px;
+    width: 800px;
+}
+
+.capa{
+    border-radius: 5px;
+    margin-top: 10px;
+    margin-left: 30px;
+    padding: 10px 10px;
+    width: -20%;
+}
+
+.estrelas{
+    display: flex;
+    list-style: none;
+    margin-top: 15px;
+    margin-left: 40px;
+    margin-bottom: 15px;
+}
+
+.starbtn{
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  padding: 0 3px;
+}
+
+.starbtn :hover{
+    box-shadow: 0 5px 15px rgb(0, 0, 0);
+}
+
+.commentbtn{
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  padding: 0 20px;
+}
+/*end publicação*/
+
+/*publicação responsiva*/
+@media (max-width: 768px){
+    .publicacao{
+        margin-left: 12%;
+    }
+
+    .descricao{
+        margin-left: 20px;
+        width: 400px;
+    }
+}
+/*end publicação responsiva*/
+
