@@ -10,11 +10,12 @@
 :root{ /*classe mae, cria variaveis*/
     --azul: #050225;
     --roxo: #5e17eb;
+    --roxoEsc: #4713af;
 
 }
 
 body {
-    background-color: var(--azul);
+    background: linear-gradient(to top, var(--azul), var(--roxoEsc));
     color: white;
     height: 100vh;
     display: flex;
@@ -76,7 +77,9 @@ body {
 @media (max-width: 768px) {
     .container {
         padding: 40px;
-        width: 530px;
-        height: 590px;
+        width: 400px;
+    }
+    .input{
+        width: 320px;
     }
 }
