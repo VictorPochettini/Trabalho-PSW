@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Usuário</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            padding: 20px;
+        }
+        
+        .profile-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .profile-header {
+            padding: 25px;
+            text-align: center;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            position: relative;
+        }
+        
+        .profile-picture-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        
+        .profile-icon {
+            font-size: 120px;
+            color: rgba(255, 255, 255, 0.8);
+            width: 120px;
+            height: 120px;
+            display: block;
+        }
+        
+        .change-photo-btn {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: #6a11cb;
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 42px;
+            height: 40px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+
+            padding-bottom: 5px;
+            justify-content: center;
+            font-size: 28px;
+        }
+        
+        .profile-name {
+            font-size: 22px;
+            margin: 10px 0 5px;
+        }
+        
+        .profile-stats {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 15px;
+        }
+        
+        .stat-number {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .posts-container {
+            padding: 20px;
+            display: grid;
+            gap: 20px;
+        }
+        
+        .post {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .post-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #6a11cb;
+        }
+        
+        .post-content {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .post-date {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .post-image {
+            width: 100%;
+            max-height: 300px;
+            border-radius: 5px;
+            margin: 10px 0;
+            object-fit: contain;
+        }
+        
+        .post-audio {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="profile-picture-container">
+                <i class="fas fa-user-circle profile-icon"></i>
+                <button class="change-photo-btn" onclick="document.getElementById('profile-photo-input').click()">+</button>
+                <input type="file" id="profile-photo-input" class="file-input" accept="image/*">
+            </div>
+            
+            <h1 class="profile-name">username0109</h1>
+            <div class="profile-username">@username0109</div>
+            
+            <div class="profile-stats">
+                <div class="stat">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Seguidores</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Seguindo</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="posts-container" id="posts-container">
+            <div class="post">Nenhuma publicação ainda.</div>
+        </div>
+    </div>
+
+    <script>
+        // Elementos DOM
+        const profileIcon = document.querySelector('.profile-icon');
+        const profilePhotoInput = document.getElementById('profile-photo-input');
+        const postsContainer = document.getElementById('posts-container');
+        
+        // Dados do usuário (vindos do banco de dados no futuro)
+        const userData = {
+            name: "username0109",
+            username: "@username0109",
+            followers: 0,
+            following: 0,
+            profilePhoto: null,
+            posts: []
+        };
+
+        // Alterar foto de perfil
+        profilePhotoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Substituir o ícone pela imagem
+                    profileIcon.className = 'profile-picture';
+                    profileIcon.src = e.target.result;
+                    profileIcon.alt = "Foto de perfil";
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Função para adicionar dados do servidor
+        window.loadUserData = function(data) {
+            Object.assign(userData, data);
+            
+            // Atualizar estatísticas
+            document.querySelectorAll('.stat-number')[0].textContent = data.followers || 0;
+            document.querySelectorAll('.stat-number')[1].textContent = data.following || 0;
+            
+            // Atualizar foto de perfil se existir
+            if (data.profilePhoto) {
+                profileIcon.className = 'profile-picture';
+                profileIcon.src = data.profilePhoto;
+                profileIcon.alt = "Foto de perfil";
+            }
+            
+            // Renderizar posts se existirem
+            if (data.posts && data.posts.length > 0) {
+                renderPosts(data.posts);
+            }
+        };
+
+        // Renderizar posts
+        function renderPosts(posts) {
+            const postsHTML = posts.map(post => `
+                <div class="post">
+                    ${post.title ? `<div class="post-title">${post.title}</div>` : ''}
+                    ${post.content ? `<div class="post-content">${post.content}</div>` : ''}
+                    ${post.image ? `<img src="${post.image}" class="post-image">` : ''}
+                    ${post.audio ? `
+                        <audio controls class="post-audio">
+                            <source src="${post.audio}" type="audio/mpeg">
+                        </audio>
+                    ` : ''}
+                    <div class="post-date">Publicado em: ${post.date || new Date().toLocaleDateString('pt-BR')}</div>
+                </div>
+            `).join('');
+            
+            postsContainer.innerHTML = postsHTML;
+        }
+    </script>
+</body>
+</html>
