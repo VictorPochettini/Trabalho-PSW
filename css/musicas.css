@@ -209,3 +209,16 @@ nav{
 }
 /*end publicação*/
 
+/*publicação responsiva*/
+@media (max-width: 768px){
+    .publicacao{
+        margin-left: 15%;
+    }
+
+    .descricao{
+        margin-left: 20px;
+        width: 400px;
+    }
+}
+/*end publicação responsiva*/
+
