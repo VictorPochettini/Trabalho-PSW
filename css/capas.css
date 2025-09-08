@@ -219,12 +219,20 @@ nav{
 /*publicação responsiva*/
 @media (max-width: 768px){
     .publicacao{
-        margin-left: 12%;
+        margin-left: 5%;
     }
 
     .descricao{
-        margin-left: 20px;
-        width: 400px;
+        margin-left: 65px;
+        width: 350px;
+    }
+
+    .capa{
+        margin-left: 58px;
+    }
+
+    .estrelas{
+        margin-left: 65px;
     }
 }
 /*end publicação responsiva*/
@@ -256,7 +264,7 @@ nav{
 /*botão mais responsivo*/
 @media (max-width: 768px){
     .morebtn{
-        margin-top: 37%;
+        margin-bottom: 10%;
     }
 }
 /*end botão mais responsivo*/
