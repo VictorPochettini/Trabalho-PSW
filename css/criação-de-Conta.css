@@ -20,11 +20,13 @@
         .btn-primary {
             background: #6a3ff8;
             color: rgb(255, 255, 255);
+            margin-right: 30px;
         }
         
         .btn-secondary {
             background: #6a3ff8;
             color: white;
+            justify-content: center;
         }
         
         .btn:hover {
@@ -85,4 +87,26 @@ label.fontelabel {
     text-align: left;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     padding-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 40px;
+        width: 370px;
+        margin-top: 60px;
+        margin-bottom: 60px;
     }
+    .input{
+        width: 320px;
+    }
+    .fontelabel{
+        margin-left: 20px;
+    }
+    .logo {
+        width: 250px;
+        height: 250px;
+    }
+    .btn btn-primary{
+        margin-bottom: 70px;
+    }
+}
