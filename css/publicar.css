@@ -1,0 +1,168 @@
+/* Seletor Universal e Variáveis (padrão do projeto) */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    text-decoration: none;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+:root {
+    --azul: #050225;
+    --roxo: #5e17eb;
+    --roxoEsc: #4713af;
+    --cinza-claro: #f0f0f0;
+    --roxo-claro: #e6dffb;
+    --borda-roxa: #c7b2fa;
+}
+
+/* Corpo da Página */
+body {
+    background: linear-gradient(to top, var(--azul), var(--roxoEsc));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Container Principal */
+.container {
+    background-color: white;
+    padding: 30px;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 500px; /* Largura máxima para desktop */
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Espaçamento entre os elementos */
+}
+
+/* Seção da Descrição */
+.descricao-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.profile-icon {
+    font-size: 50px;
+    color: #d3d3d3; /* Cinza para o ícone de placeholder */
+}
+
+.descricao-container textarea {
+    width: 100%;
+    height: 120px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 16px;
+    resize: none; /* Impede que o usuário redimensione */
+    outline-color: var(--roxo);
+}
+
+/* Seletor de Gênero */
+.genero-container {
+    width: fit-content; /* Largura se ajusta ao conteúdo */
+}
+
+.genero-select {
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 2px solid var(--roxo);
+    background-color: white;
+    color: var(--roxo);
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    outline: none;
+    -webkit-appearance: none; /* Remove a aparência padrão do seletor */
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%235e17eb' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    padding-right: 40px; /* Espaço para a seta */
+}
+
+/* Área de Upload */
+.upload-area {
+    background-color: var(--roxo-claro);
+    border: 2px dotted var(--borda-roxa);
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+}
+
+.upload-area label {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.upload-icon {
+    font-size: 50px;
+    color: #333;
+}
+
+.upload-texto-principal {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.upload-texto-secundario {
+    font-size: 14px;
+    color: #555;
+}
+
+/* Botão de Enviar */
+.enviar-btn {
+    padding: 15px 20px;
+    border-radius: 40px;
+    font-size: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: var(--roxo);
+    color: white;
+    transition: all 0.4s ease;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.enviar-btn:hover {
+    background: var(--azul);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsividade para dispositivos menores (celulares) */
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding: 20px;
+    }
+
+    .profile-icon {
+        font-size: 40px;
+    }
+
+    .descricao-container textarea {
+        height: 100px;
+        font-size: 14px;
+    }
+
+    .upload-texto-principal {
+        font-size: 16px;
+    }
+
+    .enviar-btn {
+        font-size: 18px;
+        padding: 12px;
+    }
+}
