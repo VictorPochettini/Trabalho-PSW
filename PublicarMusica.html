@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publicar Música</title>
+    <link rel="stylesheet" href="css/publicar.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="images/artBeat_Branco.png">
+</head>
+<body>
+
+    <div class="container">
+        <div class="descricao-container">
+            <i class="fa-solid fa-circle-user profile-icon"></i>
+            <textarea placeholder="Escreva sobre sua música..."></textarea>
+        </div>
+
+        <div class="genero-container">
+            <select class="genero-select">
+                <option selected disabled>Gênero</option>
+                <option value="eletronica">Eletrônica</option>
+                <option value="funk">Funk</option>
+                <option value="kpop">K-pop</option>
+                <option value="mpb">MPB</option>
+                <option value="pagode">Pagode</option>
+                <option value="pop">Pop</option>
+                <option value="rnb">R&B</option>
+                <option value="reggae">Reggae</option>
+                <option value="rock">Rock</option>
+                <option value="sertanejo">Sertanejo</option>
+                <option value="trap">Trap</option>
+            </select>
+        </div>
+
+        <div class="upload-area">
+            <input type="file" id="audio-upload" hidden accept=".mp3,.wav">
+            <label for="audio-upload">
+                <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                <p class="upload-texto-principal">Faça upload do arquivo de áudio</p>
+                <p class="upload-texto-secundario">.mp3 ou .wav</p>
+            </label>
+        </div>
+
+        <button class="enviar-btn">Enviar</button>
+    </div>
+
+</body>
+</html>
