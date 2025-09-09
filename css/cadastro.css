@@ -11,11 +11,12 @@
     --azul: #050225;
     --roxo: #5e17eb;
     --roxoEsc: #4713af;
+    --roxoMEsc: #1a0f3c;
 
 }
 
 body {
-    background: linear-gradient(135deg, #050225 0%, #1a0f3c 40%, #5e17eb 100%);
+    background: linear-gradient(135deg, var(--azul) 0%, var(--roxoMEsc) 40%, var(--roxo) 100%);
     color: white;
     min-height: 100vh;
     display: flex;

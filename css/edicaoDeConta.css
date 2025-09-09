@@ -22,12 +22,46 @@
     
 }
 
-body{
-  background: linear-gradient(to top, var(--azul), var(--roxoEsc));
+/*body{
+    background: linear-gradient(135deg, var(--azul) 0%, var(--roxoMEsc) 40%, var(--roxo) 100%);
     color: var(--azul);
-    min-height: 100vh;   /* altura mínima, mas pode crescer */
+    min-height: 100vh;   /* altura mínima, mas pode crescer 
     display: flex;
     justify-content: center;
+}*/
+
+body {
+    background: linear-gradient(135deg, var(--azul) 0%, var(--roxoMEsc) 40%, var(--roxo) 100%);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    padding: 40px 20px;
+}
+
+body::before, body::after {
+    content: '';
+    position: absolute;
+    width: 700px;
+    height: 700px;
+    border-radius: 50%;
+    filter: blur(150px);
+    z-index: 0;
+}
+
+body::before {
+    background: rgba(94, 23, 235, 0.4); /* roxo neon suave */
+    top: -200px;
+    left: -200px;
+}
+
+body::after {
+    background: rgba(5, 2, 37, 0.4); /* azul profundo */
+    bottom: -200px;
+    right: -200px;
 }
      
 .container {
@@ -88,21 +122,22 @@ body{
 }
 
 .avatar {
-    width: 300px;
-    height: 300px;
+    width: 180px;
+    height: 180px;
     border-radius: 50%;
     object-fit: cover;
+
 }
 
 /* botão add foto */
 .btnImg {
     position: absolute;
     bottom: 20px;
-    right: 20px;
+    right: 50px;
     background: var(--roxo);
     border-radius: 50%;
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
