@@ -42,24 +42,13 @@
             display: block;
         }
         
-        .change-photo-btn {
-            position: absolute;
-            bottom: 5px;
-            right: 5px;
-            background: #5e17eb;
-            border: none;
-            border-radius: 100%;
-            width: 42px;
-            height: 40px;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-
-            padding-bottom: 5px;
-            justify-content: center;
-            font-size: 28px;
-        }
+       .lapis{
+        border: none;
+        background: none;
+        position: absolute;
+        left: 400px; 
+        bottom: 100px;
+       }
         
         .profile-name {
             font-size: 22px;
