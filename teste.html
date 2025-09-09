@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tela de Perfil</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #1f1d4e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      width: 300px;
+      border-radius: 12px;
+      overflow: hidden;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    /* Botão voltar */
+    .back-btn {
+      background: #6c1df2;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 35px;
+      height: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .profile-pic {
+      margin: 15px 0;
+      display: flex;
+      justify-content: center;
+      position: relative;
+    }
+
+    .profile-pic img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: #ddd;
+    }
+
+    .add-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 90px;
+      background: #6c1df2;
+      border-radius: 50%;
+      width: 35px;
+      height: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      background: #e6e6e6;
+      margin-top: 5px;
+      font-size: 14px;
+    }
+
+    textarea {
+      resize: none;
+      height: 70px;
+    }
+
+    .genres {
+      margin-top: 10px;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 5px 12px;
+      border: 2px solid #6c1df2;
+      border-radius: 20px;
+      color: #6c1df2;
+      font-size: 13px;
+      margin: 5px 5px 0 0;
+    }
+
+    .add-genre {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #6c1df2;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+
+    .save-btn {
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+      background: #1f1d4e;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button class="back-btn">&#8592;</button>
+
+    <div class="profile-pic">
+      <img src="" alt="Foto de perfil">
+      <div class="add-btn">+</div>
+    </div>
+
+    <label for="username">Nome de usuário :</label>
+    <input type="text" id="username" placeholder="Digite seu nome">
+
+    <label for="bio">Biografia:</label>
+    <textarea id="bio" placeholder="Escreva algo..."></textarea>
+
+    <div class="genres">
+      <label>Gêneros Musicais:</label>
+      <span class="tag">Gen 1</span>
+      <span class="tag">Gen 2</span>
+      <div class="add-genre">+</div>
+    </div>
+
+    <button class="save-btn">Salvar</button>
+  </div>
+</body>
+</html>
