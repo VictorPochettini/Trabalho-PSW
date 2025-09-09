@@ -3,25 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
-    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/cadastro.css">
     <link rel="icon" href="images/ArtBeat_Branco.png">
 
 </head>
 <body>
     <div class="container">
-        <center><img src="images/artBeat.png" alt="ART BEAT" class="logo"></center>
+        <center><img src="images/artBeat_Branco.png" alt="ART BEAT" class="logo"></center>
         
         <center><h1 class="fonteh1" >Entrar Na Conta</h1></center>
         <form>
-            <label class = "fontelabel" for="usuario">Usuário:</label>
-            <input class="textoExemplo input" type="text" id="nome"><br><br>
-            <label class = "fontelabel" for="senha">Senha:</label>
-            <input class="input" type="text" id="email"><br><br>
+            <label class = "fonte" for="usuario">Usuário:</label>
+            <input class = "input" type="text" id="usuario" name="username" required><br><br>
+
+            <label class = "fonte" for="senha">Senha:</label>
+            <input class="input" type="password" id="password" name="password" required><br><br>
+
+            <center>
+                <div class="buttons">
+                    <button type="submit" class="entrarbtn">Entrar</button>
+                </div>
+            </center>
         </form>
-        
-        <center><div class="buttons">
-            <button class="entrarbtn">Entrar</button>
-        </div></center>
     </div>
 </body>
 </html>
