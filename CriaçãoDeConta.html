@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Criação de Conta</title>
+    <link rel="icon" href="images/ArtBeat_Branco.png">
+    <link rel="stylesheet" href="css/cadastro.css"> <!-- CSS moderno compartilhado -->
+</head>
+<body>
+    <div class="container">
+        <center><img src="images/artBeat_Branco.png" alt="ART BEAT" class="logo"></center>
+
+        <center><h1 class="fonteh1">Criação de Conta</h1></center>
+
+        <form>
+            <label class="fonte" for="nome">Nome:</label>
+            <input class="input" type="text" id="nome" name="nome" placeholder="João da Silva" required>
+
+            <label class="fonte" for="email">Email:</label>
+            <input class="input" type="email" id="email" name="email" placeholder="joaodasilva@gmail.com" required>
+
+            <label class="fonte" for="senha">Senha:</label>
+            <input class="input" type="password" id="senha" name="senha" required>
+
+            <label class="fonte" for="confSenha">Confirmação de Senha:</label>
+            <input class="input" type="password" id="confSenha" name="confSenha" required>
+
+            <div class="termos-container">
+                <input type="checkbox" id="termos" required>
+                <label class="termos" for="termos">Eu aceito os termos de uso e políticas de privacidade</label>
+            </div>
+
+            <div class=""buttoms>
+                <center>
+                    <button type="submit" class="entrarbtn">Criar Conta</button>
+                </center>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
