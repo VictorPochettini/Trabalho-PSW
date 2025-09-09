@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title> Músicas </title>
     <link rel="icon" href="images/ArtBeat_Branco.png">
-    <link rel="stylesheet" href="css/musicas.css">
+    <link rel="stylesheet" href="css/posts.css">
     <!--link para conseguir usar os icons do site font awesome-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
@@ -49,7 +49,7 @@
                         
                     </li>
                     <li class="dropdown">
-                        <a href="#">Letra</a>
+                        <a href="Letras.html">Letra</a>
                         <button class="dropbtn">
                             <i class="fa-solid fa-chevron-down fa-2xs" style="color: #ffffff;"></i>
                         </button>
@@ -170,12 +170,30 @@
             });
         });
     </script>
-
     <hr>
-    <!--end publicação-->
+    <!-- Botão principal -->
+    <div class="fab-container">
+    <button class="fab-btn" id="fab-btn">+</button>
+    <ul class="fab-options">
+        <li><a href="PublicarMusica.html"><i class="fa-solid fa-music"></i> Música</a></li>
+        <li><a href="PublicarImagem.html"><i class="fa-solid fa-paintbrush"></i> Arte</a></li>
+        <li><a href="PublicarLetra.html"><i class="fa-solid fa-feather"></i> Letra</a></li>
+    </ul>
+    </div>
 
-    <!--botao publicação-->
-    <button class="morebtn">+</button>
-    <!--end botao publicação-->
+    <script>
+        // Abre/fecha o menu ao clicar
+        const fabBtn = document.getElementById("fab-btn");
+        const fabContainer = document.querySelector(".fab-container");
+
+        fabBtn.addEventListener("click", () => {
+        fabContainer.classList.toggle("active");
+        });
+
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 </body>
 </html>
