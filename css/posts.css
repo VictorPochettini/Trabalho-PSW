@@ -5,24 +5,63 @@
     text-decoration: none;
 }
 
-body{
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #ffffff 0%, #d1d1e0 50%, #bdbdd8 100%);
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* faz o fundo não se mover com o scroll */
+  background-size: cover; /* garante que o degradê preencha toda a tela */
+  color: #333;
 }
 
-:root{ /*classe mae, cria variaveis*/
-    --azul: #050225;
-    --roxo: #5e17eb;
 
+:root {
+  --azul: #050225;
+  --azulclaro: #1d147c;
+  --roxo: #5e17eb;
+  --roxo-claro: #a78bfa; /* por exemplo, um roxo lilás suave */
 }
 
-/*menu*/
-.topo{ /*essa classe cria uma delimitação de margem*/
-    background-color: var(--azul);
-    margin: 0 auto; /*(esp externo) */
-    padding: 0 5%; /*0px: em cima, embaixo 5% direita, esquerda (esp interno)*/
-    width: 100%;
+
+.topo { 
+    background: linear-gradient(120deg, #050225 0%, #0d0b33 40%, #2e2573 100%);
+    margin: 20px auto 0 auto; /* margem no topo */
+    padding: 0 5%;
+    width: 90%; /* um pouco menor que 100% para "flutuar" */
     height: 110px;
+
+    /* Novo estilo */
+    border-radius: 20px; /* arredondado em todos os cantos */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35); /* sombra mais forte */
+    position: relative;
+    overflow: hidden;
+    z-index: 10;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
+/* Efeito de brilho animado */
+.topo::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+        120deg,
+        transparent,
+        rgba(255, 255, 255, 0.07),
+        transparent
+    );
+    transform: skewX(-20deg);
+    animation: brilho 6s infinite linear;
+}
+
+@keyframes brilho {
+    0% { left: -50%; }
+    100% { left: 100%; }
+}
+
 
 .logo{
     width: 90px;
@@ -53,8 +92,33 @@ nav{
     color: white;
 }
 
-.enfase{
-    text-decoration: underline;
+.enfase {
+  position: relative;
+  font-weight: 600;
+  color: var(--roxo);
+}
+
+/* Linha colorida embaixo */
+.enfase::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 0%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--roxo), rgba(255, 255, 255, 0.416));
+  border-radius: 2px;
+  animation: underlineGrow 0.8s ease forwards; /* animação */
+}
+
+/* Keyframes para o efeito */
+@keyframes underlineGrow {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
 }
 
 .dropbtn {
@@ -233,33 +297,76 @@ nav{
 /*end publicação responsiva*/
 
 /*botão mais*/
-.morebtn{
-    padding: 10px 10px;
-    border-radius: 100%;
-    cursor: pointer;
-    font-size: 28px;
-    width: 50px;
-    border: none;
-    background: var(--roxo);
-    color: white;
-    align-items: center;
-    margin-top: 14.5%;
-    margin-left: 10px;
-    transition: all 0.4s ease;
-    position: absolute;
+/* Container do botão flutuante */
+.fab-container {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  z-index: 1000;
 }
 
-.morebtn:hover {
-    box-shadow: 0 5px 15px rgb(119, 118, 123);
+/* Botão principal */
+.fab-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  font-size: 32px;
+  background: linear-gradient(135deg, var(--roxo), var(--azulclaro));
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  transition: transform 0.3s, background 0.3s;
 }
 
-/*end botão mais*/
-
-/*botão mais responsivo*/
-@media (max-width: 768px){
-    .morebtn{
-        margin-top: 37%;
-    }
+.fab-btn:hover {
+  background: linear-gradient(135deg, var(--roxo), var(--roxo-claro));
+  transform: rotate(45deg) scale(1.1);
 }
-/*end botão mais responsivo*/
+
+/* Lista de opções */
+.fab-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+}
+
+.fab-options li {
+  margin: 12px 0;
+}
+
+.fab-options a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  color: var(--azul);
+  padding: 10px 15px;
+  border-radius: 30px;
+  font-weight: 500;
+  font-size: 15px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  transition: all 0.3s;
+}
+
+.fab-options a:hover {
+  background: var(--roxo);
+  color: white;
+  transform: translateX(-5px);
+}
+
+/* Quando ativo */
+.fab-container.active .fab-options {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
 
