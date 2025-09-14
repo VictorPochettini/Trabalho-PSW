@@ -4,9 +4,71 @@
     <meta charset="UTF-8">
     <title> Artes </title>
     <link rel="icon" href="images/ArtBeat_Branco.png">
-    <link rel="stylesheet" href="css/artes.css">
+    <link rel="stylesheet" href="css/posts.css">
     <!--link para conseguir usar os icons do site font awesome-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        .capa{
+            border-radius: 5px;
+            margin-top: 10px;
+            margin-left: 30px;
+            padding: 10px 10px;
+            width: -20%;
+        }
+
+        .estrelas{
+            display: flex;
+            list-style: none;
+            margin-top: 15px;
+            margin-left: 40px;
+            margin-bottom: 15px;
+        }
+
+        .starbtn{
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            padding: 0 3px;
+        }
+
+        .starbtn :hover{
+            box-shadow: 0 5px 15px rgb(0, 0, 0);
+        }
+
+        .commentbtn{
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            padding: 0 20px;
+        }
+
+        @media (max-width: 768px){
+            .publicacao{
+                margin-left: 5%;
+            }
+
+            .descricao{
+                margin-left: 65px;
+                width: 350px;
+            }
+
+            .capa{
+                margin-left: 58px;
+            }
+
+            .estrelas{
+                margin-left: 65px;
+            }
+        }
+    </style> 
+
 </head>
 <body>
     <!--menu-->
@@ -25,24 +87,16 @@
                             <i class="fa-solid fa-chevron-down fa-2xs" style="color: #ffffff;"></i>
                         </button>
                         <ul class="submenu">
-                            <!--<li><a href="#">Blues</a></li>
                             <li><a href="#">Bossa nova</a></li>
-                            <li><a href="#">Classica</a></li>-->
                             <li><a href="#">Eletronica</a></li>
-                            <!--<li><a href="#">Forró</a></li>-->
                             <li><a href="#">Funk</a></li>
-                            <!--<li><a href="#">Gospel</a></li>
-                            <li><a href="#">Hip-hop</a></li>
-                            <li><a href="#">Jazz</a></li>-->
                             <li><a href="#">K-pop</a></li>
                             <li><a href="#">MPB</a></li>
                             <li><a href="#">Pagode</a></li>
                             <li><a href="#">Pop</a></li>
                             <li><a href="#">R&B</a></li>
                             <li><a href="#">Reggae</a></li>
-                            <!--<li><a href="#">Reggaeton</a></li>-->
                             <li><a href="#">Rock</a></li>
-                            <!--<li><a href="#">Samba</a></li>-->
                             <li><a href="#">Sertanejo</a></li>
                             <li><a href="#">Trap</a></li>
                         </ul>
@@ -54,24 +108,16 @@
                             <i class="fa-solid fa-chevron-down fa-2xs" style="color: #ffffff;"></i>
                         </button>
                         <ul class="submenu">
-                            <!--<li><a href="#">Blues</a></li>
                             <li><a href="#">Bossa nova</a></li>
-                            <li><a href="#">Classica</a></li>-->
                             <li><a href="#">Eletronica</a></li>
-                            <!--<li><a href="#">Forró</a></li>-->
                             <li><a href="#">Funk</a></li>
-                            <!--<li><a href="#">Gospel</a></li>
-                            <li><a href="#">Hip-hop</a></li>
-                            <li><a href="#">Jazz</a></li>-->
                             <li><a href="#">K-pop</a></li>
                             <li><a href="#">MPB</a></li>
                             <li><a href="#">Pagode</a></li>
                             <li><a href="#">Pop</a></li>
                             <li><a href="#">R&B</a></li>
                             <li><a href="#">Reggae</a></li>
-                            <!--<li><a href="#">Reggaeton</a></li>-->
                             <li><a href="#">Rock</a></li>
-                            <!--<li><a href="#">Samba</a></li>-->
                             <li><a href="#">Sertanejo</a></li>
                             <li><a href="#">Trap</a></li>
                         </ul>
@@ -173,7 +219,9 @@
 
     <!-- Botão principal -->
     <div class="fab-container">
-    <button class="fab-btn" id="fab-btn">+</button>
+    <button class="fab-btn" id="fab-btn">
+        <span class="fab-icon">+</span>
+    </button>
     <ul class="fab-options">
         <li><a href="PublicarMusica.html"><i class="fa-solid fa-music"></i> Música</a></li>
         <li><a href="PublicarImagem.html"><i class="fa-solid fa-paintbrush"></i> Arte</a></li>
@@ -194,7 +242,6 @@
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 
 </body>
 </html>
