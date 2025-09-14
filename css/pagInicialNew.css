@@ -80,18 +80,6 @@ header {
     align-items: center;
 }
 
-/*.logo {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--branco);
-    display: flex;
-    align-items: center;
-}
-
-.logo span {
-    color: var(--roxo-claro);
-}*/
-
 .logo{
     width: 90px;
     height:90px;
