@@ -199,6 +199,17 @@ nav {
     font-size: 17px;
 }
 
+.monetizabtn{
+  background: none;
+  border: none;
+  margin-left: -20px;
+}
+
+.monetizabtn:hover{
+  transform: translateY(-2px);
+  transition: all 0.4s ease;
+}
+
 .seguir {
     padding: 10px 10px;
     border-radius: 40px;
