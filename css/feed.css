@@ -87,6 +87,13 @@ nav {
   border-radius: 2px;
 }
 
+.dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* sem o menu dropdown n tem mais essas classes
 .dropbtn {
   background: none;
   border: none;
@@ -103,12 +110,6 @@ nav {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.dropdown {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
 .submenu {
   display: none;
   position: absolute;
@@ -119,7 +120,7 @@ nav {
   padding: 15px;
   border-radius: 10px;
   min-width: 250px;
-  z-index: 1001; /* Maior que o z-index do .topo */
+  z-index: 1001; /* Maior que o z-index do .topo 
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   margin-top: 15px;
   max-height: 400px;
@@ -150,11 +151,11 @@ nav {
   transform: translateX(5px);
 }
 
-/* JavaScript vai controlar a exibição */
+/* JavaScript vai controlar a exibição 
 .submenu.show {
   display: block;
 }
-/*end menu*/
+/*end menu antigo*/
 
 /*menu responsivo*/
 @media (max-width: 768px){
@@ -172,7 +173,7 @@ nav {
   .imagemLogo{
     margin-right: 30px;
   }
-
+  /*
   .submenu {
         min-width: 200px;
         display: none;  
@@ -182,7 +183,7 @@ nav {
 
   .submenu li {
         padding: 5px 10px;                
-  }
+  }*/
 }
 /*end menu responsivo*/
 
@@ -198,8 +199,8 @@ nav {
     font-size: 17px;
 }
 
-.seguir{
-    padding: 10px 20px;
+.seguir {
+    padding: 10px 10px;
     border-radius: 40px;
     font-size: 16px;
     cursor: pointer;
@@ -208,10 +209,18 @@ nav {
     border: none;
     background: var(--roxo);
     color: white;
+    margin-left: 20px;
 }
 
 .seguir:hover {
-    box-shadow: 0 5px 15px rgb(119, 118, 123);
+    box-shadow: 0 5px 15px rgba(119, 118, 123, 0.5);
+    transform: translateY(-2px);
+}
+
+/* Estilo para o estado "Seguindo" */
+.seguindo {
+    background: var(--azulclaro);
+    width: 110px; /* Ligeiramente mais largo para acomodar o texto */
 }
 
 .descricao{
@@ -226,6 +235,233 @@ nav {
 .audio{
     margin-left: 40px;
     margin-top: 15px;
+}
+
+.capa{
+  border-radius: 5px;
+  margin-top: 10px;
+  margin-left: 30px;
+  padding: 10px 10px;
+  width: -20%;
+}
+
+.estrelas{
+  display: flex;
+  list-style: none;
+  margin-top: 15px;
+  margin-left: 40px;
+  margin-bottom: 15px;
+ }
+
+ .starbtn{
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  padding: 0 3px;
+ }
+
+.starbtn :hover{
+  box-shadow: 0 5px 15px rgb(0, 0, 0);
+ }
+
+.commentbtn{
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  padding: 0 20px;
+}
+
+/* Overlay do pop-up de comentários */
+.comments-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+
+.comments-popup {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.comments-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: var(--azul);
+    color: white;
+}
+
+.comments-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.close-comments {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-comments:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.comments-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.comment-list {
+    padding: 20px;
+    overflow-y: auto;
+    flex-grow: 1;
+    max-height: 40vh;
+}
+
+.comment-item {
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.comment-item:last-child {
+    border-bottom: none;
+}
+
+.comment-author {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.comment-author i {
+    color: var(--roxo);
+    font-size: 1.2rem;
+}
+
+.comment-author span {
+    font-weight: 600;
+    color: var(--azul);
+}
+
+.comment-time {
+    font-size: 0.8rem;
+    color: #777;
+    display: block;
+    margin-top: 5px;
+}
+
+.comment-form {
+    padding: 20px;
+    border-top: 1px solid #eee;
+    background: #f9f9f9;
+}
+
+.comment-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    resize: vertical;
+    font-family: inherit;
+    margin-bottom: 10px;
+}
+
+.comment-form textarea:focus {
+    outline: none;
+    border-color: var(--roxo);
+}
+
+.btn-comment {
+    padding: 10px 20px;
+    background: var(--roxo);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+.btn-comment:hover {
+    background: var(--azulclaro);
+}
+
+/* Animações */
+.comments-overlay.active {
+    display: flex;
+    animation: fadeIn 0.3s;
+}
+
+.comments-popup {
+    animation: slideUp 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(20px); 
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0); 
+    }
+}
+
+@media (max-width: 768px){
+  .publicacao{
+    margin-left: 5%;
+  }
+
+  .descricao{
+    margin-left: 65px;
+    width: 350px;
+  }
+
+  .capa{
+    margin-left: 58px;
+  }
+
+  .estrelas{
+    margin-left: 65px;
+  }
 }
 
 .estrelas{

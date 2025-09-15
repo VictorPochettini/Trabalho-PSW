@@ -5,12 +5,12 @@
     <title> Músicas </title>
     
     <link rel="icon" href="images/ArtBeat_Branco.png">
-    <link rel="stylesheet" href="css/posts.css">
+    <link rel="stylesheet" href="css/feed.css">
     <!--link para conseguir usar os icons do site font awesome-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
-    <!--menu-->
+    <!--MENU ANTIGO
     <div class="topo">
         <header>
             <nav>
@@ -19,7 +19,6 @@
                 </div>
             
                 <ul class="menu">
-                    <!-- icones ainda nao tem funcionalidade-->
                     <li class="dropdown">
                          <a href="Musicas.html" class="enfase">Música</a>
                         <button class="dropbtn">
@@ -78,9 +77,28 @@
                     <li class="dropdown" onclick="window.location.href='PerfilUsuário.html'"><a href="#"><i class="fa-solid fa-circle-user fa-xl" style="color: #ffffff;"></i></a></li>
                 </ul>
             </nav>
-
         </header>
     </div>
+    END MENU ANTIGO-->
+
+    <!--menu atual-->
+    <div class="topo">
+        <header>
+            <nav>
+                <div class="imagemLogo">
+                    <img src="images/ArtBeat_Branco.png" class="logo" alt="logo art beat">
+                </div>
+            
+                <ul class="menu">
+                    <li class="dropdown"><a href="Feed.html" class="enfase">Feed</a></li>
+                    <li class="dropdown"><a href="#">Aleatórios</a></li>
+                    <li class="dropdown"><a href="#">Desafio</a></li>
+                    <li class="dropdown" onclick="window.location.href='PerfilUsuário.html'"><a href="#"><i class="fa-solid fa-circle-user fa-xl" style="color: #ffffff;"></i></a></li>
+                </ul>
+            </nav>
+        </header>
+    </div>
+    <!--end menu atual-->
 
     <script>
         document.querySelectorAll(".dropbtn").forEach(btn => {
@@ -108,7 +126,7 @@
     <!--publicação-->
     <div class="publicacao">
         <!--colocar link para a conta desse usuario-->
-        <a href="#"><i class="fa-solid fa-circle-user fa-xl" style="color: #9f9e9e;"></i> username0909</a><button class="seguir">Seguir</button>
+        <a href="#"><i class="fa-solid fa-circle-user fa-xl" style="color: #9f9e9e;"></i> username0909</a><button class="seguir js-seguir-btn">Seguir</button>
 
         <div class="descricao"> 
             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
@@ -130,7 +148,140 @@
             <li><button class="commentbtn"><i class="fa-regular fa-comment-dots" style="color: #000000;"></i></button></li>
         </ul>
     </div>
+    <hr>
 
+    <!--publicação2-->
+    <div class="publicacao">
+        <!--colocar link para a conta desse usuario-->
+        <a href="#"><i class="fa-solid fa-circle-user fa-xl" style="color: #9f9e9e;"></i> username3209</a><button class="seguir js-seguir-btn">Seguir</button>
+
+        <div class="descricao"> 
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+            <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. </p>
+        </div>
+
+        <ul class="estrelas">
+            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
+            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
+            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
+            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
+            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
+            <li><button class="commentbtn"><i class="fa-regular fa-comment-dots" style="color: #000000;"></i></button></li>
+        </ul>
+    </div>
+    <hr>
+
+    <!--publicação3-->
+    <div class="publicacao">
+        <!--colocar link para a conta desse usuario-->
+        <a href="#"><i class="fa-solid fa-circle-user fa-xl" style="color: #9f9e9e;"></i> username0255</a><button class="seguir js-seguir-btn">Seguir</button>
+
+        <div class="descricao"> 
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+            <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. </p>
+        </div>
+            <img src="images/capa.png" alt="Capa do Álbum" class="capa">
+
+        <ul class="estrelas">
+            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
+            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
+            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
+            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
+            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
+            <li><button class="commentbtn"><i class="fa-regular fa-comment-dots" style="color: #000000;"></i></button></li>
+        </ul>
+    </div>
+    <hr>
+    <!--end publicaçoes-->
+
+    <!-- Pop-up de Comentários -->
+    <div class="comments-overlay" id="comments-overlay">
+        <div class="comments-popup">
+            <div class="comments-header">
+                <h3>Comentários</h3>
+                <button class="close-comments" id="close-comments">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="comments-content">
+                <div class="comment-list">
+                    <!-- Comentários serão carregados aqui -->
+                    <div class="comment-item">
+                        <div class="comment-author">
+                            <i class="fa-solid fa-circle-user"></i>
+                            <span>usuário123</span>
+                        </div>
+                        <p>Gostei muito dessa música! Parabéns pelo trabalho.</p>
+                        <span class="comment-time">Há 2 horas</span>
+                    </div>
+                </div>
+                <div class="comment-form">
+                    <textarea placeholder="Adicione um comentário..." rows="3"></textarea>
+                    <button class="btn-comment">Comentar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--comentario-->
+    <script>
+    const commentButtons = document.querySelectorAll('.commentbtn');
+    const commentsOverlay = document.getElementById('comments-overlay');
+    const closeComments = document.getElementById('close-comments');
+
+    // Abrir pop-up de comentários
+    commentButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            commentsOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Impede scroll da página principal
+        });
+    });
+
+    // Fechar pop-up de comentários
+    closeComments.addEventListener('click', () => {
+        commentsOverlay.classList.remove('active');
+        document.body.style.overflow = ''; // Restaura scroll
+    });
+
+    // Fechar ao clicar fora do pop-up
+    commentsOverlay.addEventListener('click', (e) => {
+        if (e.target === commentsOverlay) {
+            commentsOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+
+    // Enviar comentário (exemplo básico)
+    const commentForm = document.querySelector('.comment-form');
+    const commentTextarea = commentForm.querySelector('textarea');
+    const commentList = document.querySelector('.comment-list');
+
+    commentForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const commentText = commentTextarea.value.trim();
+        if (commentText) {
+            const newComment = document.createElement('div');
+            newComment.classList.add('comment-item');
+            newComment.innerHTML = `
+                <div class="comment-author">
+                    <i class="fa-solid fa-circle-user"></i>
+                    <span>Você</span>
+                </div>
+                <p>${commentText}</p>
+                <span class="comment-time">Agora</span>
+            `;
+            
+            commentList.prepend(newComment);
+            commentTextarea.value = '';
+            
+            // Scroll para o novo comentário
+            newComment.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+    </script>
+
+    <!--estrelas-->
     <script>
         const stars = document.querySelectorAll(".starbtn");
 
@@ -154,7 +305,23 @@
             });
         });
     </script>
-    <hr>
+    
+    <!--seguir-->
+    <script>
+        document.querySelectorAll('.js-seguir-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Alternar entre os estados
+                if (this.textContent === 'Seguir') {
+                    this.textContent = 'Seguindo';
+                    this.classList.add('seguindo');
+                } else {
+                    this.textContent = 'Seguir';
+                    this.classList.remove('seguindo');
+                }
+            });
+        });
+    </script>
+
     <!-- Botão principal -->
     <div class="fab-container">
     <button class="fab-btn" id="fab-btn">
