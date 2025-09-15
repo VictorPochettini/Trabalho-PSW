@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArtBeat - Desafios</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="css/pagInicialNew.css">
+<link rel="stylesheet" href="css/desafios.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="container header-content">
+            <img src="images/ArtBeat_Branco.png" class="logo" alt="logo art beat">
+            <nav>
+                <ul>
+                    <li><a href="PagInicialNew.html">Início</a></li>
+                    <li><a href="#">Feed</a></li>
+                    <li><a href="Artistas.html">Artistas</a></li>
+                    <li><a href="Desafios.html">Desafios</a></li>
+                    <li><a href="#">Sobre</a></li>
+                </ul>
+            </nav>
+            <div class="auth-buttons">
+                <button class="btn" onclick="window.location.href='CriacaoDeConta.html'">Cadastrar</button>
+                <button class="btn btn-outline" onclick="window.location.href='Login.html'">Entrar</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="desafios-container">
+        <button class="nav-btn nav-left" onclick="prevChallenge()"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="nav-btn nav-right" onclick="nextChallenge()"><i class="fa-solid fa-chevron-right"></i></button>
+
+        <!-- Painel de desafio atual -->
+        <div class="panel" id="currentChallenge">
+            <h2 id="challengeTitle">Desafio do Mês: Pintura Digital</h2>
+            <p id="challengeDesc">Crie uma obra digital inspirada em música urbana, explorando cores vibrantes e criatividade. O melhor trabalho será destacado no feed ArtBeat!</p>
+            <img id="challengeImg" class="challenge-img" src="https://i.pravatar.cc/600?img=12" alt="Imagem do desafio">
+        </div>
+
+        <!-- Painel de resultado anterior -->
+        <div class="panel" id="previousResult">
+            <h2>Resultado do Desafio Anterior</h2>
+            <div class="podium" id="podium">
+                <div class="podium-item">
+                    <i class="fa-solid fa-medal medal gold"></i>
+                    <h3>Artista 1</h3>
+                    <button>Ver post</button>
+                </div>
+                <div class="podium-item">
+                    <i class="fa-solid fa-medal medal silver"></i>
+                    <h3>Artista 2</h3>
+                    <button>Ver post</button>
+                </div>
+                <div class="podium-item">
+                    <i class="fa-solid fa-medal medal bronze"></i>
+                    <h3>Artista 3</h3>
+                    <button>Ver post</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const challenges = [
+            {
+                title: "Desafio da Semana: A vida é uma maravilha",
+                desc: "Crie uma obra que traga esse sentimento à tona.",
+                img: "https://imgs.search.brave.com/JIZ1UG3nLySZXXwRcHFuK8aBkiqMkGdz7NewDB1RLTI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS5nZXR0eWltYWdl/cy5jb20vaWQvMTQ1/MDI2ODU1OC9waG90/by9zdW1tZXItc2Vs/ZmllLmpwZz9zPTYx/Mng2MTImdz0wJms9/MjAmYz1JaXZHUUlY/VjdwQ3VfdHIxMEkw/a2FEb3VVdElpX3BL/ek9ycUJfTkFHb0NB/PQ",
+                results: [
+                    {name:"Luna Beats", img:"https://i.pravatar.cc/300?img=12"},
+                    {name:"Rafa Groove", img:"https://i.pravatar.cc/300?img=32"},
+                    {name:"Clara Voz", img:"https://i.pravatar.cc/300?img=45"}
+                ]
+            },
+            {
+                title: "Desafio do Mês: Velho Oeste",
+                desc: "Crie uma obra que remeta a esse tempo distante e imprevisível.",
+                img: "https://imgs.search.brave.com/WFXTTes_LFKGfrjHHcTxe8PqR6Y8j1LTWh4oH5xVYOg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93YWxs/cGFwZXJzLmNvbS9p/bWFnZXMvaGQvd2ls/ZC13ZXN0LWJhY2tn/cm91bmQtZTBnbzAw/Ymowa2NsMzNzcS5q/cGc",
+                results: [
+                    {name:"João Letras", img:"https://i.pravatar.cc/300?img=22"},
+                    {name:"Ana Poesia", img:"https://i.pravatar.cc/300?img=41"},
+                    {name:"Carlos Conto", img:"https://i.pravatar.cc/300?img=14"}
+                ]
+            }
+        ];
+
+        let currentIndex = 0;
+
+        function updateChallenge() {
+            const challenge = challenges[currentIndex];
+            const panelCurrent = document.getElementById("currentChallenge");
+            const panelResult = document.getElementById("previousResult");
+
+            // fade out
+            panelCurrent.classList.add("fade-out");
+            panelResult.classList.add("fade-out");
+
+            setTimeout(() => {
+                document.getElementById("challengeTitle").innerText = challenge.title;
+                document.getElementById("challengeDesc").innerText = challenge.desc;
+                document.getElementById("challengeImg").src = challenge.img;
+
+                const podium = document.getElementById("podium");
+                podium.innerHTML = "";
+                const medals = ["gold", "silver", "bronze"];
+                challenge.results.forEach((winner, i) => {
+                    const div = document.createElement("div");
+                    div.className = "podium-item";
+                    div.innerHTML = `
+                        <i class="fa-solid fa-medal medal ${medals[i]}"></i>
+                        <h3>${winner.name}</h3>
+                        <button>Ver post</button>
+                    `;
+                    podium.appendChild(div);
+                });
+
+                // fade in
+                panelCurrent.classList.remove("fade-out");
+                panelResult.classList.remove("fade-out");
+            }, 300);
+        }
+
+        function nextChallenge() {
+            currentIndex = (currentIndex + 1) % challenges.length;
+            updateChallenge();
+        }
+
+        function prevChallenge() {
+            currentIndex = (currentIndex - 1 + challenges.length) % challenges.length;
+            updateChallenge();
+        }
+
+        // Inicializa
+        updateChallenge();
+    </script>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>ArtBeat</h3>
+                    <p>Conectando artistas independentes e amantes da música em uma plataforma colaborativa e inovadora.</p>
+                </div>
+                <div class="footer-column">
+                    <h3>Links Rápidos</h3>
+                    <ul>
+                        <li><a href="#">Início</a></li>
+                        <li><a href="#">Feed</a></li>
+                        <li><a href="#">Artistas</a></li>
+                        <li><a href="#">Desafios</a></li>
+                        <li><a href="#">Sobre</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Recursos</h3>
+                    <ul>
+                        <li><a href="#">Como funciona</a></li>
+                        <li><a href="#">Para artistas</a></li>
+                        <li><a href="#">Para ouvintes</a></li>
+                        <li><a href="#">Blog</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+    </body>
+</html>
