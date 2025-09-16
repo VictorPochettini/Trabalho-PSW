@@ -18,7 +18,6 @@
             <nav>
                 <ul>
                     <li><a href="PagInicialNew.html">Início</a></li>
-                    <li><a href="#">Feed</a></li>
                     <li><a href="Artistas.html">Artistas</a></li>
                     <li><a href="Desafios.html">Desafios</a></li>
                     <li><a href="#">Sobre</a></li>
@@ -64,18 +63,18 @@
     <script>
     const artists = {
         musica: [
-        { name: "Luna Beats", bio: "Produtora indie focada em lo-fi e chillwave.", img: "https://i.pravatar.cc/300?img=12" },
-        { name: "Rafa Groove", bio: "Músico experimental misturando jazz e eletrônica.", img: "https://i.pravatar.cc/300?img=32" },
+        { name: "Luna Beats", bio: "Produtora indie focada em lo-fi e chillwave.", img: "https://i.pravatar.cc/300?img=23" },
+        { name: "Rafa Groove", bio: "Músico experimental misturando jazz e eletrônica.", img: "https://i.pravatar.cc/300?img=51" },
         { name: "Clara Voz", bio: "Cantora de MPB com influências modernas.", img: "https://i.pravatar.cc/300?img=45" }
         ],
         texto: [
-        { name: "João Letras", bio: "Escreve crônicas urbanas com linguagem poética.", img: "https://i.pravatar.cc/300?img=22" },
+        { name: "João Letras", bio: "Escreve crônicas urbanas com linguagem poética.", img: "https://i.pravatar.cc/300?img=59" },
         { name: "Ana Poesia", bio: "Autora de poemas contemporâneos e minimalistas.", img: "https://i.pravatar.cc/300?img=41" },
         { name: "Carlos Conto", bio: "Contista com foco em realismo mágico.", img: "https://i.pravatar.cc/300?img=14" }
         ],
         visual: [
         { name: "Mia Art", bio: "Ilustradora digital apaixonada por cores vibrantes.", img: "https://i.pravatar.cc/300?img=5" },
-        { name: "Leo Sketch", bio: "Artista de rua trazendo o grafite para o digital.", img: "https://i.pravatar.cc/300?img=29" },
+        { name: "Leo Sketch", bio: "Artista de rua trazendo o grafite para o digital.", img: "https://i.pravatar.cc/300?img=11" },
         { name: "Sofia Canvas", bio: "Pintora abstrata explorando formas geométricas.", img: "https://i.pravatar.cc/300?img=38" }
         ]
     };
@@ -94,7 +93,7 @@
             <img src="${random.img}" alt="Foto do artista" style="width:120px;height:120px;object-fit:cover;border-radius:50%;margin-bottom:15px;border:4px solid #5e17eb;">
             <h2>${random.name}</h2>
             <p>${random.bio}</p>
-            <button class="follow-btn">Seguir</button>
+            <button class="follow-btn" onclick="window.location.href='Login.html'">Seguir</button>
         `;
         }, 1500);
     }
@@ -111,10 +110,9 @@
                 <div class="footer-column">
                     <h3>Links Rápidos</h3>
                     <ul>
-                        <li><a href="#">Início</a></li>
-                        <li><a href="#">Feed</a></li>
-                        <li><a href="#">Artistas</a></li>
-                        <li><a href="#">Desafios</a></li>
+                        <li><a href="PagInicialNew.html">Início</a></li>
+                        <li><a href="Artistas.html">Artistas</a></li>
+                        <li><a href="Desafios.html">Desafios</a></li>
                         <li><a href="#">Sobre</a></li>
                     </ul>
                 </div>

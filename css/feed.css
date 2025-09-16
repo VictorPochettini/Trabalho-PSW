@@ -22,17 +22,42 @@ body {
   --roxo-claro: #a78bfa; /* por exemplo, um roxo lilás suave */
 }
 
- .topo {
-  background: linear-gradient(120deg, #050225 0%, #0d0b33 40%, #2e2573 100%);
-  margin: 20px auto 0 auto;
-  padding: 0 5%;
-  width: 90%;
-  height: 110px;
-  border-radius: 20px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
-  position: relative;
-  z-index: 1000;
+.topo { 
+    background: linear-gradient(120deg, #050225 0%, #0d0b33 40%, #2e2573 100%);
+    margin: 20px auto 0 auto;
+    padding: 0 5%;
+    width: 90%;
+    height: 110px;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+    position: relative;
+    overflow: hidden;
+    z-index: 10;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+.topo::before {
+    content: "";
+    position: absolute;
+    top: 0; left: -50%;
+    width: 200%; height: 100%;
+    background: linear-gradient(120deg,transparent,rgba(255,255,255,0.07),transparent);
+    transform: skewX(-20deg);
+    animation: brilho 6s infinite linear;
+  }
+@keyframes brilho { 0%{left:-50%;}100%{left:100%;}}
+.logo{width:90px; height:90px; margin-top:8px;}
+nav{display:flex; justify-content:space-between; align-items:center; padding:8px 0;}
+.menu{color:white; font-size:20px; display:flex; list-style:none; margin-top:45px;}
+.menu li{margin-left:110px;}
+.menu li a{color:white;}
+.enfase{position:relative; font-weight:600; color:var(--roxo);}
+.enfase::after{
+  content:""; position:absolute; left:0; bottom:-3px; width:0%; height:3px;
+  background:linear-gradient(90deg,var(--roxo),rgba(255,255,255,0.416));
+  border-radius:2px; animation:underlineGrow 0.8s ease forwards;
 }
+@keyframes underlineGrow {from{width:0%;}to{width:100%;}}
+  .dropdown{position:relative;}
 
 .logo {
   width: 90px;
