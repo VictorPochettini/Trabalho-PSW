@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title> Feed </title>
+    
+    <link rel="icon" href="images/ArtBeat_Branco.png">
+    <link rel="stylesheet" href="css/BotãoMonetização.css">
+    <!--link para conseguir usar os icons do site font awesome-->
+</head>
+<body>
+    
+    
+<!-- Pop-up de Monetização -->
+<div class="monetization-overlay" id="monetization-overlay">
+    <div class="monetization-popup">
+        <div class="monetization-header">
+            <h3>Apoiar username0255</h3>
+            <button class="close-monetization" id="close-monetization">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="monetization-content">
+            <div class="user-info">
+                <i class="fa-solid fa-circle-user fa-2x"></i>
+                <span>username0255</span>
+            </div>
+            
+            <p class="monetization-description">Selecione um valor para apoiar este artista ou digite um valor personalizado:</p>
+            
+            <div class="amount-options">
+                <button class="amount-option" data-value="5">R$ 5</button>
+                <button class="amount-option" data-value="10">R$ 10</button>
+                <button class="amount-option" data-value="20">R$ 20</button>
+                <button class="amount-option" data-value="50">R$ 50</button>
+            </div>
+            
+            <div class="custom-amount">
+                <label for="custom-amount-input">Ou informe outro valor:</label>
+                <div class="input-group">
+                    <span class="currency-symbol">R$</span>
+                    <input type="number" id="custom-amount-input" min="5" step="1" placeholder="5,00">
+                </div>
+            </div>
+            
+            <div class="payment-method">
+                <h4>Método de pagamento</h4>
+                <div class="payment-options">
+                    <label class="payment-option">
+                        <input type="radio" name="payment-method" value="pix" checked>
+                        <span class="payment-label">PIX</span>
+                    </label>
+                    <label class="payment-option">
+                        <input type="radio" name="payment-method" value="credit-card">
+                        <span class="payment-label">Cartão de Crédito</span>
+                    </label>
+                </div>
+            </div>
+            
+            <button class="btn-donate" id="btn-donate">Doar Agora</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Controle do pop-up de monetização
+document.addEventListener('DOMContentLoaded', function() {
+    const monetizaButtons = document.querySelectorAll('.monetizabtn');
+    const monetizationOverlay = document.getElementById('monetization-overlay');
+    const closeMonetization = document.getElementById('close-monetization');
+    const amountOptions = document.querySelectorAll('.amount-option');
+    const customAmountInput = document.getElementById('custom-amount-input');
+    const btnDonate = document.getElementById('btn-donate');
+
+    let selectedAmount = 0;
+
+    // Abrir pop-up de monetização
+    monetizaButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            monetizationOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Atualizar nome do usuário no pop-up (se necessário)
+            const publication = btn.closest('.publicacao');
+            if (publication) {
+                const userLink = publication.querySelector('a');
+                if (userLink) {
+                    const userName = userLink.textContent.trim();
+                    const userSpan = monetizationOverlay.querySelector('.user-info span');
+                    if (userSpan && userName) {
+                        userSpan.textContent = userName;
+                        
+                        // Atualizar também o título
+                        const title = monetizationOverlay.querySelector('.monetization-header h3');
+                        if (title) {
+                            title.textContent = `Apoiar ${userName}`;
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    // Fechar pop-up de monetização
+    closeMonetization.addEventListener('click', () => {
+        monetizationOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+        resetMonetizationForm();
+    });
+
+    // Fechar ao clicar fora do pop-up
+    monetizationOverlay.addEventListener('click', (e) => {
+        if (e.target === monetizationOverlay) {
+            monetizationOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+            resetMonetizationForm();
+        }
+    });
+
+    // Fechar com tecla ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && monetizationOverlay.classList.contains('active')) {
+            monetizationOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+            resetMonetizationForm();
+        }
+    });
+
+    // Selecionar valor pré-definido
+    amountOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            // Remover seleção anterior
+            amountOptions.forEach(opt => opt.classList.remove('selected'));
+            
+            // Selecionar nova opção
+            option.classList.add('selected');
+            
+            // Definir valor selecionado
+            selectedAmount = parseInt(option.dataset.value);
+            customAmountInput.value = '';
+            
+            // Habilitar botão de doar
+            btnDonate.disabled = false;
+        });
+    });
+
+    // Entrada de valor personalizado
+    customAmountInput.addEventListener('input', () => {
+        // Remover seleção dos botões de valor pré-definido
+        amountOptions.forEach(opt => opt.classList.remove('selected'));
+        
+        // Obter valor do input
+        const value = parseFloat(customAmountInput.value);
+        
+        if (value >= 5) {
+            selectedAmount = value;
+            btnDonate.disabled = false;
+        } else {
+            selectedAmount = 0;
+            btnDonate.disabled = true;
+        }
+    });
+
+    // Processar doação
+    btnDonate.addEventListener('click', () => {
+        if (selectedAmount >= 5) {
+            // Aqui você implementaria a integração com o gateway de pagamento
+            alert(`Obrigado pela doação de R$ ${selectedAmount.toFixed(2)}!`);
+            
+            // Fechar o pop-up após a doação
+            monetizationOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+            resetMonetizationForm();
+        }
+    });
+
+    // Função para resetar o formulário
+    function resetMonetizationForm() {
+        amountOptions.forEach(opt => opt.classList.remove('selected'));
+        customAmountInput.value = '';
+        selectedAmount = 0;
+        btnDonate.disabled = true;
+        
+        // Resetar método de pagamento para PIX
+        const pixOption = document.querySelector('input[value="pix"]');
+        if (pixOption) {
+            pixOption.checked = true;
+        }
+    }
+
+    // Inicializar botão como desabilitado
+    btnDonate.disabled = true;
+});
+</script>
+</body>
+</html>
