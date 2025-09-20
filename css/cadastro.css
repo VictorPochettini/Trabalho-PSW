@@ -62,6 +62,16 @@ body::after {
     margin: 0;      /* espaço superior e inferior compacto */
 }
 
+.refs {
+    color:#ac83ff;
+    transition: all 0.3s ease;
+
+}
+.refs:hover{
+    font-size: 15px;
+    text-decoration-line: underline;   /* tipo da linha */
+    text-decoration-color:#ac83ff;  
+}
 .logo {
     width: 180px;   /* antes 220px */
     height: 180px;  /* antes 220px */
