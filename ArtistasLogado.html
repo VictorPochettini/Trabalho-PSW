@@ -47,9 +47,11 @@
       transform:scale(1.05);
     }
     .artist-card {
-      background:white;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: saturate(180%) blur(10px);
+      -webkit-backdrop-filter: saturate(180%) blur(10px);
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
       border-radius:20px;
-      box-shadow:0 10px 25px rgba(0,0,0,0.15);
       width:350px;
       text-align:center;
       padding:25px;
@@ -93,7 +95,7 @@
         <ul class="menu">
           <li class="dropdown"><a href="Feed.html">Feed</a></li>
           <li class="dropdown"><a href="ArtistasLogado.html" class="enfase">Artistas</a></li>
-          <li class="dropdown"><a href="DesafiosLogado.html">Torneios</a></li>
+          <li class="dropdown"><a href="DesafiosLogado.html">Desafios</a></li>
           <li class="dropdown" onclick="window.location.href='PerfilUsuário.html'"><a href="#"><i class="fa-solid fa-circle-user fa-xl" style="color:#ffffff;"></i></a></li>
         </ul>
       </nav>

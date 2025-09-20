@@ -7,7 +7,7 @@
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #ffffff 0%, #d1d1e0 50%, #bdbdd8 100%);
+  background: linear-gradient(135deg, #f9faff 0%, #c7cee8 45%, #a9aedc 75%, #8c91d1 100%);
   background-repeat: no-repeat;
   background-attachment: fixed; /* faz o fundo não se mover com o scroll */
   background-size: cover; /* garante que o degradê preencha toda a tela */

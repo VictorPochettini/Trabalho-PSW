@@ -5,6 +5,7 @@
     <title> Artes </title>
     <link rel="icon" href="images/ArtBeat_Branco.png">
     <link rel="stylesheet" href="css/feed.css">
+    <link rel="stylesheet" href="css/desafios.css">
     <!--link para conseguir usar os icons do site font awesome-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
@@ -26,7 +27,7 @@
                         <a href="ArtistasLogado.html">Artistas</a>
                     </li>
                     <li class="dropdown"> 
-                        <a href="DesafiosLogado.html" class="enfase"><u>Torneios</u></a>
+                        <a href="DesafiosLogado.html" class="enfase"><u>Desafios</u></a>
                     </li>
                     <li class="dropdown" onclick="window.location.href='PerfilUsuário.html'"><a href="#"><i class="fa-solid fa-circle-user fa-xl" style="color: #ffffff;"></i></a></li>
                 </ul>
@@ -34,6 +35,116 @@
 
         </header>
     </div>
+
+    
+    <div class="desafios-container">
+        <button class="nav-btn nav-left" onclick="prevChallenge()"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="nav-btn nav-right" onclick="nextChallenge()"><i class="fa-solid fa-chevron-right"></i></button>
+
+        <!-- Painel de desafio atual -->
+        <div class="panel" id="currentChallenge">
+            <h2 id="challengeTitle"></h2>
+            <p id="challengeDesc"></p>
+            <img id="challengeImg" class="challenge-img" src="" alt="Imagem do desafio">
+        </div>
+
+        <!-- Painel de resultado anterior -->
+        <div class="panel" id="previousResult">
+            <h2>Resultado do Desafio Anterior</h2>
+            <div class="podium" id="podium">
+                <div class="podium-item">
+                    <i class="fa-solid fa-medal medal gold"></i>
+                    <h3>Artista 1</h3>
+                    <button>Ver post</button>
+                </div>
+                <div class="podium-item">
+                    <i class="fa-solid fa-medal medal silver"></i>
+                    <h3>Artista 2</h3>
+                    <button>Ver post</button>
+                </div>
+                <div class="podium-item">
+                    <i class="fa-solid fa-medal medal bronze"></i>
+                    <h3>Artista 3</h3>
+                    <button>Ver post</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const challenges = [
+            {
+                title: "Desafio da Semana: A vida é uma maravilha",
+                desc: "Crie uma obra que traga esse sentimento à tona.",
+                img: "https://imgs.search.brave.com/JIZ1UG3nLySZXXwRcHFuK8aBkiqMkGdz7NewDB1RLTI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS5nZXR0eWltYWdl/cy5jb20vaWQvMTQ1/MDI2ODU1OC9waG90/by9zdW1tZXItc2Vs/ZmllLmpwZz9zPTYx/Mng2MTImdz0wJms9/MjAmYz1JaXZHUUlY/VjdwQ3VfdHIxMEkw/a2FEb3VVdElpX3BL/ek9ycUJfTkFHb0NB/PQ",
+                results: [
+                    {name:"Luna Beats", img:"https://i.pravatar.cc/300?img=12"},
+                    {name:"Rafa Groove", img:"https://i.pravatar.cc/300?img=32"},
+                    {name:"Clara Voz", img:"https://i.pravatar.cc/300?img=45"}
+                ]
+            },
+            {
+                title: "Desafio do Mês: Velho Oeste",
+                desc: "Crie uma obra que remeta a esse tempo distante e imprevisível.",
+                img: "https://imgs.search.brave.com/WFXTTes_LFKGfrjHHcTxe8PqR6Y8j1LTWh4oH5xVYOg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93YWxs/cGFwZXJzLmNvbS9p/bWFnZXMvaGQvd2ls/ZC13ZXN0LWJhY2tn/cm91bmQtZTBnbzAw/Ymowa2NsMzNzcS5q/cGc",
+                results: [
+                    {name:"João Letras", img:"https://i.pravatar.cc/300?img=22"},
+                    {name:"Ana Poesia", img:"https://i.pravatar.cc/300?img=41"},
+                    {name:"Carlos Conto", img:"https://i.pravatar.cc/300?img=14"}
+                ]
+            }
+        ];
+
+        let currentIndex = 0;
+
+        function updateChallenge() {
+            const challenge = challenges[currentIndex];
+            const panelCurrent = document.getElementById("currentChallenge");
+            const panelResult = document.getElementById("previousResult");
+
+            // fade out
+            panelCurrent.classList.add("fade-out");
+            panelResult.classList.add("fade-out");
+
+            setTimeout(() => {
+                document.getElementById("challengeTitle").innerText = challenge.title;
+                document.getElementById("challengeDesc").innerText = challenge.desc;
+                document.getElementById("challengeImg").src = challenge.img;
+
+                const podium = document.getElementById("podium");
+                podium.innerHTML = "";
+                const medals = ["gold", "silver", "bronze"];
+                challenge.results.forEach((winner, i) => {
+                    const div = document.createElement("div");
+                    div.className = "podium-item";
+                    div.innerHTML = `
+                        <i class="fa-solid fa-medal medal ${medals[i]}"></i>
+                        <h3>${winner.name}</h3>
+                        <button>Ver post</button>
+                    `;
+                    podium.appendChild(div);
+                });
+
+                // fade in
+                panelCurrent.classList.remove("fade-out");
+                panelResult.classList.remove("fade-out");
+            }, 300);
+        }
+
+        function nextChallenge() {
+            currentIndex = (currentIndex + 1) % challenges.length;
+            updateChallenge();
+        }
+
+        function prevChallenge() {
+            currentIndex = (currentIndex - 1 + challenges.length) % challenges.length;
+            updateChallenge();
+        }
+
+        // Inicializa
+        updateChallenge();
+    </script>
+
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
