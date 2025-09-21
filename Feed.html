@@ -8,6 +8,10 @@
     <link rel="stylesheet" href="css/feed.css">
     <!--link para conseguir usar os icons do site font awesome-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- ArtBeat Bootstrap Customizations -->
+    <link href="css/bootstrap-artbeat.css" rel="stylesheet">
 </head>
 <body>
     <!--MENU ANTIGO
@@ -123,82 +127,173 @@
     </script>
     <!--end menu-->
 
-    <!--publicação-->
-    <div class="publicacao">
-        <!--colocar link para a conta desse usuario-->
-        <a href="#"><i class="fa-solid fa-circle-user fa-xl" style="color: #9f9e9e;"></i> username0909</a>
-        <button class="monetizabtn"><i class="fa-solid fa-sack-dollar fa-xl" style="color: #1d147c;"></i></button>
-        <button class="seguir js-seguir-btn">Seguir</button>
-
-        <div class="descricao"> 
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
-            <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. </p>
+    <!-- Bootstrap Post Card Examples -->
+    <div class="container mt-4">
+        
+        <!-- Post Card 1 - Music -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" 
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="mb-0">@musiclover2024</h6>
+                                    <small class="text-muted">Há 2 horas</small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary monetizabtn ms-3" data-sound="navigation">
+                                    <i class="fas fa-dollar-sign me-1"></i>Apoiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-sm follow-btn" data-sound="follow">Seguir</button>
+                </div>
+                
+                <p class="mb-3">Acabei de lançar minha nova música! O que vocês acham dessa batida? 🎵</p>
+                
+                <div class="mb-3">
+                    <audio controls class="w-100">
+                        <source src="audios/audioPop.mpeg" type="audio/mpeg">
+                        Seu navegador não suporta áudio.
+                    </audio>
+                </div>
+                
+                <!-- Star Rating -->
+                <div class="star-rating" data-post="1">
+                    <button class="btn btn-sm" data-rating="1" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm" data-rating="2" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm" data-rating="3" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm" data-rating="4" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm" data-rating="5" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm ms-2" data-sound="comment">
+                        <i class="far fa-comment-dots"></i>
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="audio">
-            <audio controls>
-                <source src="audios/audioPop.mpeg" type="audio/mpeg">
-            Seu navegador não suporta áudio.
-            </audio>
+
+        <!-- Post Card 2 - Visual Art -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" 
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="mb-0">@artistavisual</h6>
+                                    <small class="text-muted">Há 4 horas</small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary monetizabtn ms-3" data-sound="navigation">
+                                    <i class="fas fa-dollar-sign me-1"></i>Apoiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-sm follow-btn" data-sound="follow">Seguir</button>
+                </div>
+                
+                <p class="mb-3">Nova arte digital inspirada em sons urbanos! 🎨 Feedback é sempre bem-vindo!</p>
+                
+                <div class="mb-3">
+                    <img src="images/capa.png" alt="Arte Digital" class="img-fluid rounded">
+                </div>
+                
+                <!-- Star Rating -->
+                <div class="star-rating" data-post="2">
+                    <button class="btn btn-sm" data-rating="1" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm" data-rating="2" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm" data-rating="3" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm" data-rating="4" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm" data-rating="5" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm ms-2" data-sound="comment">
+                        <i class="far fa-comment-dots"></i>
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <ul class="estrelas">
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="commentbtn"><i class="fa-regular fa-comment-dots" style="color: #000000;"></i></button></li>
-        </ul>
+        <!-- Post Card 3 - Text/Poetry -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" 
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="mb-0">@poetaurbano</h6>
+                                    <small class="text-muted">Há 1 dia</small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary monetizabtn ms-3" data-sound="navigation">
+                                    <i class="fas fa-dollar-sign me-1"></i>Apoiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-sm follow-btn" data-sound="follow">Seguir</button>
+                </div>
+                
+                <p class="mb-3"><em>"Entre as batidas do coração e o ritmo da cidade,<br>
+                nascem versos que ecoam verdade.<br>
+                Cada palavra, uma nota;<br>
+                cada verso, uma melodia..."</em> ✍️</p>
+                
+                <!-- Star Rating -->
+                <div class="star-rating" data-post="3">
+                    <button class="btn btn-sm" data-rating="1" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm" data-rating="2" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm" data-rating="3" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm" data-rating="4" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm" data-rating="5" data-sound="star">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button class="btn btn-sm ms-2" data-sound="comment">
+                        <i class="far fa-comment-dots"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-    <hr>
-
-    <!--publicação2-->
-    <div class="publicacao">
-        <!--colocar link para a conta desse usuario-->
-        <a href="#"><i class="fa-solid fa-circle-user fa-xl" style="color: #9f9e9e;"></i> username3209</a>
-        <button class="monetizabtn"><i class="fa-solid fa-sack-dollar fa-xl" style="color: #1d147c;"></i></button>
-        <button class="seguir js-seguir-btn">Seguir</button>
-
-        <div class="descricao"> 
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
-            <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. </p>
-        </div>
-
-        <ul class="estrelas">
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="commentbtn"><i class="fa-regular fa-comment-dots" style="color: #000000;"></i></button></li>
-        </ul>
-    </div>
-    <hr>
-
-    <!--publicação3-->
-    <div class="publicacao">
-        <!--colocar link para a conta desse usuario-->
-        <a href="#"><i class="fa-solid fa-circle-user fa-xl" style="color: #9f9e9e;"></i> username0255</a>
-        <button class="monetizabtn"><i class="fa-solid fa-sack-dollar fa-xl" style="color: #1d147c;"></i></button>
-        <button class="seguir js-seguir-btn">Seguir</button>
-
-        <div class="descricao"> 
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
-            <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. </p>
-        </div>
-            <img src="images/capa.png" alt="Capa do Álbum" class="capa">
-
-        <ul class="estrelas">
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="starbtn"><i class="fa-regular fa-star fa-xs" style="color: #000000;"></i></button></li>
-            <li><button class="commentbtn"><i class="fa-regular fa-comment-dots" style="color: #000000;"></i></button></li>
-        </ul>
-    </div>
-    <hr>
-    <!--end publicaçoes-->
 
     <!-- Pop-up de Comentários -->
     <div class="comments-overlay" id="comments-overlay">
@@ -511,31 +606,261 @@
     });
     </script>
 
-    <!-- Botão principal -->
-    <div class="fab-container">
-    <button class="fab-btn" id="fab-btn">
-        <span class="fab-icon">+</span>
-    </button>
-    <ul class="fab-options">
-        <li><a href="PublicarMusica.html"><i class="fa-solid fa-music"></i> Música</a></li>
-        <li><a href="PublicarImagem.html"><i class="fa-solid fa-paintbrush"></i> Arte</a></li>
-        <li><a href="PublicarLetra.html"><i class="fa-solid fa-feather"></i> Letra</a></li>
-    </ul>
+    <!-- Floating Action Button with Menu -->
+    <div class="floating-actions">
+        <div class="fab-container">
+            <!-- Main FAB Button -->
+            <button class="btn btn-primary rounded-circle fab-main" id="fabMain" data-sound="navigation">
+                <i class="fas fa-plus" id="fabIcon"></i>
+            </button>
+            
+            <!-- Sub-buttons (initially hidden) -->
+            <div class="fab-menu" id="fabMenu">
+                <a href="PublicarMusica.html" class="btn btn-primary rounded-circle fab-sub" data-sound="navigation" title="Publicar Música">
+                    <i class="fas fa-music"></i>
+                </a>
+                <a href="PublicarImagem.html" class="btn btn-primary rounded-circle fab-sub" data-sound="navigation" title="Publicar Arte">
+                    <i class="fas fa-paintbrush"></i>
+                </a>
+                <a href="PublicarLetra.html" class="btn btn-primary rounded-circle fab-sub" data-sound="navigation" title="Publicar Letra">
+                    <i class="fas fa-feather"></i>
+                </a>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Abre/fecha o menu ao clicar
-        const fabBtn = document.getElementById("fab-btn");
-        const fabContainer = document.querySelector(".fab-container");
-
-        fabBtn.addEventListener("click", () => {
-        fabContainer.classList.toggle("active");
+        // Star rating functionality
+        document.querySelectorAll('.star-rating').forEach(rating => {
+            const stars = rating.querySelectorAll('button[data-rating]');
+            
+            stars.forEach((star, index) => {
+                star.addEventListener('click', () => {
+                    const postId = rating.dataset.post;
+                    const starRating = parseInt(star.dataset.rating);
+                    
+                    // Update visual state
+                    stars.forEach((s, i) => {
+                        const icon = s.querySelector('i');
+                        if (i < starRating) {
+                            icon.classList.remove('far');
+                            icon.classList.add('fas');
+                            s.classList.add('active');
+                        } else {
+                            icon.classList.remove('fas');
+                            icon.classList.add('far');
+                            s.classList.remove('active');
+                        }
+                    });
+                    
+                    console.log(`Post ${postId} rated ${starRating} stars`);
+                });
+                
+                // Hover effect
+                star.addEventListener('mouseenter', () => {
+                    const hoverRating = parseInt(star.dataset.rating);
+                    stars.forEach((s, i) => {
+                        const icon = s.querySelector('i');
+                        if (i < hoverRating) {
+                            icon.style.color = '#ffc107';
+                        } else {
+                            icon.style.color = '';
+                        }
+                    });
+                });
+            });
+            
+            // Reset hover effect when leaving rating area
+            rating.addEventListener('mouseleave', () => {
+                stars.forEach(s => {
+                    const icon = s.querySelector('i');
+                    icon.style.color = '';
+                });
+            });
         });
+
+        // Follow button functionality
+        document.querySelectorAll('.follow-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.textContent.trim() === 'Seguir') {
+                    btn.textContent = 'Seguindo';
+                    btn.classList.add('following');
+                } else {
+                    btn.textContent = 'Seguir';
+                    btn.classList.remove('following');
+                }
+            });
+        });
+
+        // Floating Action Button Menu
+        const fabMain = document.getElementById('fabMain');
+        const fabMenu = document.getElementById('fabMenu');
+        const fabIcon = document.getElementById('fabIcon');
+        let isMenuOpen = false;
+
+        fabMain.addEventListener('click', () => {
+            isMenuOpen = !isMenuOpen;
+            
+            if (isMenuOpen) {
+                fabMenu.classList.add('open');
+                fabMain.classList.add('open');
+            } else {
+                fabMenu.classList.remove('open');
+                fabMain.classList.remove('open');
+            }
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.fab-container') && isMenuOpen) {
+                fabMenu.classList.remove('open');
+                fabMain.classList.remove('open');
+                isMenuOpen = false;
+            }
+        });
+
+        // Dynamic Post Creation
+        function createNewPost(postData) {
+            const feedContainer = document.querySelector('.container');
+            const newPostCard = document.createElement('div');
+            newPostCard.className = 'card mb-4';
+            
+            // Get current post count for unique IDs
+            const existingPosts = document.querySelectorAll('.star-rating').length;
+            const newPostId = existingPosts + 1;
+            
+            newPostCard.innerHTML = `
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 50px; height: 50px;">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6 class="mb-0">${postData.username}</h6>
+                                        <small class="text-muted">Agora mesmo</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary monetizabtn ms-3" data-sound="navigation">
+                                        <i class="fas fa-dollar-sign me-1"></i>Apoiar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm follow-btn" data-sound="follow">Seguir</button>
+                    </div>
+                    
+                    <p class="mb-3">${postData.content}</p>
+                    
+                    ${postData.media ? postData.media : ''}
+                    
+                    <!-- Star Rating -->
+                    <div class="star-rating" data-post="${newPostId}">
+                        <button class="btn btn-sm" data-rating="1" data-sound="star">
+                            <i class="far fa-star"></i>
+                        </button>
+                        <button class="btn btn-sm" data-rating="2" data-sound="star">
+                            <i class="far fa-star"></i>
+                        </button>
+                        <button class="btn btn-sm" data-rating="3" data-sound="star">
+                            <i class="far fa-star"></i>
+                        </button>
+                        <button class="btn btn-sm" data-rating="4" data-sound="star">
+                            <i class="far fa-star"></i>
+                        </button>
+                        <button class="btn btn-sm" data-rating="5" data-sound="star">
+                            <i class="far fa-star"></i>
+                        </button>
+                        <button class="btn btn-sm ms-2" data-sound="comment">
+                            <i class="far fa-comment-dots"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Insert the new post at the top of the feed (after the first existing post)
+            const firstPost = feedContainer.querySelector('.card');
+            if (firstPost) {
+                firstPost.parentNode.insertBefore(newPostCard, firstPost.nextSibling);
+            } else {
+                feedContainer.appendChild(newPostCard);
+            }
+            
+            // Re-attach event listeners to new elements
+            attachStarRatingEvents(newPostCard.querySelector('.star-rating'));
+            attachFollowButtonEvents(newPostCard.querySelector('.follow-btn'));
+            attachMonetizationEvents(newPostCard.querySelector('.monetizabtn'));
+        }
+
+        // Helper functions to attach events to dynamically created elements
+        function attachStarRatingEvents(ratingElement) {
+            if (!ratingElement) return;
+            
+            const stars = ratingElement.querySelectorAll('button[data-rating]');
+            stars.forEach((star, index) => {
+                star.addEventListener('click', () => {
+                    const rating = parseInt(star.dataset.rating);
+                    const postId = ratingElement.dataset.post;
+                    
+                    // Update visual feedback
+                    stars.forEach((s, i) => {
+                        const icon = s.querySelector('i');
+                        if (i < rating) {
+                            icon.classList.remove('far');
+                            icon.classList.add('fas');
+                            icon.style.color = 'var(--artbeat-roxo)';
+                        } else {
+                            icon.classList.remove('fas');
+                            icon.classList.add('far');
+                            icon.style.color = '';
+                        }
+                    });
+                });
+            });
+        }
+
+        function attachFollowButtonEvents(followButton) {
+            if (!followButton) return;
+            
+            followButton.addEventListener('click', () => {
+                if (followButton.textContent.trim() === 'Seguir') {
+                    followButton.textContent = 'Seguindo';
+                    followButton.classList.add('following');
+                } else {
+                    followButton.textContent = 'Seguir';
+                    followButton.classList.remove('following');
+                }
+            });
+        }
+
+        function attachMonetizationEvents(monetizeButton) {
+            if (!monetizeButton) return;
+            
+            monetizeButton.addEventListener('click', () => {
+                document.getElementById('monetization-overlay').style.display = 'flex';
+            });
+        }
+
+        // Example usage - you can call this function when a user creates a new post
+        // createNewPost({
+        //     username: '@newuser',
+        //     icon: 'fas fa-music',
+        //     content: 'Just posted a new track!',
+        //     media: '<audio controls class="w-100"><source src="newtrack.mp3" type="audio/mpeg"></audio>'
+        // });
 
     </script>
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+
+    <!-- ArtBeat Sound System -->
+    <script src="js/artbeat-sounds.js"></script>
 
 </body>
 </html>

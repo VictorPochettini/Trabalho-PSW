@@ -6,25 +6,45 @@
     <title>ArtBeat - Conectando Artistas Independentes</title>
     <link rel="icon" href="images/ArtBeat_Branco.png">
     <link rel="stylesheet" href="css/pagInicialNew.css">
+    <!-- Font Awesome para os ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- ArtBeat Bootstrap Customizations -->
+    <link href="css/bootstrap-artbeat.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <div class="container header-content">
-            <img src="images/ArtBeat_Branco.png" class="logo" alt="logo art beat">
-            <nav>
-                <ul>
-                    <li><a href="PagInicialNew.html">Início</a></li>
-                    <li><a href="Artistas.html">Artistas</a></li>
-                    <li><a href="Desafios.html">Desafios</a></li>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(120deg, var(--artbeat-azul) 0%, #0d0b33 40%, #2e2573 100%);">
+        <div class="container">
+            <a class="navbar-brand" href="PagInicialNew.html" data-sound="navigation">
+                <img src="images/ArtBeat_Branco.png" alt="ArtBeat" width="50" height="50" class="me-2">
+                ArtBeat
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="PagInicialNew.html" data-sound="navigation">Início</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="Artistas.html" data-sound="navigation">Artistas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="Desafios.html" data-sound="navigation">Desafios</a>
+                    </li>
                 </ul>
-            </nav>
-            <div class="auth-buttons">
-                <button class="btn" onclick="window.location.href='CriacaoDeConta.html'">Cadastrar</button>
-                <button class="btn btn-outline" onclick="window.location.href='Login.html'">Entrar</button>
+                <div class="d-flex">
+                    <button class="btn btn-outline-primary me-2" onclick="window.location.href='CriacaoDeConta.html'">Cadastrar</button>
+                    <button class="btn btn-primary" onclick="window.location.href='Login.html'">Entrar</button>
+                </div>
             </div>
         </div>
-    </header>
+    </nav>
 
     <!-- Hero Section -->
     <section class="hero">
@@ -174,4 +194,17 @@
                         <li><a href="#">Como funciona</a></li>
                         <li><a href="#">Para artistas</a></li>
                         <li><a href="#">Para ouvintes</a></li>
-                        <li><a href="#">Blog</a
+                        <li><a href="#">Blog</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+
+    <!-- ArtBeat Sound System -->
+    <script src="js/artbeat-sounds.js"></script>
+</body>
+</html>a

@@ -1,16 +1,27 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <title>Criação de Conta</title>
     <link rel="icon" href="images/ArtBeat_Branco.png">
     <link rel="stylesheet" href="css/cadastro.css"> <!-- CSS moderno compartilhado -->
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- ArtBeat Bootstrap Customizations -->
+    <link href="css/bootstrap-artbeat.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
+
 <body>
     <div class="container">
         <center><img src="images/ArtBeat_Branco.png" alt="ART BEAT" class="logo"></center>
 
-        <center><h1 class="fonteh1">Criação de Conta</h1></center>
+        <center>
+            <h1 class="fonteh1">Criação de Conta</h1>
+        </center>
 
         <form>
             <label class="fonte" for="nome">Nome:</label>
@@ -27,15 +38,24 @@
 
             <div class="termos-container">
                 <input type="checkbox" id="termos" required>
-                <label class="termos" for="termos">Eu aceito os <a class = "refs"href = "TermosDeUso.html">termos de uso</a> e <a class = "refs" href="PoliticasDePrivacidade.html">políticas de privacidade</a></label>
+                <label class="termos" for="termos">Eu aceito os <a class="refs" href="TermosDeUso.html">termos de
+                        uso</a> e <a class="refs" href="PoliticasDePrivacidade.html">políticas de
+                        privacidade</a></label>
             </div>
 
-            <div class=""buttoms>
+            <div class="botoes">
                 <center>
                     <button type="submit" class="entrarbtn">Criar Conta</button>
                 </center>
             </div>
         </form>
     </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+
+    <!-- ArtBeat Sound System -->
+    <script src="js/artbeat-sounds.js"></script>
 </body>
+
 </html>
