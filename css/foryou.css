@@ -24,6 +24,34 @@ body {
 
 /*menu esta em feed.css*/
 
+/*menu responsivo*/
+@media (max-width: 768px){
+  .topo{
+    border-radius: 0px;
+    padding: 0 0;
+    width: 100%;
+    margin-top: 0%;
+  }
+
+  .menu li {
+    font-size: 17px;
+    padding-left: 30px;
+}
+
+
+  .logo{
+    width: 60px;
+    height: 60px;
+    margin-top: 20px;
+    margin-left: 5px;
+  }
+
+  .imagemLogo{
+    margin-right: 30px;
+  }
+}
+/*end menu responsivo*/
+
 /* Conteúdo Principal */
 .container {
     max-width: 1200px;
