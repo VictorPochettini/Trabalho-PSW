@@ -91,7 +91,8 @@
             
                 <ul class="menu">
                     <li class="dropdown"><a href="Feed.html" class="enfase">Feed</a></li>
-                    <li class="dropdown"><a href="ArtistasLogado.html">Artistas</a></li>
+                    <li class="dropdown"><a href="Foryou.html">Populares</a></li>
+                    <li class="dropdown"><a href="ArtistasLogado.html">Aleatórios</a></li>
                     <li class="dropdown"><a href="DesafiosLogado.html">Desafios</a></li>
                     <li class="dropdown" onclick="window.location.href='PerfilUsuário.html'"><a href="#"><i class="fa-solid fa-circle-user fa-xl" style="color: #ffffff;"></i></a></li>
                 </ul>
@@ -100,6 +101,7 @@
     </div>
     <!--end menu atual-->
 
+    <!--
     <script>
         document.querySelectorAll(".dropbtn").forEach(btn => {
             btn.addEventListener("click", () => {
@@ -121,7 +123,7 @@
             });
         });
     </script>
-    <!--end menu-->
+    -->
 
     <!--publicação-->
     <div class="publicacao">
@@ -429,15 +431,6 @@
         // Fechar ao clicar fora do pop-up
         monetizationOverlay.addEventListener('click', (e) => {
             if (e.target === monetizationOverlay) {
-                monetizationOverlay.classList.remove('active');
-                document.body.style.overflow = '';
-                resetMonetizationForm();
-            }
-        });
-
-        // Fechar com tecla ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && monetizationOverlay.classList.contains('active')) {
                 monetizationOverlay.classList.remove('active');
                 document.body.style.overflow = '';
                 resetMonetizationForm();
