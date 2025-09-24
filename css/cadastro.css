@@ -161,6 +161,20 @@ body::after {
     margin-bottom: 0;
 }
 
+.input-container {
+  position: relative;
+  display: inline-block;
+}
+
+.input-container img {
+  position: absolute;
+  right: 10px;  /* distância da borda direita */
+  top: 50%;     /* centraliza verticalmente */
+  transform: translateY(-50%);
+  width: 20px;  /* tamanho do ícone */
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 40px;

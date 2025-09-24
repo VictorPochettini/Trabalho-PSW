@@ -79,6 +79,7 @@ label.fontelabel {
     background: #050225;
 }
 
+
 @media (max-width: 768px) {
     .fundo {
         padding-top: 40px;

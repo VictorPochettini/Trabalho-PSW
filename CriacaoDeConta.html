@@ -5,9 +5,15 @@
     <title>Criação de Conta</title>
     <link rel="icon" href="images/ArtBeat_Branco.png">
     <link rel="stylesheet" href="css/cadastro.css"> <!-- CSS moderno compartilhado -->
+    <script src="js/criacaoConta.js" defer></script>
+    
 </head>
 <body>
     <div class="container">
+    
+          
+            
+
         <a href = "javascript:history.go(-1)">
             <img src="images/botaoVolta.png" alt="voltar">
         </a>
@@ -22,10 +28,17 @@
             <input class="input" type="email" id="email" name="email" placeholder="joaodasilva@gmail.com" required>
 
             <label class="fonte" for="senha">Senha:</label>
-            <input class="input" type="password" id="senha" name="senha" required>
+            <div class = "input-container">
 
-            <label class="fonte" for="confSenha">Confirmação de Senha:</label>
-            <input class="input" type="password" id="confSenha" name="confSenha" required>
+                <input class="input" type="password" id="senha" name="senha" required>
+                    
+                <a id = vizualizacao>
+                    <img src="images/olhoFechadoRoxo.png" alt="vizualizar senha">
+                </a>
+            </div>
+                <label class="fonte" for="confSenha">Confirmação de Senha:</label>
+                <input class="input" type="password" id="confSenha" name="confSenha" required>
+
 
             <div class="termos-container">
                 <input type="checkbox" id="termos" required>
@@ -39,5 +52,6 @@
             </div>
         </form>
     </div>
+
 </body>
 </html>
