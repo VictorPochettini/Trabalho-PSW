@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Em Destaque</title>
+    <link rel="icon" href="images/ArtBeat_Branco.png">
+    <link rel="stylesheet" href="css/feed.css">
+    <link rel="stylesheet" href="css/foryou.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+
+</head>
+<body>
+    <!-- Menu -->
+    <div class="topo">
+        <header>
+            <nav>
+                <div class="imagemLogo">
+                    <img src="images/ArtBeat_Branco.png" class="logo" alt="logo art beat">
+                </div>
+            
+                <ul class="menu">
+                    <li class="dropdown"><a href="Feed.html">Feed</a></li>
+                    <li class="dropdown"><a href="Foryou.html" class="enfase">Populares</a></li>
+                    <li class="dropdown"><a href="ArtistasLogado.html">Aleatórios</a></li>
+                    <li class="dropdown"><a href="DesafiosLogado.html">Desafios</a></li>
+                    <li class="dropdown" onclick="window.location.href='PerfilUsuário.html'"><a href="#"><i class="fa-solid fa-circle-user fa-xl" style="color: #ffffff;"></i></a></li>
+                </ul>
+            </nav>
+        </header>
+    </div>
+
+    <!-- Conteúdo Principal -->
+    <div class="container">
+        <h1 class="page-title">Artistas em Destaque</h1>
+        <p class="page-subtitle">Descubra os artistas mais populares e bem avaliados da plataforma</p>
+        
+        <!-- Filtros -->
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">Todos</button>
+            <button class="filter-btn" data-filter="musica">Música</button>
+            <button class="filter-btn" data-filter="letra">Letra</button>
+            <button class="filter-btn" data-filter="arte">Arte</button>
+            <div class="sort-select">
+                <label for="sort-by">Ordenar por:</label>
+                <select id="sort-by">
+                    <option value="rating">Maior Avaliação</option>
+                    <option value="followers">Mais Seguidos</option>
+                    <option value="newest">Mais Recentes</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Lista de Artistas -->
+        <div class="artists-grid" id="artists-grid">
+            <!-- Os artistas serão carregados via JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Dados de exemplo dos artistas
+        const artistsData = [
+            {
+                id: 1,
+                name: "Ana Silva",
+                category: "Música",
+                followers: 12500,
+                works: 42,
+                rating: 4.9,
+                avatar: "🎤"
+            },
+            {
+                id: 2,
+                name: "Carlos Mendes",
+                category: "Letra",
+                followers: 8900,
+                works: 28,
+                rating: 4.8,
+                avatar: "✍️"
+            },
+            {
+                id: 3,
+                name: "Beatriz Santos",
+                category: "Arte",
+                followers: 15600,
+                works: 35,
+                rating: 4.7,
+                avatar: "🎨"
+            },
+            {
+                id: 4,
+                name: "João Costa",
+                category: "Música",
+                followers: 7200,
+                works: 19,
+                rating: 4.6,
+                avatar: "🎸"
+            },
+            {
+                id: 5,
+                name: "Marina Oliveira",
+                category: "Letra",
+                followers: 10300,
+                works: 31,
+                rating: 4.9,
+                avatar: "📝"
+            },
+            {
+                id: 6,
+                name: "Ricardo Alves",
+                category: "Arte",
+                followers: 6800,
+                works: 24,
+                rating: 4.5,
+                avatar: "🖌️"
+            },
+            {
+                id: 7,
+                name: "Fernanda Lima",
+                category: "Música",
+                followers: 14200,
+                works: 38,
+                rating: 4.8,
+                avatar: "🎹"
+            },
+            {
+                id: 8,
+                name: "Pedro Martins",
+                category: "Letra",
+                followers: 9500,
+                works: 27,
+                rating: 4.7,
+                avatar: "📖"
+            }
+        ];
+
+        // Função para normalizar categorias (remove acentos e converte para minúsculas)
+        function normalizeCategory(category) {
+            return category.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        }
+
+        // Função para renderizar os artistas
+        function renderArtists(artists) {
+            const grid = document.getElementById('artists-grid');
+            grid.innerHTML = '';
+            
+            artists.forEach(artist => {
+                const stars = '★'.repeat(Math.floor(artist.rating)) + '☆'.repeat(5 - Math.floor(artist.rating));
+                
+                const card = document.createElement('div');
+                card.className = 'artist-card';
+                card.dataset.category = normalizeCategory(artist.category);
+                
+                card.innerHTML = `
+                    <div class="artist-header">
+                        <div class="artist-avatar">${artist.avatar}</div>
+                    </div>
+                    <div class="artist-info">
+                        <h3 class="artist-name">${artist.name}</h3>
+                        <span class="artist-category">${artist.category}</span>
+                        
+                        <div class="artist-stats">
+                            <div class="stat">
+                                <div class="stat-value">${artist.followers.toLocaleString()}</div>
+                                <div class="stat-label">Seguidores</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${artist.works}</div>
+                                <div class="stat-label">Obras</div>
+                            </div>
+                        </div>
+                        
+                        <div class="artist-rating">
+                            <div class="rating-stars">${stars}</div>
+                            <span class="rating-value">${artist.rating}</span>
+                        </div>
+                        
+                        <div class="artist-actions">
+                            <button class="btn-follow js-seguir-btn">Seguir</button>
+                            <button class="btn-monetize">
+                                <i class="fa-solid fa-sack-dollar"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+            
+            // Adicionar event listeners aos botões de seguir
+            document.querySelectorAll('.js-seguir-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (this.textContent === 'Seguir') {
+                        this.textContent = 'Seguindo';
+                        this.classList.add('seguindo');
+                    } else {
+                        this.textContent = 'Seguir';
+                        this.classList.remove('seguindo');
+                    }
+                });
+            });
+        }
+
+        // Função para filtrar artistas (CORRIGIDA)
+        function filterArtists(category) {
+            if (category === 'all') {
+                return artistsData;
+            }
+            
+            return artistsData.filter(artist => {
+                const artistCategory = normalizeCategory(artist.category);
+                return artistCategory === category;
+            });
+        }
+
+        // Função para ordenar artistas
+        function sortArtists(artists, criteria) {
+            const sorted = [...artists];
+            
+            switch(criteria) {
+                case 'rating':
+                    return sorted.sort((a, b) => b.rating - a.rating);
+                case 'followers':
+                    return sorted.sort((a, b) => b.followers - a.followers);
+                case 'newest':
+                    return sorted.sort((a, b) => b.id - a.id);
+                default:
+                    return sorted;
+            }
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            // Renderizar todos os artistas inicialmente
+            renderArtists(sortArtists(artistsData, 'rating'));
+            
+            // Filtros por categoria
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remover classe active de todos os botões
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    
+                    // Adicionar classe active ao botão clicado
+                    this.classList.add('active');
+                    
+                    // Filtrar artistas
+                    const category = this.dataset.filter;
+                    const filteredArtists = filterArtists(category);
+                    
+                    // Ordenar e renderizar
+                    const sortBy = document.getElementById('sort-by').value;
+                    renderArtists(sortArtists(filteredArtists, sortBy));
+                });
+            });
+            
+            // Ordenação
+            document.getElementById('sort-by').addEventListener('change', function() {
+                const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+                const filteredArtists = filterArtists(activeFilter);
+                renderArtists(sortArtists(filteredArtists, this.value));
+            });
+            
+            // Adicionar event listeners para os botões de monetização
+            document.querySelectorAll('.monetizabtn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Aqui você pode adicionar a lógica para abrir o popup de monetização
+                    console.log('Abrir popup de monetização');
+                });
+            });
+        });
+    </script>
+
+    <!-- Pop-up de Monetização -->
+    <div class="monetization-overlay" id="monetization-overlay">
+        <div class="monetization-popup">
+            <div class="monetization-header">
+                <h3>Apoiar username0255</h3>
+                <button class="close-monetization" id="close-monetization">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="monetization-content">
+                <div class="user-info">
+                    <i class="fa-solid fa-circle-user fa-2x"></i>
+                    <span>username0255</span>
+                </div>
+                
+                <p class="monetization-description">Selecione um valor para apoiar este artista ou digite um valor personalizado:</p>
+                
+                <div class="amount-options">
+                    <button class="amount-option" data-value="5">R$ 5</button>
+                    <button class="amount-option" data-value="10">R$ 10</button>
+                    <button class="amount-option" data-value="20">R$ 20</button>
+                    <button class="amount-option" data-value="50">R$ 50</button>
+                </div>
+                
+                <div class="custom-amount">
+                    <label for="custom-amount-input">Ou informe outro valor:</label>
+                    <div class="input-group">
+                        <span class="currency-symbol">R$</span>
+                        <input type="number" id="custom-amount-input" min="5" step="1" placeholder="5,00">
+                    </div>
+                </div>
+                
+                <div class="payment-method">
+                    <h4>Método de pagamento</h4>
+                    <div class="payment-options">
+                        <label class="payment-option">
+                            <input type="radio" name="payment-method" value="pix" checked>
+                            <span class="payment-label">PIX</span>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="payment-method" value="credit-card">
+                            <span class="payment-label">Cartão de Crédito</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <button class="btn-donate" id="btn-donate">Doar Agora</button>
+            </div>
+        </div>
+    </div>
+
+    <!--monetizar-->
+    <script>
+    // Controle do pop-up de monetização
+    document.addEventListener('DOMContentLoaded', function() {
+        const monetizaButtons = document.querySelectorAll('.btn-monetize');
+        const monetizationOverlay = document.getElementById('monetization-overlay');
+        const closeMonetization = document.getElementById('close-monetization');
+        const amountOptions = document.querySelectorAll('.amount-option');
+        const customAmountInput = document.getElementById('custom-amount-input');
+        const btnDonate = document.getElementById('btn-donate');
+
+        let selectedAmount = 0;
+
+        // Abrir pop-up de monetização (CÓDIGO CORRIGIDO)
+        monetizaButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                monetizationOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                
+                // Encontrar o cartão do artista e obter o nome
+                const artistCard = btn.closest('.artist-card');
+                if (artistCard) {
+                    const artistNameElement = artistCard.querySelector('.artist-name');
+                    if (artistNameElement) {
+                        const artistName = artistNameElement.textContent;
+                        
+                        // Atualizar o título do pop-up
+                        const title = monetizationOverlay.querySelector('.monetization-header h3');
+                        if (title) {
+                            title.textContent = `Apoiar ${artistName}`;
+                        }
+                        
+                        // Atualizar o nome do usuário no conteúdo
+                        const userSpan = monetizationOverlay.querySelector('.user-info span');
+                        if (userSpan) {
+                            userSpan.textContent = artistName;
+                        }
+                    }
+                }
+            });
+        });
+
+        // Fechar pop-up de monetização
+        closeMonetization.addEventListener('click', () => {
+            monetizationOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+            resetMonetizationForm();
+        });
+
+        // Fechar ao clicar fora do pop-up
+        monetizationOverlay.addEventListener('click', (e) => {
+            if (e.target === monetizationOverlay) {
+                monetizationOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+                resetMonetizationForm();
+            }
+        });
+
+        // Fechar com tecla ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && monetizationOverlay.classList.contains('active')) {
+                monetizationOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+                resetMonetizationForm();
+            }
+        });
+
+        // Selecionar valor pré-definido
+        amountOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                // Remover seleção anterior
+                amountOptions.forEach(opt => opt.classList.remove('selected'));
+                
+                // Selecionar nova opção
+                option.classList.add('selected');
+                
+                // Definir valor selecionado
+                selectedAmount = parseInt(option.dataset.value);
+                customAmountInput.value = '';
+                
+                // Habilitar botão de doar
+                btnDonate.disabled = false;
+            });
+        });
+
+        // Entrada de valor personalizado
+        customAmountInput.addEventListener('input', () => {
+            // Remover seleção dos botões de valor pré-definido
+            amountOptions.forEach(opt => opt.classList.remove('selected'));
+            
+            // Obter valor do input
+            const value = parseFloat(customAmountInput.value);
+            
+            if (value >= 5) {
+                selectedAmount = value;
+                btnDonate.disabled = false;
+            } else {
+                selectedAmount = 0;
+                btnDonate.disabled = true;
+            }
+        });
+
+        // Processar doação
+        btnDonate.addEventListener('click', () => {
+            if (selectedAmount >= 5) {
+                // Aqui você implementaria a integração com o gateway de pagamento
+                alert(`Obrigado pela doação de R$ ${selectedAmount.toFixed(2)}!`);
+                
+                // Fechar o pop-up após a doação
+                monetizationOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+                resetMonetizationForm();
+            }
+        });
+
+        // Função para resetar o formulário
+        function resetMonetizationForm() {
+            amountOptions.forEach(opt => opt.classList.remove('selected'));
+            customAmountInput.value = '';
+            selectedAmount = 0;
+            btnDonate.disabled = true;
+            
+            // Resetar método de pagamento para PIX
+            const pixOption = document.querySelector('input[value="pix"]');
+            if (pixOption) {
+                pixOption.checked = true;
+            }
+        }
+
+        // Inicializar botão como desabilitado
+        btnDonate.disabled = true;
+    });
+    </script>
+
+</body>
+</html>
