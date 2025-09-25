@@ -7,18 +7,23 @@
         <link rel = "stylesheet" href="css/perfilUsuário.css">
         <link rel = "stylesheet " href = "css/publicar.css">
         <link rel="icon" href="images/ArtBeat_Branco.png">
+           <script src="js/edicaoConta.js" defer></script>
+
     
         </head>
     <body>
-        <!--mudar tudo isso quando precisar add js, o trecho que trata da inserção de imagem é puramente estetico-->
+        
         <div class = "container">
-            <a href = "javascript:history.go(-1)">
-                <img src="images/botaoVolta.png" alt="voltar">
-            </a>
-            <div class="avatar-container">
-                <img class="avatar" src="images/avatarPadrao.png" alt="Avatar">
-                <button class="btnImg">+</button>
-            </div>
+            
+        <a href = "javascript:history.go(-1)">
+            <img src="images/botaoVolta.png" alt="voltar">
+        </a>
+            <center>
+                <img id="fotoPerfil" src="images/avatarPadrao.png" alt="Foto de perfil">
+                <label for="fileInput" id="uploadBtn">+</label>
+                <input type="file" id="fileInput" accept="image/*">
+            </center>
+       
                     
             <form >
                 <label class = "fontelabel" >Nome de úsuario:</label>

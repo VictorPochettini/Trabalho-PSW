@@ -1,3 +1,5 @@
+
+//Visualização de senha
 const icone = document.getElementById("vizualizacao");
 const senha = document.getElementById("senha");
 

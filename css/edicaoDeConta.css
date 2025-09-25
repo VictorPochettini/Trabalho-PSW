@@ -129,30 +129,6 @@ body::after {
 
 }
 
-/* botão add foto */
-.btnImg {
-    position: absolute;
-    bottom: 20px;
-    right: 50px;
-    background: var(--roxo);
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 30px;
-    
-    cursor: pointer;
-    border: none;
-    transition: 0.3s;
-}
-
-.btnImg:hover {
-    background: var(--azul);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
 
 
 label.fontelabel {
@@ -164,5 +140,41 @@ label.fontelabel {
     padding-bottom: 15px;
     padding-top: 10px;
 }
+#fotoPerfil {
+     
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--roxoEsc);
+    }
+
+    #uploadBtn {
+    position: absolute;
+    bottom: 20px;
+    
+    left:280px;
+    background: var(--roxoEsc);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 30px;
+    margin-bottom: 270px;
+    cursor: pointer;
+    border: none;
+    transition: 0.3s;
+    }
+
+    #uploadBtn:hover {
+      background-color: var(--azul);
+    }
+
+    input[type="file"] {
+      display: none; 
+    }
 
 

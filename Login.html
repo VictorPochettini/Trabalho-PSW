@@ -5,6 +5,7 @@
     <title>Login</title>
     <link rel="stylesheet" href="css/cadastro.css">
     <link rel="icon" href="images/ArtBeat_Branco.png">
+    <script src="js/criacaoConta.js" defer></script>
 
 </head>
 <body>
@@ -14,13 +15,18 @@
         </a>
         <center><img src="images/ArtBeat_Branco.png" alt="ART BEAT" class="logo"></center>
         
-        <center><h1 class="fonteh1" >Entrar Na Conta</h1></center>
+        <center><h1 class="fonteh1" >Entrar Na Conta</h1></center><br>
         <form>
             <label class = "fonte" for="usuario">Usuário:</label>
             <input class = "input" type="text" id="usuario" name="username" required><br><br>
 
             <label class = "fonte" for="senha">Senha:</label>
-            <input class="input" type="password" id="password" name="password" required><br><br>
+            <div class = "input-container">
+                <input class="input" type="password" id="senha" name="senha" required>
+                <a id = visualizacao>
+                    <img src="images/olhoFechadoRoxo.png" alt="vizualizar senha">
+                </a>
+            </div>
 
             <center>
                 <div class="buttons">
