@@ -4,47 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil de Usuário</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/perfilUsuário.css">
     <link rel="icon" href="images/ArtBeat_Branco.png">
-
 </head>
 <body>
-    <div class="profile-container">
-        <div class="profile-header">
-            <div class="profile-picture-container">
-                <i class="fas fa-user-circle profile-icon"></i>
-                <button class="lapis" onclick="window.location.href='EdiçãoDeConta.html'"><i class="fa-solid fa-pencil fa-lg" style="color: #ffffff;"></i></button>
-                <input type="file" id="profile-photo-input" class="file-input" accept="image/*">
-            </div>
-            
-            <h1 class="profile-name">username0109</h1>
-            <div class="profile-username">@username0109</div>
-            
-            <div class="profile-stats">
-                <div class="stat">
-                    <div class="stat-number">0</div>
-                    <div class="stat-label">Seguidores</div>
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8 col-lg-6">
+                <!-- Profile Header -->
+                <div class="profile-header position-relative">
+                    <!-- Botão do lápis movido para fora do container da foto -->
+                    <button class="lapis" onclick="window.location.href='EdiçãoDeConta.html'">
+                        <i class="fa-solid fa-pencil fa-lg" style="color: #ffffff;"></i>
+                    </button>
+                    
+                    <div class="profile-picture-container">
+                        <i class="fas fa-user-circle profile-icon"></i>
+                        <input type="file" id="profile-photo-input" class="file-input" accept="image/*">
+                    </div>
+                    
+                    <!-- Restante do conteúdo permanece igual -->
+                    <h1 class="profile-name">username0109</h1>
+                    <div class="profile-username">@username0109</div>
+                    
+                    <div class="profile-stats">
+                        <div class="stat">
+                            <div class="stat-number">0</div>
+                            <div class="stat-label">Seguidores</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number">0</div>
+                            <div class="stat-label">Seguindo</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat">
-                    <div class="stat-number">0</div>
-                    <div class="stat-label">Seguindo</div>
+                    
+                    <!-- Posts Container -->
+                    <div class="posts-container" id="posts-container">
+                        <div class="card">
+                            <div class="card-body text-center text-muted py-5">
+                                <i class="fas fa-images display-4 mb-3"></i>
+                                <p class="mb-0">Nenhuma publicação ainda.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="posts-container" id="posts-container">
-            <div class="post">Nenhuma publicação ainda.</div>
         </div>
     </div>
 
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        // Elementos DOM
+        // (O JavaScript permanece o mesmo do código anterior)
         const profileIcon = document.querySelector('.profile-icon');
         const profilePhotoInput = document.getElementById('profile-photo-input');
         const postsContainer = document.getElementById('posts-container');
         
-        // Dados do usuário (vindos do banco de dados no futuro)
         const userData = {
             name: "username0109",
             username: "@username0109",
@@ -54,55 +74,68 @@
             posts: []
         };
 
-        // Alterar foto de perfil
         profilePhotoInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file && file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    // Substituir o ícone pela imagem
-                    profileIcon.className = 'profile-picture';
+                    profileIcon.className = 'profile-picture rounded-circle';
                     profileIcon.src = e.target.result;
                     profileIcon.alt = "Foto de perfil";
+                    profileIcon.style.width = '120px';
+                    profileIcon.style.height = '120px';
+                    profileIcon.style.objectFit = 'cover';
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        // Função para adicionar dados do servidor
         window.loadUserData = function(data) {
             Object.assign(userData, data);
             
-            // Atualizar estatísticas
             document.querySelectorAll('.stat-number')[0].textContent = data.followers || 0;
             document.querySelectorAll('.stat-number')[1].textContent = data.following || 0;
             
-            // Atualizar foto de perfil se existir
             if (data.profilePhoto) {
-                profileIcon.className = 'profile-picture';
+                profileIcon.className = 'profile-picture rounded-circle';
                 profileIcon.src = data.profilePhoto;
                 profileIcon.alt = "Foto de perfil";
+                profileIcon.style.width = '120px';
+                profileIcon.style.height = '120px';
+                profileIcon.style.objectFit = 'cover';
             }
             
-            // Renderizar posts se existirem
             if (data.posts && data.posts.length > 0) {
                 renderPosts(data.posts);
             }
         };
 
-        // Renderizar posts
         function renderPosts(posts) {
+            if (posts.length === 0) {
+                postsContainer.innerHTML = `
+                    <div class="card">
+                        <div class="card-body text-center text-muted py-5">
+                            <i class="fas fa-images display-4 mb-3"></i>
+                            <p class="mb-0">Nenhuma publicação ainda.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
             const postsHTML = posts.map(post => `
-                <div class="post">
-                    ${post.title ? `<div class="post-title">${post.title}</div>` : ''}
-                    ${post.content ? `<div class="post-content">${post.content}</div>` : ''}
-                    ${post.image ? `<img src="${post.image}" class="post-image">` : ''}
-                    ${post.audio ? `
-                        <audio controls class="post-audio">
-                            <source src="${post.audio}" type="audio/mpeg">
-                        </audio>
-                    ` : ''}
-                    <div class="post-date">Publicado em: ${post.date || new Date().toLocaleDateString('pt-BR')}</div>
+                <div class="card">
+                    <div class="card-body">
+                        ${post.title ? `<h5 class="post-title">${post.title}</h5>` : ''}
+                        ${post.content ? `<p class="post-content">${post.content}</p>` : ''}
+                        ${post.image ? `<img src="${post.image}" class="post-image">` : ''}
+                        ${post.audio ? `
+                            <audio controls class="post-audio">
+                                <source src="${post.audio}" type="audio/mpeg">
+                            </audio>
+                        ` : ''}
+                        <div class="post-date">Publicado em: ${post.date || new Date().toLocaleDateString('pt-BR')}</div>
+                    </div>
                 </div>
             `).join('');
             
