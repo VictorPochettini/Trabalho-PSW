@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import FeedPage from './pages/FeedPage';
 import UserProfile from './pages/UserProfile';
+
 import './index.css';
 
 function App() {
