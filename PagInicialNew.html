@@ -47,122 +47,156 @@
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero">
-        <div class="container hero-content">
-            <h1>Conecte-se com a criatividade musical independente</h1>
-            <p>Descubra, colabore e apoie artistas talentosos em uma plataforma feita para celebrar a música e a arte em todas as suas formas.</p>
-            <div class="hero-buttons">
-                <a href="Artistas.html" class="btn">Explorar Artistas</a>
-                <a href="Desafios.html" class="btn btn-outline">Participar de Desafios</a>
+    <section class="hero py-5">
+        <div class="container">
+            <div class="row justify-content-center text-center">
+                <div class="col-12 col-lg-8">
+                    <h1 class="display-4 fw-bold mb-4">Conecte-se com a criatividade musical independente</h1>
+                    <p class="lead mb-4">Descubra, colabore e apoie artistas talentosos em uma plataforma feita para celebrar a música e a arte em todas as suas formas.</p>
+                    <div class="hero-buttons">
+                        <a href="Artistas.html" class="btn btn-primary btn-lg me-3">Explorar Artistas</a>
+                        <a href="Desafios.html" class="btn btn-outline-primary btn-lg">Participar de Desafios</a>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- Features Section -->
-    <section class="features">
+    <section class="features py-5">
         <div class="container">
-            <div class="section-title">
-                <h2>Como o ArtBeat funciona</h2>
-                <p>Uma plataforma completa para artistas independentes mostrarem seu trabalho e se conectarem com fãs e outros criadores</p>
+            <div class="row text-center mb-5">
+                <div class="col-12">
+                    <h2 class="display-5 fw-bold mb-3">Como o ArtBeat funciona</h2>
+                    <p class="lead">Uma plataforma completa para artistas independentes mostrarem seu trabalho e se conectarem com fãs e outros criadores</p>
+                </div>
             </div>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🎵</div>
-                    <h3>Divulgue sua música</h3>
-                    <p>Compartilhe suas composições autorais e receba feedback direto da comunidade.</p>
+            <div class="row g-4">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 text-center p-4">
+                        <div class="feature-icon fs-1 mb-3">🎵</div>
+                        <h3 class="h4">Divulgue sua música</h3>
+                        <p class="text-muted">Compartilhe suas composições autorais e receba feedback direto da comunidade.</p>
+                    </div>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">⭐</div>
-                    <h3>Receba avaliações</h3>
-                    <p>Seu trabalho é avaliado com estrelas e comentários para ajudar no seu crescimento.</p>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 text-center p-4">
+                        <div class="feature-icon fs-1 mb-3">⭐</div>
+                        <h3 class="h4">Receba avaliações</h3>
+                        <p class="text-muted">Seu trabalho é avaliado com estrelas e comentários para ajudar no seu crescimento.</p>
+                    </div>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">💝</div>
-                    <h3>Receba apoio</h3>
-                    <p>Permita que seus fãs apoiem seu trabalho com doações a partir de R$ 5,00.</p>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 text-center p-4">
+                        <div class="feature-icon fs-1 mb-3">💝</div>
+                        <h3 class="h4">Receba apoio</h3>
+                        <p class="text-muted">Permita que seus fãs apoiem seu trabalho com doações a partir de R$ 5,00.</p>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Challenge Section -->
-    <section class="challenge">
-        <div class="container challenge-content">
-            <h2>Desafio da Semana</h2>
-            <p>Participe do nosso desafio temático semanal e mostre sua criatividade! Esta semana o tema é "A vida é uma maravilha".</p>
-            
-            <div class="timer">
-                <div class="timer-item">
-                    <div class="timer-value" id="days">05</div>
-                    <div class="timer-label">Dias</div>
-                </div>
-                <div class="timer-item">
-                    <div class="timer-value" id="hours">18</div>
-                    <div class="timer-label">Horas</div>
-                </div>
-                <div class="timer-item">
-                    <div class="timer-value" id="minutes">43</div>
-                    <div class="timer-label">Minutos</div>
-                </div>
-                <div class="timer-item">
-                    <div class="timer-value" id="seconds">22</div>
-                    <div class="timer-label">Segundos</div>
+    <section class="challenge py-5">
+        <div class="container">
+            <div class="row justify-content-center text-center">
+                <div class="col-12 col-lg-8">
+                    <h2 class="display-5 fw-bold mb-3">Desafio da Semana</h2>
+                    <p class="lead mb-4">Participe do nosso desafio temático semanal e mostre sua criatividade! Esta semana o tema é "A vida é uma maravilha".</p>
+                    
+                    <div class="row justify-content-center mb-4">
+                        <div class="col-6 col-sm-3 col-lg-2 mb-3">
+                            <div class="timer-item bg-white rounded p-3">
+                                <div class="timer-value fs-2 fw-bold text-primary" id="days">05</div>
+                                <div class="timer-label text-muted">Dias</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-3 col-lg-2 mb-3">
+                            <div class="timer-item bg-white rounded p-3">
+                                <div class="timer-value fs-2 fw-bold text-primary" id="hours">18</div>
+                                <div class="timer-label text-muted">Horas</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-3 col-lg-2 mb-3">
+                            <div class="timer-item bg-white rounded p-3">
+                                <div class="timer-value fs-2 fw-bold text-primary" id="minutes">43</div>
+                                <div class="timer-label text-muted">Minutos</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-3 col-lg-2 mb-3">
+                            <div class="timer-item bg-white rounded p-3">
+                                <div class="timer-value fs-2 fw-bold text-primary" id="seconds">22</div>
+                                <div class="timer-label text-muted">Segundos</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <a href="#" class="btn btn-primary btn-lg">Participar do Desafio</a>
                 </div>
             </div>
-            
-            <a href="#" class="btn">Participar do Desafio</a>
         </div>
     </section>
 
     <!-- Artists Section -->
-    <section class="artists">
+    <section class="artists py-5">
         <div class="container">
-            <div class="section-title">
-                <h2>Artistas em Destaque</h2>
-                <p>Conheça alguns dos talentos incríveis que fazem parte da nossa comunidade</p>
+            <div class="row text-center mb-5">
+                <div class="col-12">
+                    <h2 class="display-5 fw-bold mb-3">Artistas em Destaque</h2>
+                    <p class="lead">Conheça alguns dos talentos incríveis que fazem parte da nossa comunidade</p>
+                </div>
             </div>
-            <div class="artists-grid">
-                <div class="artist-card">
-                    <div class="artist-image">🎸</div>
-                    <div class="artist-info">
-                        <h3>Marina Silva</h3>
-                        <p>Cantora e compositora com foco em MPB e folk contemporâneo.</p>
-                        <div class="artist-stats">
-                            <span>⭐ 4.8</span>
-                            <span>25 músicas</span>
+            <div class="row g-4">
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card artist-card h-100 text-center">
+                        <div class="card-body p-4">
+                            <div class="artist-image fs-1 mb-3">🎸</div>
+                            <h3 class="h5">Marina Silva</h3>
+                            <p class="text-muted">Cantora e compositora com foco em MPB e folk contemporâneo.</p>
+                            <div class="artist-stats">
+                                <span class="badge bg-warning me-2">⭐ 4.8</span>
+                                <span class="badge bg-secondary">25 músicas</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="artist-card">
-                    <div class="artist-image">🎹</div>
-                    <div class="artist-info">
-                        <h3>Pedro Costa</h3>
-                        <p>Produtor musical especializado em eletrônica e ambient.</p>
-                        <div class="artist-stats">
-                            <span>⭐ 4.9</span>
-                            <span>18 músicas</span>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card artist-card h-100 text-center">
+                        <div class="card-body p-4">
+                            <div class="artist-image fs-1 mb-3">🎹</div>
+                            <h3 class="h5">Pedro Costa</h3>
+                            <p class="text-muted">Produtor musical especializado em eletrônica e ambient.</p>
+                            <div class="artist-stats">
+                                <span class="badge bg-warning me-2">⭐ 4.9</span>
+                                <span class="badge bg-secondary">18 músicas</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="artist-card">
-                    <div class="artist-image">🎤</div>
-                    <div class="artist-info">
-                        <h3>Ana & Bia</h3>
-                        <p>Duo vocal que mistura pop com elementos de música regional.</p>
-                        <div class="artist-stats">
-                            <span>⭐ 4.7</span>
-                            <span>12 músicas</span>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card artist-card h-100 text-center">
+                        <div class="card-body p-4">
+                            <div class="artist-image fs-1 mb-3">🎤</div>
+                            <h3 class="h5">Ana & Bia</h3>
+                            <p class="text-muted">Duo vocal que mistura pop com elementos de música regional.</p>
+                            <div class="artist-stats">
+                                <span class="badge bg-warning me-2">⭐ 4.7</span>
+                                <span class="badge bg-secondary">12 músicas</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="artist-card">
-                    <div class="artist-image">🎻</div>
-                    <div class="artist-info">
-                        <h3>Rafael Moura</h3>
-                        <p>Violonista erudito e compositor de trilhas sonoras.</p>
-                        <div class="artist-stats">
-                            <span>⭐ 5.0</span>
-                            <span>30 músicas</span>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card artist-card h-100 text-center">
+                        <div class="card-body p-4">
+                            <div class="artist-image fs-1 mb-3">🎻</div>
+                            <h3 class="h5">Rafael Moura</h3>
+                            <p class="text-muted">Violonista erudito e compositor de trilhas sonoras.</p>
+                            <div class="artist-stats">
+                                <span class="badge bg-warning me-2">⭐ 5.0</span>
+                                <span class="badge bg-secondary">30 músicas</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -184,7 +218,7 @@
                         <li><a href="PagInicialNew.html">Início</a></li>
                         <li><a href="Artistas.html">Artistas</a></li>
                         <li><a href="Desafios.html">Desafios</a></li>
-                        <li><a href="PoliticasDePrivacidade.html">Politicas de Privacidade</a></li>
+                        <li><a href="PoliticasDePrivacidade.html">Políticas de Privacidade</a></li>
                         <li><a href="TermosDeUso.html">Termos De Uso</a></li>
                     </ul>
                 </div>
