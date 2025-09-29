@@ -8,8 +8,13 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import PublicarMusica from './pages/PublicarMusica.jsx'
 import PublicarImagem from './pages/PublicarImagem.jsx'
 import PublicarLetra from './pages/PublicarLetra.jsx'
+import InitialPage from './pages/InitialPage.jsx'
 
 const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <InitialPage/>
+  },
   {
     path: "/feed",
     element: <Feed/>
@@ -17,6 +22,10 @@ const router = createBrowserRouter([
   {
     path: "/discover",
     element: <DiscoverArtist/>
+  },
+  {
+    path: "/desafios",
+    element: <>DESAFIOS</>
   },
   {
     path: "/publicar/imagem",
