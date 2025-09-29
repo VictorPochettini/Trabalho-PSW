@@ -9,6 +9,7 @@ import PublicarMusica from './pages/PublicarMusica.jsx'
 import PublicarImagem from './pages/PublicarImagem.jsx'
 import PublicarLetra from './pages/PublicarLetra.jsx'
 import InitialPage from './pages/InitialPage.jsx'
+import ArtistsPage from './pages/ArtistsPage.jsx'
 
 const router = createBrowserRouter([
   {
@@ -39,6 +40,10 @@ const router = createBrowserRouter([
     path: "/publicar/musica",
     element: <PublicarMusica/>
   },
+  {
+    path: "/artistas",
+    element: <ArtistsPage/>
+  }
 ])
 
 createRoot(document.getElementById('root')).render(
