@@ -39,13 +39,13 @@ const FloatingActionButton = () => {
         </button>
 
         <div className={`fab-menu ${isOpen ? 'open' : ''}`}>
-          <a href="PublicarMusica.html" className="fab-sub" title="Publicar Música">
+          <a href="publicar/musica" className="fab-sub" title="Publicar Música">
             <i className="fas fa-music"></i> Publicar Música
           </a>
-          <a href="PublicarImagem.html" className="fab-sub" title="Publicar Arte">
+          <a href="publicar/imagem" className="fab-sub" title="Publicar Arte">
             <i className="fas fa-image"></i> Publicar Imagem
           </a>
-          <a href="PublicarLetra.html" className="fab-sub" title="Publicar Letra">
+          <a href="publicar/letra" className="fab-sub" title="Publicar Letra">
             <i className="fas fa-feather"></i> Publicar Letra
           </a>
         </div>

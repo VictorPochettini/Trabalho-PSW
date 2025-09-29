@@ -1,8 +1,20 @@
 // src/components/Header.jsx
 import React from 'react';
-import logo from '../images/ArtBeat_Branco.png'; // Ajuste o caminho conforme necessário
+import { useLocation } from 'react-router-dom';
+import logo from '../images/ArtBeat_Branco.png';
 
 const Header = () => {
+  const location = useLocation();
+  
+  const isActiveLink = (path) => {
+    // Remove a barra inicial e compara os caminhos
+    const currentPath = location.pathname.replace('/', '');
+    const comparePath = path.replace('/', '');
+    
+    // Verifica se é a página inicial ou corresponde ao path
+    return currentPath === '' && path === 'feed' || currentPath === comparePath;
+  };
+
   return (
     <div className="topo">
       <header>
@@ -12,19 +24,35 @@ const Header = () => {
           </div>
           <ul className="menu">
             <li className="dropdown">
-              <a href="Feed.html" className="enfase">
+              <a 
+                href="/feed" 
+                className={isActiveLink('feed') ? 'enfase' : ''}
+              >
                 Feed
               </a>
             </li>
             <li className="dropdown">
-              <a href="ArtistasLogado.html">Artistas</a>
+              <a 
+                href="/discover" 
+                className={isActiveLink('discover') ? 'enfase' : ''}
+              >
+                Artistas
+              </a>
             </li>
             <li className="dropdown">
-              <a href="DesafiosLogado.html">Desafios</a>
+              <a 
+                href="/desafios" 
+                className={isActiveLink('desafios') ? 'enfase' : ''}
+              >
+                Desafios
+              </a>
             </li>
             <li className="dropdown">
-              <a href="PerfilUsuário.html">
-                <i className="fa-solid fa-circle-user fa-xl" style={{ color: '#ffffff' }}></i>
+              <a href="/perfil">
+                <i 
+                  className="fa-solid fa-circle-user fa-xl" 
+                  style={{ color: '#ffffff' }}
+                ></i>
               </a>
             </li>
           </ul>

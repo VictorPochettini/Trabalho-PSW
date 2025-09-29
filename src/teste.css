@@ -26,7 +26,6 @@ nav{display:flex; justify-content:space-between; align-items:center; padding:8px
 .menu{color:white; font-size:20px; display:flex; list-style:none; margin-top:45px;}
 .menu li{margin-left:110px;}
 .menu li a{color:white;}
-.menu li a{text-decoration: none;}
 .enfase{position:relative; font-weight:600; color:var(--roxo);}
 .enfase::after{
   content:""; position:absolute; left:0; bottom:-3px; width:0%; height:3px;
