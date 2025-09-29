@@ -10,6 +10,8 @@ import PublicarImagem from './pages/PublicarImagem.jsx'
 import PublicarLetra from './pages/PublicarLetra.jsx'
 import InitialPage from './pages/InitialPage.jsx'
 import ArtistsPage from './pages/ArtistsPage.jsx'
+import ChallengePage from './pages/ChallengePage.jsx'
+import UserProfile from './pages/UserProfile.jsx'
 
 const router = createBrowserRouter([
   {
@@ -26,7 +28,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/desafios",
-    element: <>DESAFIOS</>
+    element: <ChallengePage/>
   },
   {
     path: "/publicar/imagem",
@@ -43,6 +45,10 @@ const router = createBrowserRouter([
   {
     path: "/artistas",
     element: <ArtistsPage/>
+  },
+  {
+    path: "/perfil",
+    element: <UserProfile/>
   }
 ])
 

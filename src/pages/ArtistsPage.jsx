@@ -1,4 +1,5 @@
 import React from 'react';
+import { useState } from 'react';
 import '../css/InitialPage.css';
 import NavbarAL from '../components/NavbarAL';
 import FooterAL from '../components/FooterAL';
@@ -38,7 +39,7 @@ const ArtistsPage = () => {
 
   return (
     <div className="artistas-page">
-      <Navbar />
+      <NavbarAL/>
       
       {/* Hero Section com Bootstrap Grid */}
       <section className="hero-artistas py-5">
@@ -135,7 +136,7 @@ const ArtistsPage = () => {
         </div>
       </section>
 
-      <Footer />
+      <FooterAL/>
     </div>
   );
 };

@@ -1,5 +1,7 @@
 import React from 'react';
 import '../css/InitialPage.css';
+import { useState } from 'react';
+import { useEffect } from 'react';
 import NavbarAL from '../components/NavbarAL';
 import FooterAL from '../components/FooterAL';
 
@@ -121,7 +123,7 @@ const ChallengePage = () => {
 
   return (
     <div className="desafios-page">
-      <Navbar />
+      <NavbarAL/>
       
       {/* Seção Principal de Desafios com Bootstrap Grid */}
       <section className="desafios-hero py-5">
@@ -234,7 +236,7 @@ const ChallengePage = () => {
         </div>
       </section>
 
-      <Footer />
+      <FooterAL/>
     </div>
   );
 };
