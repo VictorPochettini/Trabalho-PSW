@@ -1,16 +1,14 @@
-// src/App.jsx
+// src/pages/FeedPage.jsx
 import React, { useState } from 'react';
 import Header from '../components/Header';
 import PostCard from '../components/PostCard';
 import MonetizationPopup from '../components/MonetizationPopup';
 import CommentsPopup from '../components/CommentsPopup';
 import FloatingActionButton from '../components/FloatingActionButton';
+import audioPop from '../audios/audioPop.mpeg';
+import capaImage from '../images/capa.png';
 
-// Importe suas imagens e áudios
-import audioPop from '../audios/audioPop.mpeg'; // Ajuste o caminho
-import capaImage from '../images/capa.png';     // Ajuste o caminho
-
-const App = () => {
+const FeedPage = () => {
   const [showMonetization, setShowMonetization] = useState(false);
   const [monetizationUsername, setMonetizationUsername] = useState('');
   const [showComments, setShowComments] = useState(false);
@@ -19,27 +17,26 @@ const App = () => {
   const handleMonetizeClick = (username) => {
     setMonetizationUsername(username);
     setShowMonetization(true);
-    document.body.style.overflow = 'hidden'; // Impede scroll
+    document.body.style.overflow = 'hidden';
   };
 
   const handleCloseMonetization = () => {
     setShowMonetization(false);
-    document.body.style.overflow = ''; // Restaura scroll
+    document.body.style.overflow = '';
   };
 
   const handleCommentClick = (postId) => {
     setCurrentPostIdForComments(postId);
     setShowComments(true);
-    document.body.style.overflow = 'hidden'; // Impede scroll
+    document.body.style.overflow = 'hidden';
   };
 
   const handleCloseComments = () => {
     setShowComments(false);
     setCurrentPostIdForComments(null);
-    document.body.style.overflow = ''; // Restaura scroll
+    document.body.style.overflow = '';
   };
 
-  // Dados de exemplo para os posts
   const posts = [
     {
       id: 1,
@@ -62,43 +59,40 @@ const App = () => {
       id: 3,
       username: '@poetaurbano',
       time: 'Há 1 dia',
-      content: `
-        "Entre as batidas do coração e o ritmo da cidade,
-        nascem versos que ecoam verdade.
-        Cada palavra, uma nota;
-        cada verso, uma melodia..." ✍️
-      `,
-      mediaType: 'text',
-    },
-    {
-      id: 4,
-      username: '@poeta333urbano',
-      time: 'Há 1 dia',
-      content: `
-        "Entre as batidas do coração e o ritmo da cidade,
-        nascem versos que ecoam verdade.
-        Cada palavra, uma nota;
-        cada verso, uma melodia..." ✍️
-      `,
+      content: `"Entre as batidas do coração e o ritmo da cidade, nascem versos que ecoam verdade. Cada palavra, uma nota; cada verso, uma melodia..." ✍️`,
       mediaType: 'text',
     },
   ];
 
-function App() {
   return (
-    <Router>
-      {/*<div className="App">*/}
-        <Routes>
-          {/*<Route path="/" element={<InitialPage />} />
-          <Route path="/artistas" element={<ArtistsPage />} />
-          <Route path="/desafios" element={<ChallengePage />} />*/}
+    <>
+      <Header />
+      <div className="feed-content-wrapper">
+        {posts.map((post) => (
+          <PostCard
+            key={post.id}
+            post={post}
+            onMonetizeClick={handleMonetizeClick}
+            onCommentClick={handleCommentClick}
+          />
+        ))}
+      </div>
 
-          <Route path="/" element={<FeedPage />} />
-          <Route path="/profile" element={<UserProfile />} />
-        </Routes>
-      {/*</div>*/}
-    </Router>
+      <MonetizationPopup
+        show={showMonetization}
+        onClose={handleCloseMonetization}
+        username={monetizationUsername}
+      />
+
+      <CommentsPopup
+        show={showComments}
+        onClose={handleCloseComments}
+        postId={currentPostIdForComments}
+      />
+
+      <FloatingActionButton />
+    </>
   );
-}
+};
 
-export default App;
+export default FeedPage;

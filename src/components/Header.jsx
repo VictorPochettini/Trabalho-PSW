@@ -29,7 +29,7 @@ const Header = () => {
                 className={isActiveLink('feed') ? 'enfase' : ''}
               >
                 Feed
-              </a>
+              </Link>
             </li>
             <li className="dropdown">
               <a 

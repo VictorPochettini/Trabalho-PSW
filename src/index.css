@@ -957,6 +957,19 @@ nav {
   justify-content: center;
   z-index: 1001;
   font-size: 1.5rem;
+  /* CORREÇÃO DO ALINHAMENTO */
+  padding: 0 !important;
+}
+
+/* GARANTINDO QUE O ÍCONE + FIQUE PERFEITAMENTE CENTRALIZADO */
+.fab-main i {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  line-height: 1 !important;
 }
 
 .fab-main:hover {
@@ -1051,6 +1064,7 @@ nav {
     font-size: 14px;
   }
 }
+
 
 /* Responsividade */
 @media (max-width: 768px) {
@@ -1933,3 +1947,4 @@ nav {
         max-width: 95%; /* Ajuste para telas menores */
     }
 }
+
