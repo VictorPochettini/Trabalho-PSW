@@ -1,8 +1,9 @@
 import React from 'react';
+//import '../css/FooterAL.css';
 
-function FooterAL() {
+const FooterAL = () => {
   return (
-    <footer>
+    <footer className="artbeat-footer">
       <div className="container">
         <div className="footer-content">
           <div className="footer-column">
@@ -29,9 +30,12 @@ function FooterAL() {
             </ul>
           </div>
         </div>
+        <div className="copyright">
+          <p>&copy; 2025 ArtBeat. Todos os direitos reservados.</p>
+        </div>
       </div>
     </footer>
   );
-}
+};
 
 export default FooterAL;
