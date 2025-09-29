@@ -1,5 +1,5 @@
-// Adicione este useEffect ao seu componente FloatingActionButton
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 const FloatingActionButton = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,24 +30,27 @@ const FloatingActionButton = () => {
     <div className="floating-actions">
       <div className={`fab-container ${isOpen ? 'active' : ''}`}>
         <button 
-          className={`btn btn-primary rounded-circle fab-main ${isOpen ? 'open' : ''}`} 
+          className={`btn btn-primary fab-main ${isOpen ? 'open' : ''}`} 
           onClick={toggleMenu}
           aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
           aria-expanded={isOpen}
         >
-          <i className="fas fa-plus" id="fabIcon"></i>
+          <i className="fas fa-plus"></i>
         </button>
 
         <div className={`fab-menu ${isOpen ? 'open' : ''}`}>
-          <a href="PublicarMusica.html" className="fab-sub" title="Publicar Música">
-            <i className="fas fa-music"></i> Publicar Música
-          </a>
-          <a href="PublicarImagem.html" className="fab-sub" title="Publicar Arte">
-            <i className="fas fa-image"></i> Publicar Imagem
-          </a>
-          <a href="PublicarLetra.html" className="fab-sub" title="Publicar Letra">
-            <i className="fas fa-feather"></i> Publicar Letra
-          </a>
+          <Link to="/publicar-musica" className="fab-sub" title="Publicar Música">
+            <i className="fas fa-music"></i>
+            <span>Música</span>
+          </Link>
+          <Link to="/publicar-imagem" className="fab-sub" title="Publicar Arte">
+            <i className="fas fa-image"></i>
+            <span>Imagem</span>
+          </Link>
+          <Link to="/publicar-letra" className="fab-sub" title="Publicar Letra">
+            <i className="fas fa-feather"></i>
+            <span>Letra</span>
+          </Link>
         </div>
       </div>
     </div>

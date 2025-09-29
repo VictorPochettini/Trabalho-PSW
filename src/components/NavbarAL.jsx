@@ -3,12 +3,14 @@ import { Link, useLocation } from 'react-router-dom';
 import logo from '../images/ArtBeat_Branco.png';
 
 const NavbarAL = () => {
+  const location = useLocation(); 
+
   return (
     <nav className="navbar navbar-expand-lg navbar-artbeat">
       <div className="container">
-        <a className="navbar-brand" href="/" data-sound="navigation">
+        <Link className="navbar-brand" to="/"> {/* ← Mude <a> para <Link> */}
           <img src={logo} alt="ArtBeat" width="80" height="80" className="me-2" />
-        </a>
+        </Link>
         
         <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span className="navbar-toggler-icon"></span>
