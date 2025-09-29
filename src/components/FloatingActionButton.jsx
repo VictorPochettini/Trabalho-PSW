@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 const FloatingActionButton = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const fabRef = useRef(null);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -11,8 +12,7 @@ const FloatingActionButton = () => {
   // Fechar o menu ao clicar fora dele
   useEffect(() => {
     const handleClickOutside = (event) => {
-      const fabContainer = document.querySelector('.fab-container');
-      if (fabContainer && !fabContainer.contains(event.target)) {
+      if (fabRef.current && !fabRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     };
@@ -28,9 +28,12 @@ const FloatingActionButton = () => {
 
   return (
     <div className="floating-actions">
-      <div className={`fab-container ${isOpen ? 'active' : ''}`}>
+      <div 
+        className={`fab-container ${isOpen ? 'active' : ''}`} 
+        ref={fabRef}
+      >
         <button 
-          className={`btn btn-primary fab-main ${isOpen ? 'open' : ''}`} 
+          className={`fab-main ${isOpen ? 'open' : ''}`} 
           onClick={toggleMenu}
           aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
           aria-expanded={isOpen}
@@ -39,15 +42,15 @@ const FloatingActionButton = () => {
         </button>
 
         <div className={`fab-menu ${isOpen ? 'open' : ''}`}>
-          <a href="publicar/musica" className="fab-sub" title="Publicar Música">
+          <Link to="/publicar/musica" className="fab-sub" title="Publicar Música" onClick={() => setIsOpen(false)}>
             <i className="fas fa-music"></i> Publicar Música
-          </a>
-          <a href="publicar/imagem" className="fab-sub" title="Publicar Arte">
+          </Link>
+          <Link to="/publicar/imagem" className="fab-sub" title="Publicar Arte" onClick={() => setIsOpen(false)}>
             <i className="fas fa-image"></i> Publicar Imagem
-          </a>
-          <a href="publicar/letra" className="fab-sub" title="Publicar Letra">
+          </Link>
+          <Link to="/publicar/letra" className="fab-sub" title="Publicar Letra" onClick={() => setIsOpen(false)}>
             <i className="fas fa-feather"></i> Publicar Letra
-          </a>
+          </Link>
         </div>
       </div>
     </div>

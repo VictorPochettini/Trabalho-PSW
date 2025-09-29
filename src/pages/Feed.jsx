@@ -1,16 +1,16 @@
 // src/App.jsx
 import React, { useState } from 'react';
-import Header from './components/Header';
-import PostCard from './components/PostCard';
-import MonetizationPopup from './components/MonetizationPopup';
-import CommentsPopup from './components/CommentsPopup';
-import FloatingActionButton from './components/FloatingActionButton';
+import Header from '../components/Header';
+import PostCard from '../components/PostCard';
+import MonetizationPopup from '../components/MonetizationPopup';
+import CommentsPopup from '../components/CommentsPopup';
+import FloatingActionButton from '../components/FloatingActionButton';
 
 // Importe suas imagens e áudios
-import audioPop from './audios/audioPop.mpeg'; // Ajuste o caminho
-import capaImage from './images/capa.png';     // Ajuste o caminho
+import audioPop from '../audios/audioPop.mpeg'; // Ajuste o caminho
+import capaImage from '../images/capa.png';     // Ajuste o caminho
 
-const App = () => {
+const Feed = () => {
   const [showMonetization, setShowMonetization] = useState(false);
   const [monetizationUsername, setMonetizationUsername] = useState('');
   const [showComments, setShowComments] = useState(false);
@@ -116,4 +116,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default Feed;

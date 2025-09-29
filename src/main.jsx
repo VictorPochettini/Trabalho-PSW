@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import './index.css'
-import App from './App.jsx'
+import Feed from './pages/Feed.jsx'
 import DiscoverArtist from './pages/DiscoverArtist.jsx'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import PublicarMusica from './pages/PublicarMusica.jsx'
@@ -12,7 +12,7 @@ import PublicarLetra from './pages/PublicarLetra.jsx'
 const router = createBrowserRouter([
   {
     path: "/feed",
-    element: <App/>
+    element: <Feed/>
   },
   {
     path: "/discover",
