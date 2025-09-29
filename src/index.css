@@ -957,6 +957,53 @@ nav {
   justify-content: center;
   z-index: 1001;
   font-size: 1.5rem;
+}
+
+.fab-main:hover {
+  background: linear-gradient(135deg, var(--roxo-claro), var(--roxo));
+  box-shadow: 0 6px 25px rgba(94, 23, 235, 0.6);
+  transform: scale(1.05);
+}
+
+.fab-main.open {
+  transform: rotate(45deg);
+  background: linear-gradient(135deg, var(--roxo-claro), var(--roxo));
+}
+
+.fab-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+}
+
+.fab-container.active .fab-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.fab-sub {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  color: var(--azul);
+  padding: 12px 20px;
+  border-radius: 30px;
+  font-weight: 500;
+  font-size: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  text-decoration: none;
+
   /* CORREÇÃO DO ALINHAMENTO */
   padding: 0 !important;
 }

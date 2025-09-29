@@ -1,14 +1,14 @@
 // src/App.jsx
 import React, { useState } from 'react';
-import Header from '../components/Header';
-import PostCard from '../components/PostCard';
-import MonetizationPopup from '../components/MonetizationPopup';
-import CommentsPopup from '../components/CommentsPopup';
-import FloatingActionButton from '../components/FloatingActionButton';
+import Header from './components/Header';
+import PostCard from './components/PostCard';
+import MonetizationPopup from './components/MonetizationPopup';
+import CommentsPopup from './components/CommentsPopup';
+import FloatingActionButton from './components/FloatingActionButton';
 
 // Importe suas imagens e áudios
-import audioPop from '../audios/audioPop.mpeg'; // Ajuste o caminho
-import capaImage from '../images/capa.png';     // Ajuste o caminho
+import audioPop from './audios/audioPop.mpeg'; // Ajuste o caminho
+import capaImage from './images/capa.png';     // Ajuste o caminho
 
 const App = () => {
   const [showMonetization, setShowMonetization] = useState(false);
@@ -84,21 +84,36 @@ const App = () => {
     },
   ];
 
-function App() {
   return (
-    <Router>
-      {/*<div className="App">*/}
-        <Routes>
-          {/*<Route path="/" element={<InitialPage />} />
-          <Route path="/artistas" element={<ArtistsPage />} />
-          <Route path="/desafios" element={<ChallengePage />} />*/}
+    <>
+      <Header />
+      {/* Novo wrapper para centralizar e limitar a largura dos posts */}
+      <div className="feed-content-wrapper">
+        {posts.map((post) => (
+          <PostCard
+            key={post.id}
+            post={post}
+            onMonetizeClick={handleMonetizeClick}
+            onCommentClick={handleCommentClick}
+          />
+        ))}
+      </div>
 
-          <Route path="/" element={<FeedPage />} />
-          <Route path="/profile" element={<UserProfile />} />
-        </Routes>
-      {/*</div>*/}
-    </Router>
+      <MonetizationPopup
+        show={showMonetization}
+        onClose={handleCloseMonetization}
+        username={monetizationUsername}
+      />
+
+      <CommentsPopup
+        show={showComments}
+        onClose={handleCloseComments}
+        postId={currentPostIdForComments}
+      />
+
+      <FloatingActionButton />
+    </>
   );
-}
+};
 
 export default App;
