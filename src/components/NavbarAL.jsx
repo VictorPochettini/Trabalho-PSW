@@ -1,11 +1,13 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import logo from '../images/ArtBeat_Branco.png';
 
 const NavbarAL = () => {
   return (
     <nav className="navbar navbar-expand-lg navbar-artbeat">
       <div className="container">
         <a className="navbar-brand" href="/" data-sound="navigation">
-          <img src="/images/ArtBeat_Branco.png" alt="ArtBeat" width="80" height="80" className="me-2" />
+          <img src={logo} alt="ArtBeat" width="80" height="80" className="me-2" />
         </a>
         
         <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -15,22 +17,37 @@ const NavbarAL = () => {
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav me-auto">
             <li className="nav-item">
-              <a className="nav-link active" href="/" data-sound="navigation">Início</a>
+              <Link 
+                to="/" 
+                className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
+              >
+                Início
+              </Link>
             </li>
             <li className="nav-item">
-              <a className="nav-link" href="/artistas" data-sound="navigation">Artistas</a>
+              <Link 
+                to="/artistas" 
+                className={`nav-link ${location.pathname === '/artistas' ? 'active' : ''}`}
+              >
+                Artistas
+              </Link>
             </li>
             <li className="nav-item">
-              <a className="nav-link" href="/desafios" data-sound="navigation">Desafios</a>
+              <Link 
+                to="/desafios" 
+                className={`nav-link ${location.pathname === '/desafios' ? 'active' : ''}`}
+              >
+                Desafios
+              </Link>
             </li>
           </ul>
           <div className="d-flex">
-            <button className="btn btn-outline-primary me-2" onClick={() => window.location.href = '/cadastro'}>
+            <Link to="/cadastro" className="btn btn-outline-primary me-2">
               Cadastrar
-            </button>
-            <button className="btn btn-primary" onClick={() => window.location.href = '/login'}>
+            </Link>
+            <Link to="/login" className="btn btn-primary me-5">
               Entrar
-            </button>
+            </Link>
           </div>
         </div>
       </div>

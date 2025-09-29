@@ -6,7 +6,7 @@ const FooterAL = () => {
     <footer className="artbeat-footer">
       <div className="container">
         <div className="footer-content">
-          <div className="footer-column">
+          <div className="footer-column me-3">
             <h3>ArtBeat</h3>
             <p>Conectando artistas independentes e amantes da música em uma plataforma colaborativa e inovadora.</p>
           </div>

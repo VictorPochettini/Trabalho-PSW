@@ -5,6 +5,8 @@ import FeedPage from './pages/FeedPage';
 import UserProfile from './pages/UserProfile';
 import './index.css';
 import InitialPage from './pages/InitialPage';
+import ArtistsPage from './pages/ArtistsPage';
+import ChallengePage from './pages/ChallengePage';
 
 function App() {
   return (
@@ -12,9 +14,11 @@ function App() {
       {/*<div className="App">*/}
         <Routes>
           <Route path="/" element={<InitialPage />} />
+          <Route path="/artistas" element={<ArtistsPage />} />
+          <Route path="/desafios" element={<ChallengePage />} />
 
-          <Route path="/feed" element={<FeedPage />} />
-          <Route path="/profile" element={<UserProfile />} />
+          {/*<Route path="/feed" element={<FeedPage />} />
+          <Route path="/profile" element={<UserProfile />} />*/}
         </Routes>
       {/*</div>*/}
     </Router>

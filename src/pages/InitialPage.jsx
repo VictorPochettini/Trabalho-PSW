@@ -10,7 +10,7 @@ const InitialPage = () => {
       
       {/* Hero Section */}
       <section className="hero-artbeat py-5">
-        <div className="container">
+        <div className="container-fluid">
           <div className="row justify-content-center text-center">
             <div className="col-12 col-lg-8">
               <h1 className="display-4 fw-bold mb-4">Conecte-se com a criatividade musical independente</h1>
