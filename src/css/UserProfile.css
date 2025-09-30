@@ -1,15 +1,4 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
 
-body {
-    background-color: #f5f7fa;
-    color: #333;
-    padding: 20px;
-}
 
 /* Sobrescrevendo estilos do Bootstrap para manter o design original */
 .profile-container {
