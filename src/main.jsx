@@ -12,6 +12,7 @@ import InitialPage from './pages/InitialPage.jsx'
 import ArtistsPage from './pages/ArtistsPage.jsx'
 import ChallengePage from './pages/ChallengePage.jsx'
 import UserProfile from './pages/UserProfile.jsx'
+import Login from './pages/Login.jsx'
 
 const router = createBrowserRouter([
   {
@@ -49,7 +50,11 @@ const router = createBrowserRouter([
   {
     path: "/perfil",
     element: <UserProfile/>
-  }
+  },
+  {
+    path: "/login",   
+    element: <Login/>
+  },
 ])
 
 createRoot(document.getElementById('root')).render(
