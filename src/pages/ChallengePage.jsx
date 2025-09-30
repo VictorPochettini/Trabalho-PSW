@@ -165,8 +165,8 @@ const ChallengePage = () => {
                     </div>
                     
                     {/* Resultado Anterior */}
-                    <div className="col-12 col-lg-6">
-                      <div className={`card resultado-card h-100 ${isTransitioning ? 'fade-out' : 'fade-in'}`}>
+                    <div className="col-12 col-lg-6" id="divranking">
+                      {/*<div className={`card resultado-card h-100 ${isTransitioning ? 'fade-out' : 'fade-in'}`}>*/}
                         <div className="card-body text-center p-4">
                           <h2 className="card-title h3 mb-4">Resultado do Desafio Anterior</h2>
                           
@@ -193,7 +193,7 @@ const ChallengePage = () => {
                             ))}
                           </div>
                         </div>
-                      </div>
+                      {/*</div>*/}
                     </div>
                     
                   </div>
