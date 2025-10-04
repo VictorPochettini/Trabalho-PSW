@@ -13,6 +13,7 @@ import ArtistsPage from './pages/ArtistsPage.jsx'
 import ChallengePage from './pages/ChallengePage.jsx'
 import UserProfile from './pages/UserProfile.jsx'
 import Login from './pages/Login.jsx'
+import CreateAccount from './pages/CreateAccount.jsx'
 
 const router = createBrowserRouter([
   {
@@ -54,6 +55,10 @@ const router = createBrowserRouter([
   {
     path: "/login",   
     element: <Login/>
+  },
+  {
+    path:"/cadastro",
+    element:<CreateAccount/>
   },
 ])
 

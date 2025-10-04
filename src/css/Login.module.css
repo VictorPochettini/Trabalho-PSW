@@ -214,6 +214,49 @@
   padding: 0;
   overflow: hidden;
 }
+.input::placeholder {
+  color: gray; /* cinza mais visível */
+  font-style: italic;
+}
+/* Override quando .formGroup e .termosContainer estiverem juntas */
+.formGroup.termosContainer {
+  display: flex;         /* garante que seja flex */
+  flex-direction: row;   /* força linha (ao invés de column) */
+  align-items: center;   /* alinha verticalmente checkbox + texto */
+  gap: 12px;             /* espaço entre checkbox e texto */
+}
+
+/* redundância segura caso a ordem das regras compile de outra forma */
+.termosContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Estilo opcional para a checkbox (pequeno, alinhado) */
+.termosCheckbox {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  /* accent-color funciona em navegadores modernos para colorir a checkbox */
+  accent-color: var(--roxo);
+}
+
+/* Garante que o label não quebre a linha por ser block */
+.termos {
+  display: inline-block;
+  margin: 0;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+/* Caso haja alguma regra .fonte ou .termos que force width:100%, sobrescreva */
+.termos, .formGroup.termosContainer .termos {
+  width: auto;
+}
+
+
 
 @media (max-width: 768px) {
   .loginPage {
