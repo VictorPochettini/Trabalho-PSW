@@ -12,8 +12,9 @@ export default function CriacaoConta() {
   const [erro, setErro] = useState("");
   const [aceitouTermos, setAceitouTermos] = useState(false);
 
-    const senhasCoincidem = senha !== "" && senha === confirmarSenha;
-    const podeCriarConta = senhasCoincidem && aceitouTermos;
+  const senhasCoincidem = senha !== "" && senha === confSenha;
+  const podeCriarConta = senhasCoincidem && aceitouTermos;
+
   
 
   const toggleSenha = () => {
@@ -88,50 +89,58 @@ export default function CriacaoConta() {
           </div>
 
           {/* Senha */}
-          <div className={styles.formGroup}>
-            <label className={styles.fonte} htmlFor="senha">
-              Senha:
-            </label>
-            <div className={styles.inputContainer}>
-              <input
-                className={styles.input}
-                type={senhaVisivel ? "text" : "password"}
-                id="senha"
-                name="senha"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                required
-              />
-              <img
-                src={senhaVisivel ? olhoAberto : olhoFechado}
-                alt="visualizar senha"
-                className={styles.eyeIcon}
-                onClick={toggleSenha}
-              />
-            </div>
-          </div>
-
-          {/* Confirmar Senha */}
-          <div className={styles.formGroup}>
-            <label className={styles.fonte} htmlFor="confSenha">
-              Confirmação de Senha:
-            </label>
+        <div className={styles.formGroup}>
+        <label className={styles.fonte} htmlFor="senha">
+            Senha:
+        </label>
+        <div className={styles.inputContainer}>
             <input
-              className={styles.input}
-              type="password"
-              id="confSenha"
-              name="confSenha"
-              value={confSenha}
-              onChange={(e) => setConfSenha(e.target.value)}
-              required
+            className={`${styles.input} ${erro ? styles.inputErro : ""}`}
+            type={senhaVisivel ? "text" : "password"}
+            id="senha"
+            name="senha"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            required
             />
-            {/* Mensagem de erro */}
-            {erro && <p style={{ color: "red", marginTop: "5px" }}>{erro}</p>}
-          </div>
+            <img
+            src={senhaVisivel ? olhoAberto : olhoFechado}
+            alt="visualizar senha"
+            className={styles.eyeIcon}
+            onClick={toggleSenha}
+            />
+        </div>
+        </div>
+
+        {/* Confirmar Senha */}
+        <div className={styles.formGroup}>
+        <label className={styles.fonte} htmlFor="confSenha">
+            Confirmação de Senha:
+        </label>
+        <input
+            className={`${styles.input} ${erro ? styles.inputErro : ""}`}
+            type="password"
+            id="confSenha"
+            name="confSenha"
+            value={confSenha}
+            onChange={(e) => setConfSenha(e.target.value)}
+            required
+        />
+         {erro && <span className={styles.inputErrorMsg}>{erro}</span>}
+        </div>
+
 
           {/* Termos de uso */}
           <div className={`${styles.formGroup} ${styles.termosContainer}`}>
-            <input type="checkbox" id="termos" required />
+           <input
+            type="checkbox"
+            id="termos"
+            checked={aceitouTermos}
+            onChange={(e) => setAceitouTermos(e.target.checked)}
+            className={styles.termosCheckbox}
+            required
+            />
+
             <label className={styles.termos} htmlFor="termos">
               Eu aceito os{" "}
               <a className={styles.refs} href="TermosDeUso.html">
@@ -145,9 +154,13 @@ export default function CriacaoConta() {
           </div>
 
           {/* Botão Criar Conta */}
-          <button type="submit" className={styles.entrarbtn}>
+          <button
+            type="submit"
+            className={`${styles.entrarbtn} ${!podeCriarConta ? styles.desabilitado : ""}`}
+            disabled={!podeCriarConta}
+            >
             Criar Conta
-          </button>
+            </button>
         </form>
       </div>
     </div>

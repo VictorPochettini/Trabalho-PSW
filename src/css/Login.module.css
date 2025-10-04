@@ -16,6 +16,7 @@
   --roxoMEsc: #1a0f3c;
 }
 
+
 /* CORREÇÃO: Remover a classe do body e aplicar no container */
 .loginPage {
   background: linear-gradient(135deg, var(--azul) 0%, var(--roxoMEsc) 40%, var(--roxo) 100%);
@@ -118,7 +119,6 @@
   flex-direction: column;
   align-items: flex-start;
 }
-
 .entrarbtn {
   padding: 12px 20px;
   border-radius: 50px;
@@ -135,12 +135,20 @@
   box-shadow: 0 4px 15px rgba(94, 23, 235, 0.4);
 }
 
-.entrarbtn:hover {
-  background: linear-gradient(135deg, #5e17eb, #7a3fff);
+/* Hover só funciona se o botão estiver habilitado */
+.entrarbtn:enabled:hover {
+  background: linear-gradient(135deg, #4713af, #5e17eb); /* roxo mais escuro */
   box-shadow: 0 8px 25px rgba(94, 23, 235, 0.6);
   transform: translateY(-2px);
 }
 
+/* Estado desabilitado */
+.entrarbtn:disabled {
+  background: #2c0d57; /* roxo bem mais escuro */
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none; /* sem sombra pra parecer desabilitado */
+}
 /* CORREÇÃO: Input com largura total e área clicável completa */
 .input {
   width: 100%;
@@ -255,7 +263,63 @@
 .termos, .formGroup.termosContainer .termos {
   width: auto;
 }
+.tooltip {
+  visibility: visible;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  position: absolute;
+  bottom: 110%; /* acima do botão */
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 12px;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none; /* para não atrapalhar hover do mouse */
+}
 
+div:hover .tooltip {
+  opacity: 1;
+}
+.refs {
+    color:#ac83ff;
+    transition: all 0.3s ease;
+
+}
+.refs:hover{
+    font-size: 17px;
+    text-decoration-line: underline;   /* tipo da linha */
+    text-decoration-color:#ac83ff;  
+}
+.inputErro {
+  border: 3px solid rgb(141, 0, 0);
+  border-radius: 15px; /* opcional, para combinar com os inputs */
+  padding: 5px; /* opcional, ajusta o espaçamento interno */
+}
+/* Mantém vermelho mesmo em focus */
+.inputErro:focus {
+  border: 2px solid rgb(110, 0, 0);
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+
+/* Input com erro */
+.inputErro {
+  border: 1px solid #e74c3c; /* contorno vermelho */
+}
+
+/* Mensagem de erro consistente */
+.inputErrorMsg {
+  color: #e74c3c;
+  font-size: 13px;
+  margin-top: 5px;
+  display: block;
+  font-weight: 500;
+}
 
 
 @media (max-width: 768px) {
