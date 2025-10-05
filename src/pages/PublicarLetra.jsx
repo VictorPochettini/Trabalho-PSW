@@ -3,7 +3,7 @@ import React from 'react';
 import DescricaoInput from '../components/publicar/DescricaoInput';
 import GeneroSelect from '../components/publicar/GeneroSelect';
 import EnviarButton from '../components/publicar/EnviarButton';
-import '../publicar.css';
+import '../css/publicar.css';
 import PublicarLayout from '../components/layout/PublicarLayout';
 
 const PublicarLetra = () => {

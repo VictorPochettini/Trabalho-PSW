@@ -14,10 +14,11 @@ import ChallengePage from './pages/ChallengePage.jsx'
 import UserProfile from './pages/UserProfile.jsx'
 import Login from './pages/Login.jsx'
 import CreateAccount from './pages/CreateAccount.jsx'
+import ForYou from './pages/ForYou.jsx'
 
 const router = createBrowserRouter([
   {
-    path: "/",
+    path: "/InitialPage",
     element: <InitialPage/>
   },
   {
@@ -59,6 +60,10 @@ const router = createBrowserRouter([
   {
     path:"/cadastro",
     element:<CreateAccount/>
+  },
+  {
+    path: "/", 
+    element: <ForYou/>
   },
 ])
 
