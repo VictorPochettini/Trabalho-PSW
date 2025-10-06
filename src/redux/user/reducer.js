@@ -1,12 +1,37 @@
+import { createSlice } from "@reduxjs/toolkit";
+
+const accounts = [ {username:'admin', password:'admin'} ];
+
 const initialState = {
-    currentUser: null,
+  currentUser: null,
+  error: null
 };
 
-const userReducer = (state = initialState, action) => {
-    if (action.type === 'user/login') {
-        return { ...state, currentUser: 10 };
+const userSlice = createSlice({
+  name: "user",
+  initialState,
+  reducers: {
+    login: (state, action) => {
+      const { username, password } = action.payload;
+      const user = accounts.find(
+        u => u.username === username && u.password === password
+      );
+      if (user) {
+        state.currentUser = { username: user.username, name: user.name };
+        state.error = null;
+      } else {
+        state.error = "Usuário ou senha inválidos";
+      }
+    },
+    logout: (state) => {
+      state.currentUser = null;
+      state.error = null;
+    },
+    clearError: (state) => {
+      state.error = null;
     }
-    return state;
-};
+  }
+});
 
-export default userReducer;
+export const { login, logout, clearError } = userSlice.actions;
+export default userSlice.reducer;

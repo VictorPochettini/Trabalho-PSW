@@ -11,13 +11,16 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.0.1",
+    "@reduxjs/toolkit": "^2.9.0",
     "bootstrap": "^5.3.8",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.9.3",
-    "redux": "^5.0.1"
+    "redux": "^5.0.1",
+    "redux-thunk": "^3.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

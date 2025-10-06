@@ -16,59 +16,27 @@ import Login from './pages/Login.jsx'
 import CreateAccount from './pages/CreateAccount.jsx'
 import ForYou from './pages/ForYou.jsx'
 
+
 import { Provider } from "react-redux";
 import store from "./redux/store";
 
+import ProtectedRoute from './components/ProtectedRoute.jsx';
+
 const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <InitialPage/>
-  },
-  {
-    path: "/feed",
-    element: <Feed/>
-  },
-  {
-    path: "/discover",
-    element: <DiscoverArtist/>
-  },
-  {
-    path: "/desafios",
-    element: <ChallengePage/>
-  },
-  {
-    path: "/publicar/imagem",
-    element: <PublicarImagem/>
-  },
-  {
-    path: "/publicar/letra",
-    element: <PublicarLetra/>
-  },
-  {
-    path: "/publicar/musica",
-    element: <PublicarMusica/>
-  },
-  {
-    path: "/artistas",
-    element: <ArtistsPage/>
-  },
-  {
-    path: "/perfil",
-    element: <UserProfile/>
-  },
-  {
-    path: "/login",   
-    element: <Login/>
-  },
-  {
-    path:"/cadastro",
-    element:<CreateAccount/>
-  },
-  {
-    path: "/populares", 
-    element: <ForYou/>
-  },
-])
+  { path: "/", element: <InitialPage/> },
+  { path: "/feed", element: <ProtectedRoute><Feed/></ProtectedRoute> },
+  { path: "/discover", element: <ProtectedRoute><DiscoverArtist/></ProtectedRoute> },
+  { path: "/desafios", element: <ChallengePage/> },
+  { path: "/publicar/imagem", element: <ProtectedRoute><PublicarImagem/></ProtectedRoute> },
+  { path: "/publicar/letra", element: <ProtectedRoute><PublicarLetra/></ProtectedRoute> },
+  { path: "/publicar/musica", element: <ProtectedRoute><PublicarMusica/></ProtectedRoute> },
+  { path: "/artistas", element: <ArtistsPage/> },
+  { path: "/perfil", element: <ProtectedRoute><UserProfile/></ProtectedRoute> },
+  { path: "/login", element: <Login/> }, // público
+  { path: "/cadastro", element: <CreateAccount/> }, // público
+  { path: "/populares", element: <ProtectedRoute><ForYou/></ProtectedRoute> },
+]);
+
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
