@@ -841,6 +841,7 @@ nav {
 }
 
 .follow-button {
+  color: white;
   border-radius: 12px;
   font-weight: 600;
   padding: 0.5rem 1rem;
@@ -1423,6 +1424,7 @@ body {
 }
 
 .follow-button.following {
+    color:white;
     background: linear-gradient(135deg, #3048b1 0%, #4c1f79 100%);
 }
 
@@ -1815,18 +1817,19 @@ nav {
 }
 
 .follow-button {
+    color: white;
     border-radius: 12px;
     font-weight: 600;
     padding: 0.5rem 1rem;
     min-width: 100px;
     border: none;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
     transition: all 0.3s ease;
 }
 
 .follow-button.following {
     background: linear-gradient(135deg, #3048b1 0%, #4c1f79 100%);
+    color: white;
 }
 
 .follow-button:hover {

@@ -1,6 +1,6 @@
 // src/pages/DiscoverArtist.jsx
 import React, { useState } from 'react';
-import Header from '../components/Header';
+import Header from '../components/Header2';
 
 const DiscoverArtist = () => {
   const [currentArtist, setCurrentArtist] = useState(null);

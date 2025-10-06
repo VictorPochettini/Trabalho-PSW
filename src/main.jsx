@@ -18,7 +18,7 @@ import ForYou from './pages/ForYou.jsx'
 
 const router = createBrowserRouter([
   {
-    path: "/InitialPage",
+    path: "/",
     element: <InitialPage/>
   },
   {
@@ -62,7 +62,7 @@ const router = createBrowserRouter([
     element:<CreateAccount/>
   },
   {
-    path: "/", 
+    path: "/populares", 
     element: <ForYou/>
   },
 ])

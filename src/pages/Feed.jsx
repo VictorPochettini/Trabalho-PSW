@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useState } from 'react';
-import Header from '../components/Header';
+import Header from '../components/Header2';
 import PostCard from '../components/PostCard';
 import MonetizationPopup from '../components/MonetizationPopup';
 import CommentsPopup from '../components/CommentsPopup';

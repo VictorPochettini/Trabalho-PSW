@@ -1,63 +1,41 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import logo from '../images/ArtBeat_Branco.png';
+import styles from '../css/Header.module.css';
 
 const HeaderForYou = () => {
   const location = useLocation();
-  
+
   const isActiveLink = (path) => {
     const currentPath = location.pathname.replace('/', '');
     const comparePath = path.replace('/', '');
-    return currentPath === '' && path === 'feed' || currentPath === comparePath;
+    return (currentPath === '' && path === 'feed') || currentPath === comparePath;
   };
 
   return (
-    <div className="topo">
-      <header>
-        <nav>
-          <div className="imagemLogo">
-            <img src={logo} className="logo" alt="logo art beat" />
+    <div className={`${styles.topo} container-fluid`}>
+      <header className="w-100">
+        <nav className="d-flex align-items-center justify-content-between">
+          <div className="d-flex align-items-center">
+            <img src={logo} className={styles.logo} alt="logo art beat" />
           </div>
-          <ul className="menu">
-            <li className="dropdown">
-              <a 
-                href="/feed" 
-                className={isActiveLink('feed') ? 'enfase' : ''}
-              >
-                Feed
-              </a>
+          <ul className={`${styles.menu} mb-0`}>
+            <li>
+              <Link to="/feed" className={isActiveLink('feed') ? styles.enfase : ''}>Feed</Link>
             </li>
-            <li className="dropdown">
-              <a 
-                href="/artistas" 
-                className={isActiveLink('artistas') ? 'enfase' : ''}
-              >
-                Populares
-              </a>
+            <li>
+              <Link to="/populares" className={isActiveLink('populares') ? styles.enfase : ''}>Populares</Link>
             </li>
-            <li className="dropdown">
-              <a 
-                href="/discover" 
-                className={isActiveLink('discover') ? 'enfase' : ''}
-              >
-                Aleatórios
-              </a>
+            <li>
+              <Link to="/discover" className={isActiveLink('discover') ? styles.enfase : ''}>Aleatórios</Link>
             </li>
-            <li className="dropdown">
-              <a 
-                href="/desafios" 
-                className={isActiveLink('desafios') ? 'enfase' : ''}
-              >
-                Desafios
-              </a>
+            <li>
+              <Link to="/desafios" className={isActiveLink('desafios') ? styles.enfase : ''}>Desafios</Link>
             </li>
-            <li className="dropdown">
-              <a href="/perfil">
-                <i 
-                  className="fa-solid fa-circle-user fa-xl" 
-                  style={{ color: '#ffffff' }}
-                ></i>
-              </a>
+            <li>
+              <Link to="/perfil">
+                <i className={`fa-solid fa-circle-user fa-xl ${styles.perfilIcon}`}></i>
+              </Link>
             </li>
           </ul>
         </nav>

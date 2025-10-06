@@ -1,0 +1,280 @@
+.topo {
+  background: linear-gradient(120deg, #050225 0%, #0d0b33 40%, #2e2573 100%);
+  margin: 20px auto 0 auto;
+  padding: 0.75rem 1.5rem;
+  width: 95%;
+  min-height: 90px;
+  border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+  z-index: 10;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* brilho animado */
+.topo::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.07),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: brilho 6s infinite linear;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes brilho {
+  0% { left: -50%; }
+  100% { left: 100%; }
+}
+
+/* Logo */
+.logo {
+  width: 75px;
+  height: 75px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.08) rotate(-2deg);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.25);
+}
+
+/* Navegação principal */
+nav {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  list-style: none;
+  gap: 2.5rem;
+  margin: 0;
+  padding: 0;
+  font-size: 1.15rem;
+}
+
+.menu li a {
+  color: white;
+  text-decoration: none;
+  position: relative;
+  transition: color 0.3s ease, transform 0.2s ease;
+  padding: 2px 0;
+}
+
+.menu li a:hover {
+  color: rgb(215, 215, 215);
+  transform: translateY(-2px);
+}
+
+/* Sublinhar animado com transição suave */
+.menu li a::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #5e17eb, rgba(255, 255, 255, 0.416));
+  border-radius: 2px;
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.menu li a:hover::after,
+.menu li a.enfase::after {
+  width: 100%;
+}
+
+/* Ícone de perfil */
+.perfilIcon {
+  color: #fff;
+  transition: transform 0.3s ease, color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.perfilIcon:hover {
+  color: #d6d6d6;
+  transform: scale(1.1) rotate(5deg);
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+}
+
+/* Responsividade */
+@media (max-width: 992px) {
+  .topo {
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    height: auto;
+  }
+
+  .logo {
+    width: 65px;
+    height: 65px;
+    margin-bottom: 0.5rem;
+  }
+
+  .menu {
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    justify-content: center;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .topo {
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .menu {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .menu li a {
+    font-size: 1.05rem;
+  }
+
+  .logo {
+    width: 55px;
+    height: 55px;
+  }
+}
+
+/* Garantindo hierarquia de z-index */
+.topo { position: relative; z-index: 1; }
+nav, .menu, .menu li, .menu li a { position: relative; z-index: 2; }
+
+/* ======================= */
+/* Header principal        */
+/* ======================= */
+
+/* brilho animado */
+.topo::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.07),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: brilho 6s infinite linear;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes brilho {
+  0% { left: -50%; }
+  100% { left: 100%; }
+}
+
+/* Logo */
+.logo {
+  width: 70px;
+  height: 70px;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.logo:hover {
+  transform: scale(1.1) rotate(-5deg);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+/* Navegação principal */
+.menu li a {
+  color: #fff;
+  text-decoration: none;
+  position: relative;
+  padding: 4px 0;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.menu li a:hover {
+  color: #d8d8ff;
+  transform: translateY(-3px);
+}
+
+/* Sublinhar animado */
+.menu li a::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #7b2ff7, #f107a3);
+  border-radius: 3px;
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.menu li a:hover::after,
+.menu li a.enfase::after {
+  width: 100%;
+}
+
+/* Ícone perfil */
+.perfilIcon {
+  color: #fff;
+  transition: transform 0.3s ease, text-shadow 0.3s ease;
+}
+
+.perfilIcon:hover {
+  transform: scale(1.15) rotate(5deg);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  color: #d8d8ff;
+}
+
+/* Responsividade com Bootstrap */
+@media (max-width: 992px) {
+  .topo {
+    flex-direction: column;
+    align-items: center;
+  }
+  .menu {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .topo {
+    border-radius: 0;
+    padding: 0.5rem 1rem;
+  }
+  .logo {
+    width: 55px;
+    height: 55px;
+  }
+  .menu li a {
+    font-size: 0.95rem;
+  }
+}

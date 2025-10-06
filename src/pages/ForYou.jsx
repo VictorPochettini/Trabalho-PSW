@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import HeaderForYou from '../components/Header2';
 import MonetizationPopup from '../components/MonetizationPopup';
-import '../css/ForYou.css';
+import styles from '../css/ForYou.module.css';
 
 const ForYou = () => {
   // Estados para monetização
@@ -187,43 +187,41 @@ const ForYou = () => {
     <>
       <HeaderForYou />
       
-      {/* Conteúdo Principal */}
-      <div className="container">
-        <h1 className="page-title">Artistas em Destaque</h1>
-        <p className="page-subtitle">
+      <div className={styles.container}>
+        <h1 className={styles.pageTitle}>Artistas em Destaque</h1>
+        <p className={styles.pageSubtitle}>
           Descubra os artistas mais populares e bem avaliados da plataforma
         </p>
         
-        {/* Filtros */}
-        <div className="filters">
-          <div className="filter-buttons">
+        <div className={styles.filters}>
+          <div className={styles.filterButtons}>
             <button 
-              className={`filter-btn ${activeFilter === 'all' ? 'active' : ''}`}
+              className={`${styles.filterBtn} ${activeFilter === 'all' ? styles.active : ''}`}
               onClick={() => handleFilterClick('all')}
             >
               Todos
             </button>
             <button 
-              className={`filter-btn ${activeFilter === 'musica' ? 'active' : ''}`}
+              className={`${styles.filterBtn} ${activeFilter === 'musica' ? styles.active : ''}`}
               onClick={() => handleFilterClick('musica')}
             >
               Música
             </button>
             <button 
-              className={`filter-btn ${activeFilter === 'letra' ? 'active' : ''}`}
+              className={`${styles.filterBtn} ${activeFilter === 'letra' ? styles.active : ''}`}
               onClick={() => handleFilterClick('letra')}
             >
               Letra
             </button>
             <button 
-              className={`filter-btn ${activeFilter === 'arte' ? 'active' : ''}`}
+              className={`${styles.filterBtn} ${activeFilter === 'arte' ? styles.active : ''}`}
               onClick={() => handleFilterClick('arte')}
             >
               Arte
             </button>
           </div>
           
-          <div className="sort-select">
+          <div className={styles.sortSelect}>
             <label htmlFor="sort-by">Ordenar por:</label>
             <select id="sort-by" value={sortBy} onChange={handleSortChange}>
               <option value="rating">Maior Avaliação</option>
@@ -233,43 +231,42 @@ const ForYou = () => {
           </div>
         </div>
         
-        {/* Grid de Artistas */}
-        <div className="artists-grid">
+        <div className={styles.artistsGrid}>
           {filteredArtists.map(artist => (
-            <div key={artist.id} className="artist-card" data-category={normalizeCategory(artist.category)}>
-              <div className="artist-header">
-                <div className="artist-avatar">{artist.avatar}</div>
+            <div key={artist.id} className={styles.artistCard} data-category={normalizeCategory(artist.category)}>
+              <div className={styles.artistHeader}>
+                <div className={styles.artistAvatar}>{artist.avatar}</div>
               </div>
               
-              <div className="artist-info">
-                <h3 className="artist-name">{artist.name}</h3>
-                <span className="artist-category">{artist.category}</span>
+              <div className={styles.artistInfo}>
+                <h3 className={styles.artistName}>{artist.name}</h3>
+                <span className={styles.artistCategory}>{artist.category}</span>
                 
-                <div className="artist-stats">
-                  <div className="stat">
-                    <div className="stat-value">{artist.followers.toLocaleString()}</div>
-                    <div className="stat-label">Seguidores</div>
+                <div className={styles.artistStats}>
+                  <div className={styles.stat}>
+                    <div className={styles.statValue}>{artist.followers.toLocaleString()}</div>
+                    <div className={styles.statLabel}>Seguidores</div>
                   </div>
-                  <div className="stat">
-                    <div className="stat-value">{artist.works}</div>
-                    <div className="stat-label">Obras</div>
+                  <div className={styles.stat}>
+                    <div className={styles.statValue}>{artist.works}</div>
+                    <div className={styles.statLabel}>Obras</div>
                   </div>
                 </div>
                 
-                <div className="artist-rating">
-                  <div className="rating-stars">{renderStars(artist.rating)}</div>
-                  <span className="rating-value">{artist.rating}</span>
+                <div className={styles.artistRating}>
+                  <div className={styles.ratingStars}>{renderStars(artist.rating)}</div>
+                  <span className={styles.ratingValue}>{artist.rating}</span>
                 </div>
                 
-                <div className="artist-actions">
+                <div className={styles.artistActions}>
                   <button 
-                    className={`btn-follow ${artist.isFollowing ? 'seguindo' : ''}`}
+                    className={`${styles.btnFollow} ${artist.isFollowing ? styles.seguindo : ''}`}
                     onClick={() => handleFollowClick(artist.id)}
                   >
                     {artist.isFollowing ? 'Seguindo' : 'Seguir'}
                   </button>
                   <button 
-                    className="btn-monetize"
+                    className={styles.btnMonetize}
                     onClick={() => handleMonetizeClick(artist.username)}
                   >
                     <i className="fa-solid fa-sack-dollar"></i>
@@ -281,7 +278,6 @@ const ForYou = () => {
         </div>
       </div>
 
-      {/* Pop-up de Monetização */}
       <MonetizationPopup
         show={showMonetization}
         onClose={handleCloseMonetization}
