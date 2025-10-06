@@ -4,6 +4,22 @@ import botaoVolta from "../images/botaoVolta.png";
 import logo from "../images/ArtBeat_Branco.png";
 import olhoFechado from "../images/olhoFechadoRoxo.png";
 import olhoAberto from "../images/olhoAbertoRoxo.png";
+import { useNavigate } from 'react-router-dom';
+
+// Componente BackButton
+const BackButton = () => {
+  const navigate = useNavigate();
+
+  return (
+    <button
+      type="button"
+      className={styles.backButton}
+      onClick={() => navigate(-1)} // volta uma página
+    >
+      <img src={botaoVolta} alt="Voltar" />
+    </button>
+  );
+};
 
 export default function CriacaoConta() {
   const [senhaVisivel, setSenhaVisivel] = useState(false);
@@ -14,8 +30,6 @@ export default function CriacaoConta() {
 
   const senhasCoincidem = senha !== "" && senha === confSenha;
   const podeCriarConta = senhasCoincidem && aceitouTermos;
-
-  
 
   const toggleSenha = () => {
     setSenhaVisivel((prev) => !prev);
@@ -45,9 +59,7 @@ export default function CriacaoConta() {
   return (
     <div className={styles.loginPage}>
       {/* Botão voltar */}
-      <a href="javascript:history.back()" className={styles.backButton}>
-        <img src={botaoVolta} alt="voltar" />
-      </a>
+      <BackButton />
 
       <div className={styles.container}>
         {/* Logo */}
@@ -89,58 +101,56 @@ export default function CriacaoConta() {
           </div>
 
           {/* Senha */}
-        <div className={styles.formGroup}>
-        <label className={styles.fonte} htmlFor="senha">
-            Senha:
-        </label>
-        <div className={styles.inputContainer}>
+          <div className={styles.formGroup}>
+            <label className={styles.fonte} htmlFor="senha">
+              Senha:
+            </label>
+            <div className={styles.inputContainer}>
+              <input
+                className={`${styles.input} ${erro ? styles.inputErro : ""}`}
+                type={senhaVisivel ? "text" : "password"}
+                id="senha"
+                name="senha"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                required
+              />
+              <img
+                src={senhaVisivel ? olhoAberto : olhoFechado}
+                alt="visualizar senha"
+                className={styles.eyeIcon}
+                onClick={toggleSenha}
+              />
+            </div>
+          </div>
+
+          {/* Confirmar Senha */}
+          <div className={styles.formGroup}>
+            <label className={styles.fonte} htmlFor="confSenha">
+              Confirmação de Senha:
+            </label>
             <input
-            className={`${styles.input} ${erro ? styles.inputErro : ""}`}
-            type={senhaVisivel ? "text" : "password"}
-            id="senha"
-            name="senha"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            required
+              className={`${styles.input} ${erro ? styles.inputErro : ""}`}
+              type="password"
+              id="confSenha"
+              name="confSenha"
+              value={confSenha}
+              onChange={(e) => setConfSenha(e.target.value)}
+              required
             />
-            <img
-            src={senhaVisivel ? olhoAberto : olhoFechado}
-            alt="visualizar senha"
-            className={styles.eyeIcon}
-            onClick={toggleSenha}
-            />
-        </div>
-        </div>
-
-        {/* Confirmar Senha */}
-        <div className={styles.formGroup}>
-        <label className={styles.fonte} htmlFor="confSenha">
-            Confirmação de Senha:
-        </label>
-        <input
-            className={`${styles.input} ${erro ? styles.inputErro : ""}`}
-            type="password"
-            id="confSenha"
-            name="confSenha"
-            value={confSenha}
-            onChange={(e) => setConfSenha(e.target.value)}
-            required
-        />
-         {erro && <span className={styles.inputErrorMsg}>{erro}</span>}
-        </div>
-
+            {erro && <span className={styles.inputErrorMsg}>{erro}</span>}
+          </div>
 
           {/* Termos de uso */}
           <div className={`${styles.formGroup} ${styles.termosContainer}`}>
-           <input
-            type="checkbox"
-            id="termos"
-            checked={aceitouTermos}
-            onChange={(e) => setAceitouTermos(e.target.checked)}
-            className={styles.termosCheckbox}
-            required
+            <input
+              type="checkbox"
+              id="termos"
+              checked={aceitouTermos}
+              onChange={(e) => setAceitouTermos(e.target.checked)}
+              className={styles.termosCheckbox}
+              required
             />
-
             <label className={styles.termos} htmlFor="termos">
               Eu aceito os{" "}
               <a className={styles.refs} href="TermosDeUso.html">
@@ -156,11 +166,13 @@ export default function CriacaoConta() {
           {/* Botão Criar Conta */}
           <button
             type="submit"
-            className={`${styles.entrarbtn} ${!podeCriarConta ? styles.desabilitado : ""}`}
+            className={`${styles.entrarbtn} ${
+              !podeCriarConta ? styles.desabilitado : ""
+            }`}
             disabled={!podeCriarConta}
-            >
+          >
             Criar Conta
-            </button>
+          </button>
         </form>
       </div>
     </div>

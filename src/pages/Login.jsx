@@ -1,17 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "../css/Login.module.css";
 import botaoVolta from "../images/botaoVolta.png";
 import logo from "../images/ArtBeat_Branco.png";
 import olhoFechado from "../images/olhoFechadoRoxo.png";
 import olhoAberto from "../images/olhoAbertoRoxo.png";
-import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+// Componente BackButton
+const BackButton = () => {
+  const navigate = useNavigate();
+
+  return (
+    <button
+      type="button"
+      className={styles.backButton}
+      onClick={() => navigate(-1)}
+    >
+      <img src={botaoVolta} alt="Voltar" />
+    </button>
+  );
+};
 
 export default function Login() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
-
-  const voltarPagina = () => {
-    window.history.back();
-  };
 
   const alternarSenha = () => {
     setMostrarSenha(!mostrarSenha);
@@ -20,7 +31,7 @@ export default function Login() {
   useEffect(() => {
     // Adiciona classe ao body para garantir overflow hidden
     document.body.classList.add(styles.loginBody);
-    
+
     // Remove quando sair da página
     return () => {
       document.body.classList.remove(styles.loginBody);
@@ -30,10 +41,8 @@ export default function Login() {
   return (
     <div className={styles.pagefe}>
       <div className={styles.loginPage}>
-        {/* CORREÇÃO: Botão voltar com classe específica */}
-        <a className={styles.backButton} onClick={voltarPagina}>
-          <img src={botaoVolta} alt="voltar" />
-        </a>
+        {/* Botão voltar */}
+        <BackButton />
 
         <div className={styles.container}>
           <div style={{ textAlign: "center" }}>
@@ -45,7 +54,7 @@ export default function Login() {
           </div>
 
           <form className={styles.formContainer}>
-            {/* CORREÇÃO: Grupo do usuário */}
+            {/* Usuário */}
             <div className={styles.formGroup}>
               <label className={styles.fonte} htmlFor="usuario">
                 Usuário:
@@ -60,7 +69,7 @@ export default function Login() {
               />
             </div>
 
-            {/* CORREÇÃO: Grupo da senha com container correto */}
+            {/* Senha */}
             <div className={styles.formGroup}>
               <label className={styles.fonte} htmlFor="senha">
                 Senha:

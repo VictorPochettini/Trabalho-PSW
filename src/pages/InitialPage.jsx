@@ -2,10 +2,12 @@ import React from 'react';
 import '../css/InitialPage.css';
 import NavbarAL from '../components/NavbarAL';
 import FooterAL from '../components/FooterAL';
+import VerificaLogin from '../components/VerificaLogin';
 
 const InitialPage = () => {
   return (
     <div className="home-page">
+      <VerificaLogin/>
       <NavbarAL />
       
       {/* Hero Section */}

@@ -16,6 +16,9 @@ import Login from './pages/Login.jsx'
 import CreateAccount from './pages/CreateAccount.jsx'
 import ForYou from './pages/ForYou.jsx'
 
+import { Provider } from "react-redux";
+import store from "./redux/store";
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -69,6 +72,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <RouterProvider router={router} />
-  </StrictMode>,
-)
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>
+  </StrictMode>
+);
