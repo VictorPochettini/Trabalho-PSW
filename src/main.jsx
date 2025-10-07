@@ -15,6 +15,7 @@ import UserProfile from './pages/UserProfile.jsx'
 import Login from './pages/Login.jsx'
 import CreateAccount from './pages/CreateAccount.jsx'
 import ForYou from './pages/ForYou.jsx'
+import L_ChallengePage from './pages/L_ChallengePage.jsx'
 
 
 import { Provider } from "react-redux";
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
   { path: "/login", element: <Login/> }, // público
   { path: "/cadastro", element: <CreateAccount/> }, // público
   { path: "/populares", element: <ProtectedRoute><ForYou/></ProtectedRoute> },
+    { path: "/Ldesafios", element: <ProtectedRoute><L_ChallengePage/></ProtectedRoute> },
 ]);
 
 

@@ -42,7 +42,7 @@ const Header = () => {
             <li className="dropdown">
               <a 
                 href="/desafios" 
-                className={isActiveLink('desafios') ? 'enfase' : ''}
+                className={isActiveLink('desafios') || isActiveLink('Ldesafios') ? 'enfase' : ''}
               >
                 Desafios
               </a>
