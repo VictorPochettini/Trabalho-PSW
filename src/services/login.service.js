@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-const db = [ {username:'admin', password:'admin'} ];
+const db = [ {username:'admin', password:'admin'}, {username: "teste", password: "teste"} ];
 
 export default {
     authenticate: async ({username, password}) => {

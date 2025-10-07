@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const accounts = [ {username:'admin', password:'admin'} ];
+const accounts = [ {username:'admin', password:'admin'}, {username: "diogo", password: "cefet"} ];
 
 const initialState = {
   currentUser: null,

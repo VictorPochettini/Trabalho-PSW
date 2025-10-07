@@ -2,11 +2,13 @@
 import React, { useState, useRef } from 'react';
 import FloatingActionButton from '../components/FloatingActionButton';
 import '../css/UserProfile.css';
+import { useSelector } from 'react-redux';
 
 const UserProfile = () => {
+  const currentUser = useSelector(state => state.user.currentUser);
   const [userData, setUserData] = useState({
-    name: "username0109",
-    username: "@username0109",
+    name: currentUser.username,
+    username: "@"+currentUser.username,
     followers: 0,
     following: 0,
     profilePhoto: null,
