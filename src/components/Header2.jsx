@@ -30,7 +30,7 @@ const HeaderForYou = () => {
               <Link to="/discover" className={isActiveLink('discover') ? styles.enfase : ''}>Aleatórios</Link>
             </li>
             <li>
-              <Link to="/desafios" className={isActiveLink('desafios') ? styles.enfase : ''}>Desafios</Link>
+              <Link to="/Ldesafios" className={isActiveLink('desafios') ? styles.enfase : ''}>Desafios</Link>
             </li>
             <li>
               <Link to="/perfil">

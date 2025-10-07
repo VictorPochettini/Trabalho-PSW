@@ -44,7 +44,7 @@ const PostCard = ({ post, onMonetizeClick, onCommentClick }) => {
                       <i className="fas fa-dollar-sign me-1"></i>Apoiar
                     </button>
                     <button
-                      className={`btn btn-sm follow-button ${isFollowing ? 'following' : ''}`}
+                      className={`btn btn-sm follow-button ${isFollowing ? 'following' : 'notfollowing'}`}
                       onClick={handleFollowToggle}
                     >
                       {isFollowing ? 'Seguindo' : 'Seguir'}
@@ -97,7 +97,7 @@ const PostCard = ({ post, onMonetizeClick, onCommentClick }) => {
                         className="star-button"
                         onClick={() => handleStarClick(starValue)}
                         style={{
-                          color: starValue <= rating ? '#fbbf24' : '#e5e7eb'
+                          color: starValue <= rating ? '#fbbf24' : '#b8bec9'
                         }}
                       >
                         ★
@@ -113,7 +113,7 @@ const PostCard = ({ post, onMonetizeClick, onCommentClick }) => {
                     onClick={() => onCommentClick(post.id)}
                   >
                     <i className="far fa-comment-dots"></i>
-                    <span>Comentar</span>
+                    <span className="comentarioTexto"> Comentar</span>
                   </button>
                 </div>
               </div>

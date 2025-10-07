@@ -1832,6 +1832,11 @@ nav {
     color: white;
 }
 
+.follow-button.notfollowing {
+    background: linear-gradient(135deg, #3048b1 0%, #4c1f79 100%);
+    color: white;
+}
+
 .follow-button:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -2027,5 +2032,11 @@ nav {
     .post-card {
         max-width: 95%; /* Ajuste para telas menores */
     }
+}
+.fa-comment-dots {
+  color: white;
+}
+.comentarioTexto {
+  color: white;
 }
 

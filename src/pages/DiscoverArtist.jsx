@@ -64,7 +64,7 @@ const DiscoverArtist = () => {
                 className="btn cat-btn px-4 py-3"
                 onClick={() => getRandomArtist('visual')}
               >
-                <i className="fa-solid fa-paintbrush me-2"></i> Visual
+                <i className="fas fa-image"></i> Visual
               </button>
             </div>
 

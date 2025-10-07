@@ -1,5 +1,4 @@
 import React from 'react';
-import '../css/InitialPage.css';
 import { useState } from 'react';
 import { useEffect } from 'react';
 import NavbarAL from '../components/NavbarAL';
@@ -157,9 +156,6 @@ const ChallengePage = () => {
                             alt="Imagem do desafio" 
                             className="img-fluid rounded mb-4 desafio-img"
                           />
-                          <button className="btn btn-primary btn-lg">
-                            Participar do Desafio
-                          </button>
                         </div>
                       </div>
                     </div>

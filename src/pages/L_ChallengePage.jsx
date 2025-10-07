@@ -1,9 +1,7 @@
 import React from 'react';
-import '../css/InitialPage.css';
 import { useState } from 'react';
 import { useEffect } from 'react';
-import NavbarAL from '../components/NavbarAL';
-import FooterAL from '../components/FooterAL';
+import Header2 from '../components/Header2';
 
 const L_ChallengePage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -123,8 +121,8 @@ const L_ChallengePage = () => {
 
   return (
     <div className="desafios-page">
-      <NavbarAL/>
-      
+      <Header2/>
+      <br/>
       {/* Seção Principal de Desafios com Bootstrap Grid */}
       <section className="desafios-hero py-5">
         <div className="container">
@@ -235,8 +233,6 @@ const L_ChallengePage = () => {
           </div>
         </div>
       </section>
-
-      <FooterAL/>
     </div>
   );
 };

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useState } from 'react';
-import '../css/InitialPage.css';
 import NavbarAL from '../components/NavbarAL';
 import FooterAL from '../components/FooterAL';
 
@@ -80,7 +79,7 @@ const ArtistsPage = () => {
                     onClick={() => getRandomArtist('visual')}
                     disabled={isLoading}
                   >
-                    <i className="fa-solid fa-paintbrush me-2"></i>
+                    <i className="fas fa-image me-2"></i>
                     Visual
                   </button>
                 </div>
@@ -106,7 +105,7 @@ const ArtistsPage = () => {
                       <div className="artist-placeholder">
                         <i className="fa-solid fa-user-circle artist-placeholder-icon"></i>
                         <h2 className="h4 mt-3">Artista</h2>
-                        <p className="text-muted">Perfil a ser sorteado...</p>
+                        <p className="text-muted">Perfil sendo sorteado...</p>
                         <button className="btn btn-outline-primary" disabled>
                           Seguir
                         </button>
