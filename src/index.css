@@ -95,69 +95,6 @@ nav {
   align-items: center;
 }
 
-/* sem o menu dropdown n tem mais essas classes
-.dropbtn {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 14px;
-  cursor: pointer;
-  margin-left: 5px;
-  transition: transform 0.3s;
-  padding: 5px;
-  border-radius: 50%;
-}
-
- .dropbtn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.submenu {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background: var(--azul);
-  list-style: none;
-  padding: 15px;
-  border-radius: 10px;
-  min-width: 250px;
-  z-index: 1001; /* Maior que o z-index do .topo 
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  margin-top: 15px;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.submenu li {
-  padding: 8px 0;
-  margin: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.submenu li:last-child {
-  border-bottom: none;
-}
-
-.submenu li a {
-  color: white;
-  text-decoration: none;
-  padding: 8px 15px;
-  display: block;
-  border-radius: 5px;
-  transition: all 0.3s;
-}
-
-.submenu li a:hover {
-  background-color: var(--roxo);
-  transform: translateX(5px);
-}
-
-/* JavaScript vai controlar a exibição 
-.submenu.show {
-  display: block;
-}
-/*end menu antigo*/
 
 /*menu responsivo*/
 @media (max-width: 768px){
@@ -175,17 +112,6 @@ nav {
   .imagemLogo{
     margin-right: 30px;
   }
-  /*
-  .submenu {
-        min-width: 200px;
-        display: none;  
-        transform: translateX(-50%);
-        padding: 0 auto;
-    }
-
-  .submenu li {
-        padding: 5px 10px;                
-  }*/
 }
 /*end menu responsivo*/
 

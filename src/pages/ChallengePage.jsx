@@ -134,7 +134,7 @@ const ChallengePage = () => {
               <div className="row align-items-center mb-5">
                 <div className="col-1 text-start">
                   <button 
-                    className="btn btn-outline-primary btn-lg rounded-circle"
+                    className="btn btncircular btn-lg rounded-circle"
                     onClick={prevChallenge}
                     disabled={isTransitioning}
                   >
@@ -181,7 +181,7 @@ const ChallengePage = () => {
                                     height="80"
                                   />
                                   <h3 className="h6 mb-2">{winner.name}</h3>
-                                  <button className="btn btn-outline-primary btn-sm">
+                                  <button className="btn btnver btn-sm">
                                     Ver post
                                   </button>
                                 </div>
@@ -197,7 +197,7 @@ const ChallengePage = () => {
                 
                 <div className="col-1 text-end">
                   <button 
-                    className="btn btn-outline-primary btn-lg rounded-circle"
+                    className="btn btncircular btn-lg rounded-circle"
                     onClick={nextChallenge}
                     disabled={isTransitioning}
                   >

@@ -2,13 +2,14 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import logo from '../images/ArtBeat_Branco.png';
 
+
 const NavbarAL = () => {
   const location = useLocation(); 
 
   return (
     <nav className="navbar navbar-expand-lg navbar-artbeat">
       <div className="container">
-        <Link className="navbar-brand" to="/"> {/* ← Mude <a> para <Link> */}
+        <Link className="navbar-brand" to="/"> 
           <img src={logo} alt="ArtBeat" width="80" height="80" className="me-2" />
         </Link>
         

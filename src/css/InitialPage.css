@@ -74,6 +74,56 @@ body {
   color: var(--artbeat-roxo-claro) !important;
 }
 
+/*responsividade*/
+@media (max-width: 768px) {
+  .navbar-artbeat {
+    padding: 0.5rem 0;
+  }
+  
+  .navbar-artbeat .container {
+    padding: 0 1rem;
+  }
+  
+  .navbar-artbeat .navbar-collapse {
+    background: linear-gradient(120deg, var(--artbeat-azul) 0%, #0d0b33 60%, #2e2573 100%);
+    margin: 0 -1rem;
+    padding: 0 1rem;
+    border-radius: 0 0 10px 10px;
+  }
+  
+  .navbar-artbeat .nav-link {
+    font-size: 1.1rem;
+    padding: 0.5rem 6.5rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .navbar-artbeat .nav-link:last-child {
+    border-bottom: none;
+  }
+  
+  .navbar-artbeat .d-flex {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 0;
+  }
+  
+  .navbar-artbeat .btn {
+    width: 100%;
+    max-width: 250px;
+    margin: 0.25rem 0;
+    padding: 0.75rem 1.5rem !important;
+  }
+  
+  .navbar-artbeat .me-2 {
+    margin-right: 0 !important;
+  }
+  
+  .navbar-artbeat .me-5 {
+    margin-right: 0 !important;
+  }
+}
+
 /* ===== ESTILOS GERAIS ===== */
 .home-page {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -111,6 +161,55 @@ body {
   justify-content: center;
   flex-wrap: wrap;
   margin-top: 2rem;
+}
+
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 768px) {
+  .hero-artbeat h1.display-4 {
+    font-size: 2.5rem;
+  }
+  
+  .hero-artbeat .lead {
+    font-size: 1.1rem;
+  }
+  
+  .hero-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .hero-buttons .btn {
+    width: 100%;
+    max-width: 300px;
+    margin-bottom: 1rem;
+  }
+
+  .btn-outline-primary{
+    margin-right: 12px;
+    height: 62px !important;
+    width: 300px !important;
+  }
+    
+  .display-5 {
+    font-size: 2rem !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-artbeat {
+    min-height: 70vh;
+    padding: 3rem 0;
+  }
+  
+  .hero-artbeat h1.display-4 {
+    font-size: 2rem;
+  }
+  
+  .features-artbeat,
+  .challenge-artbeat,
+  .artists-artbeat {
+    padding: 3rem 0;
+  }
 }
 
 /* ===== FEATURES SECTION ===== */
@@ -277,49 +376,6 @@ body {
   opacity: 0.7;
 }
 
-/* ===== RESPONSIVIDADE ===== */
-@media (max-width: 768px) {
-  .hero-artbeat h1.display-4 {
-    font-size: 2.5rem;
-  }
-  
-  .hero-artbeat .lead {
-    font-size: 1.1rem;
-  }
-  
-  .hero-buttons {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .hero-buttons .btn {
-    width: 100%;
-    max-width: 300px;
-    margin-bottom: 1rem;
-  }
-  
-  .display-5 {
-    font-size: 2rem !important;
-  }
-}
-
-@media (max-width: 576px) {
-  .hero-artbeat {
-    min-height: 70vh;
-    padding: 3rem 0;
-  }
-  
-  .hero-artbeat h1.display-4 {
-    font-size: 2rem;
-  }
-  
-  .features-artbeat,
-  .challenge-artbeat,
-  .artists-artbeat {
-    padding: 3rem 0;
-  }
-}
-
 /*pagina artistas*/
 /* Hero Section Artistas */
 .hero-artistas {
@@ -483,6 +539,27 @@ body {
   border: 3px solid var(--artbeat-roxo);
 }
 
+.btncircular{
+  background-color: transparent !important;
+  border: 2px solid var(--artbeat-roxo) !important;
+  color: var(--artbeat-roxo) !important;
+  margin-left: -25px;
+}
+
+.btncircular:hover{
+  background: linear-gradient(135deg, var(--artbeat-roxo-claro), var(--artbeat-roxo)) !important;
+  border-color: var(--artbeat-roxo) !important;
+  color: var(--branco) !important;
+}
+
+.btnver{
+  background-color: transparent !important;
+  border: 2px solid var(--artbeat-roxo) !important;
+  color: var(--artbeat-roxo) !important;
+  border-radius: 30px;
+  font-weight: 600;
+}
+
 /* Desafios da Comunidade */
 .comunidade-desafios {
   background: var(--branco);
@@ -544,31 +621,11 @@ body {
   transition: opacity 0.3s ease;
 }
 
-/* Botões de Navegação 
-.btn-outline-primary {
-  border: 2px solid var(--artbeat-roxo) !important;
-  color: var(--artbeat-roxo) !important;
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-outline-primary:hover {
-  background: var(--artbeat-roxo) !important;
-  color: var(--branco) !important;
-}*/
 
 /* Responsividade */
 @media (max-width: 768px) {
   .desafios-hero {
     padding: 2rem 0;
-  }
-  
-  .btn-outline-primary {
-    width: 50px;
-    height: 50px;
   }
   
   .desafio-img {
