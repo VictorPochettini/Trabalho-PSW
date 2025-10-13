@@ -33,7 +33,7 @@ const router = createBrowserRouter([
   { path: "/publicar/letra", element: <ProtectedRoute><PublicarLetra/></ProtectedRoute> },
   { path: "/publicar/musica", element: <ProtectedRoute><PublicarMusica/></ProtectedRoute> },
   { path: "/artistas", element: <ArtistsPage/> },
-  { path: "/perfil", element: <ProtectedRoute><UserProfile/></ProtectedRoute> },
+  { path: "/user/:username", element: <UserProfile/> },
   { path: "/login", element: <Login/> }, // público
   { path: "/cadastro", element: <CreateAccount/> }, // público
   { path: "/populares", element: <ProtectedRoute><ForYou/></ProtectedRoute> },

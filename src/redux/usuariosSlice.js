@@ -1,9 +1,10 @@
+// src/redux/userSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const API_URL = "http://localhost:5000/usuarios";
 
-// thunk assíncrono para login
+// Thunk assíncrono para login
 export const login = createAsyncThunk(
   "user/login",
   async ({ username, password }, { rejectWithValue }) => {
@@ -20,10 +21,20 @@ export const login = createAsyncThunk(
   }
 );
 
+// Thunk assíncrono para buscar todos os usuários
+export const fetchUsuarios = createAsyncThunk(
+  "user/fetchUsuarios",
+  async () => {
+    const res = await axios.get(API_URL);
+    return res.data;
+  }
+);
+
 const userSlice = createSlice({
   name: "user",
   initialState: {
     currentUser: null,
+    usuarios: [],   // <-- array para armazenar todos os usuários
     error: null,
     loading: false
   },
@@ -38,6 +49,7 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // login
       .addCase(login.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -49,10 +61,23 @@ const userSlice = createSlice({
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+
+      // fetchUsuarios
+      .addCase(fetchUsuarios.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchUsuarios.fulfilled, (state, action) => {
+        state.loading = false;
+        state.usuarios = action.payload;
+      })
+      .addCase(fetchUsuarios.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
       });
   }
 });
 
 export const { logout, clearError } = userSlice.actions;
-export default userSlice.reducer; // ✅ correto
-
+export default userSlice.reducer;

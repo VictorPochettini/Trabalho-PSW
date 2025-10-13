@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import logo from '../images/ArtBeat_Branco.png';
 import styles from '../css/Header.module.css';
+import user from '../redux/usuariosSlice';
 
 const HeaderForYou = () => {
   const location = useLocation();
@@ -33,7 +34,7 @@ const HeaderForYou = () => {
               <Link to="/Ldesafios" className={isActiveLink('desafios') ? styles.enfase : ''}>Desafios</Link>
             </li>
             <li>
-              <Link to="/perfil">
+              <Link to="/user/juanm">
                 <i className={`fa-solid fa-circle-user fa-xl ${styles.perfilIcon}`}></i>
               </Link>
             </li>
