@@ -7,12 +7,16 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "json-server --watch server/db.json --port 5000"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.0.0",
     "@fortawesome/fontawesome-free": "^7.0.1",
     "@reduxjs/toolkit": "^2.9.0",
+    "axios": "^1.12.2",
     "bootstrap": "^5.3.8",
+    "json-server": "^1.0.0-beta.3",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",
@@ -31,6 +35,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.4.0",
+    "parcel": "^2.16.0",
     "vite": "^7.1.7"
   }
 }

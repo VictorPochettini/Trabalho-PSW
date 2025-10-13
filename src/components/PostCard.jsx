@@ -5,15 +5,10 @@ const PostCard = ({ post, onMonetizeClick, onCommentClick }) => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [rating, setRating] = useState(0);
 
-  const handleFollowToggle = () => {
-    setIsFollowing(!isFollowing);
-  };
+  const handleFollowToggle = () => setIsFollowing(!isFollowing);
+  const handleStarClick = (value) => setRating(value);
 
-  const handleStarClick = (selectedRating) => {
-    setRating(selectedRating);
-  };
-
-  const { username, time, content, mediaType, mediaSrc, mediaAlt } = post;
+  const { username, time, content, mediaType, mediaSrc, mediaAlt, id, texto } = post;
 
   return (
     <div className="post-container">
@@ -22,7 +17,7 @@ const PostCard = ({ post, onMonetizeClick, onCommentClick }) => {
           <div className="col-12 col-md-8 col-lg-6">
             <div className="card post-card">
               <div className="card-body post-card-body">
-                {/* Header do Post */}
+                {/* Header */}
                 <div className="post-header">
                   <div className="user-info">
                     <div className="user-avatar-container">
@@ -35,12 +30,8 @@ const PostCard = ({ post, onMonetizeClick, onCommentClick }) => {
                       <small className="post-time">{time}</small>
                     </div>
                   </div>
-                  
                   <div className="post-actions">
-                    <button
-                      className="btn btn-sm support-button"
-                      onClick={() => onMonetizeClick(username)}
-                    >
+                    <button className="btn btn-sm support-button" onClick={() => onMonetizeClick(username)}>
                       <i className="fas fa-dollar-sign me-1"></i>Apoiar
                     </button>
                     <button
@@ -52,7 +43,7 @@ const PostCard = ({ post, onMonetizeClick, onCommentClick }) => {
                   </div>
                 </div>
 
-                {/* Conteúdo do Post */}
+                {/* Conteúdo */}
                 <div className="post-content">
                   <span className="quote-start">"</span>
                   {content}
@@ -60,7 +51,7 @@ const PostCard = ({ post, onMonetizeClick, onCommentClick }) => {
                 </div>
 
                 {/* Mídia */}
-                {mediaType === 'audio' && (
+                {mediaType === 'audio' && mediaSrc && (
                   <div className="media-container">
                     <audio controls className="audio-player">
                       <source src={mediaSrc} type="audio/mpeg" />
@@ -69,49 +60,36 @@ const PostCard = ({ post, onMonetizeClick, onCommentClick }) => {
                   </div>
                 )}
 
-                {mediaType === 'image' && (
+                {mediaType === 'image' && mediaSrc && (
                   <div className="media-container">
-                    <img 
-                      src={mediaSrc} 
-                      alt={mediaAlt || 'Imagem do post'} 
-                      className="post-image"
-                    />
+                    <img src={mediaSrc} alt={mediaAlt || 'Imagem do post'} className="post-image" />
                   </div>
                 )}
 
                 {mediaType === 'text' && (
                   <div className="text-media">
                     <small className="text-muted">
-                      <i className="fas fa-font me-2"></i>
-                      Conteúdo em texto
+                      <i className="fas fa-font me-2"></i>{texto}
                     </small>
                   </div>
                 )}
 
-                {/* Ações do Post */}
+                {/* Footer */}
                 <div className="post-footer">
                   <div className="rating-section">
-                    {[1, 2, 3, 4, 5].map((starValue) => (
+                    {[1, 2, 3, 4, 5].map((star) => (
                       <button
-                        key={starValue}
+                        key={star}
                         className="star-button"
-                        onClick={() => handleStarClick(starValue)}
-                        style={{
-                          color: starValue <= rating ? '#fbbf24' : '#b8bec9'
-                        }}
+                        onClick={() => handleStarClick(star)}
+                        style={{ color: star <= rating ? '#fbbf24' : '#b8bec9' }}
                       >
                         ★
                       </button>
                     ))}
-                    <small className="rating-text">
-                      {rating > 0 ? `(${rating}/5)` : 'Avaliar'}
-                    </small>
+                    <small className="rating-text">{rating > 0 ? `(${rating}/5)` : 'Avaliar'}</small>
                   </div>
-
-                  <button
-                    className="btn comment-button"
-                    onClick={() => onCommentClick(post.id)}
-                  >
+                  <button className="btn comment-button" onClick={() => onCommentClick(id)}>
                     <i className="far fa-comment-dots"></i>
                     <span className="comentarioTexto"> Comentar</span>
                   </button>

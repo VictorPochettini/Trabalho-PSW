@@ -1,0 +1,91 @@
+{
+  "usuarios": [
+    {
+      "id": 1,
+      "nome": "Juan Mendes",
+      "username": "juanm",
+      "senha": "123456",
+      "email": "juan@email.com"
+    },
+    {
+      "id": 2,
+      "nome": "Victor Pochettini",
+      "username": "vpochettini",
+      "senha": "654321",
+      "email": "victor@email.com"
+    }
+  ],
+
+  "posts": [
+    {
+      "id": 1,
+      "usuarioId": 1,
+      "titulo": "Primeiro post!",
+      "conteudo": "Texto introdutório sobre o projeto.",
+      "tipo": "texto",
+      "genero": "informativo",
+      "data": "2025-10-13T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "usuarioId": 2,
+      "titulo": "Nova música de estudo",
+      "conteudo": "audioPop.mpeg",
+      "tipo": "musica",
+      "genero": "lofi",
+      "data": "2025-10-13T11:00:00Z"
+    },
+    {
+      "id": 3,
+      "usuarioId": 1,
+      "titulo": "Desenho experimental",
+      "conteudo": "capa.png",
+      "tipo": "visual",
+      "genero": "abstrato",
+      "data": "2025-10-13T12:00:00Z"
+    }
+  ],
+
+  "desafios": [
+    {
+      "id": 1,
+      "titulo": "Desafio Semanal #1",
+      "descricao": "Crie uma música com o tema natureza.",
+      "tipo": "oficial",
+      "subtipo": "semanal",
+      "premiacao": "Top 3 usuários destacados no pódio",
+      "ganhadores": [
+        { "posicao": 1, "usuarioId": 1 },
+        { "posicao": 2, "usuarioId": 2 },
+        { "posicao": 3, "usuarioId": 1 }
+      ],
+      "dataInicio": "2025-10-01",
+      "dataFim": "2025-10-07"
+    },
+    {
+      "id": 2,
+      "titulo": "Desafio Mensal #1",
+      "descricao": "Publique uma arte visual original.",
+      "tipo": "oficial",
+      "subtipo": "mensal",
+      "premiacao": "Top 3 do mês",
+      "ganhadores": [
+        { "posicao": 1, "usuarioId": 2 },
+        { "posicao": 2, "usuarioId": 1 },
+        { "posicao": 3, "usuarioId": 2 }
+      ],
+      "dataInicio": "2025-09-01",
+      "dataFim": "2025-09-30"
+    },
+    {
+      "id": 3,
+      "titulo": "Desafio da Comunidade - Beats LoFi",
+      "descricao": "Crie o melhor beat LoFi e compartilhe.",
+      "tipo": "comunidade",
+      "criadorId": 1,
+      "ganhador": { "usuarioId": 2 },
+      "dataInicio": "2025-10-05",
+      "dataFim": "2025-10-12"
+    }
+  ]
+}

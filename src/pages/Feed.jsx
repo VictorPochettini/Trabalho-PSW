@@ -1,95 +1,93 @@
-// src/App.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import axios from 'axios';
+import { fetchPosts } from '../redux/postsSlice';
+
 import Header from '../components/Header2';
 import PostCard from '../components/PostCard';
 import MonetizationPopup from '../components/MonetizationPopup';
 import CommentsPopup from '../components/CommentsPopup';
 import FloatingActionButton from '../components/FloatingActionButton';
 
-// Importe suas imagens e áudios
-import audioPop from '../audios/audioPop.mpeg'; // Ajuste o caminho
-import capaImage from '../images/capa.png';     // Ajuste o caminho
-
 const Feed = () => {
+  const dispatch = useDispatch();
+
+  const posts = useSelector((state) => state.posts.lista);
+  const loadingPosts = useSelector((state) => state.posts.loading);
+  const errorPosts = useSelector((state) => state.posts.error);
+
+  const [usuarios, setUsuarios] = useState([]);
+  const [loadingUsuarios, setLoadingUsuarios] = useState(true);
+
+  const [postsComUsuario, setPostsComUsuario] = useState([]);
+
   const [showMonetization, setShowMonetization] = useState(false);
   const [monetizationUsername, setMonetizationUsername] = useState('');
   const [showComments, setShowComments] = useState(false);
   const [currentPostIdForComments, setCurrentPostIdForComments] = useState(null);
 
+  // Busca posts e usuários
+  useEffect(() => {
+    dispatch(fetchPosts());
+
+    axios.get('http://localhost:5000/usuarios')
+      .then(res => setUsuarios(res.data))
+      .catch(err => console.error(err))
+      .finally(() => setLoadingUsuarios(false));
+  }, [dispatch]);
+
+  // Combina posts com usuários após tudo carregar
+  useEffect(() => {
+    if (!loadingPosts && !loadingUsuarios && usuarios.length > 0) {
+      const combinados = posts.map(post => {
+        const usuario = usuarios.find(u => Number(u.id) === Number(post.usuarioId));
+        return {
+          ...post,
+          id: post.id,
+          content: post.titulo,
+          texto: post.conteudo,
+          username: usuario ? usuario.nome : '@desconhecido',
+          mediaType: post.tipo === 'musica' ? 'audio' : post.tipo === 'visual' ? 'image' : 'text',
+          mediaSrc: post.tipo === 'musica' || post.tipo === 'visual' ? `/media/${post.conteudo}` : null,
+          mediaAlt: post.tipo === 'visual' ? post.titulo : null,
+          time: new Date(post.data).toLocaleString()
+        };
+      });
+      setPostsComUsuario(combinados);
+    }
+  }, [loadingPosts, loadingUsuarios, posts, usuarios]);
+
   const handleMonetizeClick = (username) => {
     setMonetizationUsername(username);
     setShowMonetization(true);
-    document.body.style.overflow = 'hidden'; // Impede scroll
+    document.body.style.overflow = 'hidden';
   };
 
   const handleCloseMonetization = () => {
     setShowMonetization(false);
-    document.body.style.overflow = ''; // Restaura scroll
+    document.body.style.overflow = '';
   };
 
   const handleCommentClick = (postId) => {
     setCurrentPostIdForComments(postId);
     setShowComments(true);
-    document.body.style.overflow = 'hidden'; // Impede scroll
+    document.body.style.overflow = 'hidden';
   };
 
   const handleCloseComments = () => {
     setShowComments(false);
     setCurrentPostIdForComments(null);
-    document.body.style.overflow = ''; // Restaura scroll
+    document.body.style.overflow = '';
   };
 
-  // Dados de exemplo para os posts
-  const posts = [
-    {
-      id: 1,
-      username: '@musiclover2024',
-      time: 'Há 2 horas',
-      content: 'Acabei de lançar minha nova música! O que vocês acham dessa batida? 🎵',
-      mediaType: 'audio',
-      mediaSrc: audioPop,
-    },
-    {
-      id: 2,
-      username: '@artistavisual',
-      time: 'Há 4 horas',
-      content: 'Nova arte digital inspirada em sons urbanos! 🎨 Feedback é sempre bem-vindo!',
-      mediaType: 'image',
-      mediaSrc: capaImage,
-      mediaAlt: 'Arte Digital',
-    },
-    {
-      id: 3,
-      username: '@poetaurbano',
-      time: 'Há 1 dia',
-      content: `
-        "Entre as batidas do coração e o ritmo da cidade,
-        nascem versos que ecoam verdade.
-        Cada palavra, uma nota;
-        cada verso, uma melodia..." ✍️
-      `,
-      mediaType: 'text',
-    },
-    {
-      id: 4,
-      username: '@poeta333urbano',
-      time: 'Há 1 dia',
-      content: `
-        "Entre as batidas do coração e o ritmo da cidade,
-        nascem versos que ecoam verdade.
-        Cada palavra, uma nota;
-        cada verso, uma melodia..." ✍️
-      `,
-      mediaType: 'text',
-    },
-  ];
+  if (loadingPosts || loadingUsuarios) return <p>Carregando...</p>;
+  if (errorPosts) return <p>{errorPosts}</p>;
 
   return (
     <>
       <Header />
-      {/* Novo wrapper para centralizar e limitar a largura dos posts */}
       <div className="feed-content-wrapper">
-        {posts.map((post) => (
+        {postsComUsuario.map(post => (
           <PostCard
             key={post.id}
             post={post}

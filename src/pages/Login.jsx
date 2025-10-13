@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { login, clearError } from "../redux/user/reducer";
+import { login, clearError } from "../redux/usuariosSlice";
 import { useNavigate } from "react-router-dom";
 import styles from "../css/Login.module.css";
 import botaoVolta from "../images/botaoVolta.png";
@@ -13,6 +13,8 @@ export default function Login() {
   const navigate = useNavigate();
   const currentUser = useSelector(state => state.user.currentUser);
   const error = useSelector(state => state.user.error);
+  const loading = useSelector(state => state.user.loading);
+
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -95,9 +97,10 @@ export default function Login() {
             {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
 
             <div style={{ textAlign: "center" }}>
-              <button type="submit" className={styles.entrarbtn}>
-                Entrar
+              <button type="submit" disabled={loading} className={styles.entrarbtn}>
+                {loading ? "Entrando..." : "Entrar"}
               </button>
+
             </div>
           </form>
         </div>
