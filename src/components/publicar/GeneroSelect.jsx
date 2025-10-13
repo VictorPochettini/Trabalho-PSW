@@ -1,7 +1,7 @@
 // src/components/publicar/GeneroSelect.jsx
 import React from 'react';
 
-const GeneroSelect = ({ tipo = "arte" }) => {
+const GeneroSelect = ({ tipo = "arte", value, onChange }) => {
   const opcoesArte = [
     { value: "ilustracao-digital", label: "Ilustração digital" },
     { value: "ilustracao-manual", label: "Ilustração manual" },
@@ -30,8 +30,12 @@ const GeneroSelect = ({ tipo = "arte" }) => {
 
   return (
     <div className="genero-container">
-      <select className="genero-select">
-        <option selected disabled>{placeholder}</option>
+      <select
+        className="genero-select"
+        value={value}
+        onChange={(e) => onChange(e.target.value)} // ✅ Agora envia apenas o valor
+      >
+        <option value="" disabled>{placeholder}</option>
         {opcoes.map((opcao) => (
           <option key={opcao.value} value={opcao.value}>
             {opcao.label}

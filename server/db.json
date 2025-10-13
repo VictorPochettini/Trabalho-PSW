@@ -5,17 +5,26 @@
       "nome": "Juan Mendes",
       "username": "juanm",
       "senha": "123456",
-      "email": "juan@email.com"
+      "email": "juan@email.com",
+      "estrelas": 0
     },
     {
       "id": 2,
       "nome": "Victor Pochettini",
       "username": "vpochettini",
       "senha": "654321",
-      "email": "victor@email.com"
+      "email": "victor@email.com",
+      "estrelas": 0
+    },
+    {
+      "id": 3,
+      "nome": "joao",
+      "username": "joaozinho",
+      "email": "joaosilva@gmail.com",
+      "senha": "mmm",
+      "estrelas": 0
     }
   ],
-
   "posts": [
     {
       "id": 1,
@@ -43,9 +52,35 @@
       "tipo": "visual",
       "genero": "abstrato",
       "data": "2025-10-13T12:00:00Z"
+    },
+    {
+      "id": 4,
+      "usuarioId": 1,
+      "titulo": "TESTE-MUSICA",
+      "conteudo": "Apex Bout Final Music.mp3",
+      "tipo": "musica",
+      "genero": "eletronica",
+      "data": "2025-10-13T20:02:26.963Z"
+    },
+    {
+      "id": 5,
+      "usuarioId": 1,
+      "titulo": "Capa do album novo",
+      "conteudo": "Vermelho.jpg",
+      "tipo": "visual",
+      "genero": "ilustracao-digital",
+      "data": "2025-10-13T20:03:15.182Z"
+    },
+    {
+      "id": 6,
+      "usuarioId": 1,
+      "titulo": "Letra......",
+      "conteudo": "Letra......",
+      "tipo": "texto",
+      "genero": "trap",
+      "data": "2025-10-13T20:07:12.307Z"
     }
   ],
-
   "desafios": [
     {
       "id": 1,
@@ -55,9 +90,18 @@
       "subtipo": "semanal",
       "premiacao": "Top 3 usuários destacados no pódio",
       "ganhadores": [
-        { "posicao": 1, "usuarioId": 1 },
-        { "posicao": 2, "usuarioId": 2 },
-        { "posicao": 3, "usuarioId": 1 }
+        {
+          "posicao": 1,
+          "usuarioId": 1
+        },
+        {
+          "posicao": 2,
+          "usuarioId": 2
+        },
+        {
+          "posicao": 3,
+          "usuarioId": 1
+        }
       ],
       "dataInicio": "2025-10-01",
       "dataFim": "2025-10-07"
@@ -70,9 +114,18 @@
       "subtipo": "mensal",
       "premiacao": "Top 3 do mês",
       "ganhadores": [
-        { "posicao": 1, "usuarioId": 2 },
-        { "posicao": 2, "usuarioId": 1 },
-        { "posicao": 3, "usuarioId": 2 }
+        {
+          "posicao": 1,
+          "usuarioId": 2
+        },
+        {
+          "posicao": 2,
+          "usuarioId": 1
+        },
+        {
+          "posicao": 3,
+          "usuarioId": 2
+        }
       ],
       "dataInicio": "2025-09-01",
       "dataFim": "2025-09-30"
@@ -83,7 +136,9 @@
       "descricao": "Crie o melhor beat LoFi e compartilhe.",
       "tipo": "comunidade",
       "criadorId": 1,
-      "ganhador": { "usuarioId": 2 },
+      "ganhador": {
+        "usuarioId": 2
+      },
       "dataInicio": "2025-10-05",
       "dataFim": "2025-10-12"
     }
