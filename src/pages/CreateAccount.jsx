@@ -4,22 +4,15 @@ import botaoVolta from "../images/botaoVolta.png";
 import logo from "../images/ArtBeat_Branco.png";
 import olhoFechado from "../images/olhoFechadoRoxo.png";
 import olhoAberto from "../images/olhoAbertoRoxo.png";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 
 // Componente BackButton
-const BackButton = () => {
-  const navigate = useNavigate();
-  return (
-    <button
-      type="button"
-      className={styles.backButton}
-      onClick={() => navigate(-1)}
-    >
-      <img src={botaoVolta} alt="Voltar" />
-    </button>
-  );
-};
+const BackButton = () => (
+  <Link to="/" className={styles.backButton} aria-label="Voltar para início">
+    <img src={botaoVolta} alt="Voltar" />
+  </Link>
+);
 
 export default function CriacaoConta() {
   const [usuarios, setUsuarios] = useState([]);
@@ -28,7 +21,7 @@ export default function CriacaoConta() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confSenha, setConfSenha] = useState("");
-  const estrelas = 0;
+  const admin = false;
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [erro, setErro] = useState("");
   const [aceitouTermos, setAceitouTermos] = useState(false);
@@ -77,7 +70,7 @@ export default function CriacaoConta() {
         username,
         email,
         senha,
-        estrelas,
+        admin,
       });
 
       // Redireciona para login ou limpa form
@@ -191,14 +184,7 @@ export default function CriacaoConta() {
               required
             />
             <label className={styles.termos} htmlFor="termos">
-              Eu aceito os{" "}
-              <a className={styles.refs} href="TermosDeUso.html">
-                termos de uso
-              </a>{" "}
-              e{" "}
-              <a className={styles.refs} href="PoliticasDePrivacidade.html">
-                políticas de privacidade
-              </a>
+              Eu aceito os termos de uso e as políticas de privacidade
             </label>
           </div>
 

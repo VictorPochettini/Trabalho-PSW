@@ -1,5 +1,6 @@
 // src/pages/PublicarMusica.jsx
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { addPost } from "../redux/postsSlice";
 import PublicarLayout from "../components/layout/PublicarLayout";
@@ -7,7 +8,22 @@ import DescricaoInput from "../components/publicar/DescricaoInput";
 import GeneroSelect from "../components/publicar/GeneroSelect";
 import UploadArea from "../components/publicar/UploadArea";
 import EnviarButton from "../components/publicar/EnviarButton";
+import botaoVolta from "../images/botaoVolta.png";
 import "../css/publicar.css";
+import styles from "../css/Login.module.css";
+
+const BackButton = () => {
+  const navigate = useNavigate();
+  return (
+    <button
+      type="button"
+      className={styles.backButton}
+      onClick={() => navigate(-1)}
+    >
+      <img src={botaoVolta} alt="Voltar" />
+    </button>
+  );
+};
 
 const PublicarMusica = () => {
   const dispatch = useDispatch();
@@ -25,9 +41,9 @@ const PublicarMusica = () => {
     }
 
     const novoPost = {
-      id: posts.length > 0 ? Math.max(...posts.map((p) => p.id)) + 1 : 1,
+      id: (posts.length > 0 ? Math.max(...posts.map((p) => p.id)) + 1 : 1).toString(),
       usuarioId: currentUser.id,
-      titulo: descricao.slice(0, 20),
+      titulo: descricao,
       conteudo: arquivo.name,
       tipo: "musica",
       genero,
@@ -46,6 +62,8 @@ const PublicarMusica = () => {
   };
 
   return (
+    <>
+    <BackButton/>
     <PublicarLayout>
       <div className="container-publicar">
         <DescricaoInput value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Escreva sobre sua música..." />
@@ -54,6 +72,7 @@ const PublicarMusica = () => {
         <EnviarButton onClick={handleEnviar} />
       </div>
     </PublicarLayout>
+    </>
   );
 };
 

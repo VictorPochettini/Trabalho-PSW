@@ -1,7 +1,8 @@
+//LOGIN
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { login, clearError } from "../redux/usuariosSlice";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import styles from "../css/Login.module.css";
 import botaoVolta from "../images/botaoVolta.png";
 import logo from "../images/ArtBeat_Branco.png";
@@ -43,9 +44,10 @@ export default function Login() {
   return (
     <div className={styles.pagefe}>
       <div className={styles.loginPage}>
-        <a className={styles.backButton} onClick={voltarPagina}>
-          <img src={botaoVolta} alt="voltar" />
-        </a>
+        <Link to="/" className={styles.backButton}>
+  <img src={botaoVolta} alt="voltar" />
+</Link>
+
 
         <div className={styles.container}>
           <div style={{ textAlign: "center" }}>
@@ -102,6 +104,27 @@ export default function Login() {
               </button>
 
             </div>
+              <div style={{ textAlign: "center", marginTop: 1 }}>
+                <Link
+                  to="/cadastro"
+                  className={styles.entrarbtn}
+                  role="button"
+                  style={{
+                    textDecoration: "none",
+                    opacity: 0.5,           // mais translúcido
+                    fontSize: "0.9rem",     // texto menor
+                    padding: "20px 50px",    // balão menor
+                    width: "auto",          // não ocupar 100%
+                    minWidth: "unset",      // remove min-width do CSS base
+                    display: "inline-flex", // só o necessário
+                    alignItems: "center",
+                    justifyContent: "center",
+                    lineHeight: 1.05,
+                  }}
+                >
+                  Criar conta
+                </Link>
+              </div>
           </form>
         </div>
       </div>

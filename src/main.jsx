@@ -30,7 +30,7 @@ const router = createBrowserRouter([
   { path: "/discover", element: <ProtectedRoute><DiscoverArtist/></ProtectedRoute> },
   { path: "/desafios", element: <ChallengePage/> },
   { path: "/publicar/imagem", element: <ProtectedRoute><PublicarImagem/></ProtectedRoute> },
-  { path: "/publicar/letra", element: <ProtectedRoute><PublicarLetra/></ProtectedRoute> },
+  { path: "/publicar/texto", element: <ProtectedRoute><PublicarLetra/></ProtectedRoute> },
   { path: "/publicar/musica", element: <ProtectedRoute><PublicarMusica/></ProtectedRoute> },
   { path: "/artistas", element: <ArtistsPage/> },
   { path: "/user/:username", element: <UserProfile/> },

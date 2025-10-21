@@ -154,3 +154,62 @@
         gap: 15px;
     }
 }
+/* Remove o “retângulo branco” contínuo atrás dos posts */
+.profile-shell {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* O container onde os posts aparecem também não deve ter fundo/sombra */
+.posts-feed {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Cada post em seu “quadrado” separado — mesmo visual do PostCard */
+.post-container {
+  padding: 0;               /* já tem container/row/col dentro */
+  margin-bottom: 1rem;      /* espaço entre os “quadrados” */
+}
+
+
+/* Garantir responsividade e centralização dos cards */
+.post-container .container {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+
+.post-container .row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.post-container .col-12.col-md-8.col-lg-6 {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Conteúdo do card, igual ao PostCard */
+.post-card-body { padding: 16px 18px; }
+
+
+.post-header { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  gap: 12px; 
+}
+
+.user-info { display: flex; align-items: center; gap: 12px; }
+.user-avatar-container { display: flex; }
+.user-avatar {
+  width: 40px; height: 40px; 
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: linear-gradient(145deg, #8a7cff, #5a46d6);
+  color: #fff;
+}
+

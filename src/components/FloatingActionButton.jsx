@@ -48,8 +48,8 @@ const FloatingActionButton = () => {
           <Link to="/publicar/imagem" className="fab-sub" title="Publicar Arte" onClick={() => setIsOpen(false)}>
             <i className="fas fa-image"></i> Publicar Imagem
           </Link>
-          <Link to="/publicar/letra" className="fab-sub" title="Publicar Letra" onClick={() => setIsOpen(false)}>
-            <i className="fas fa-feather"></i> Publicar Letra
+          <Link to="/publicar/texto" className="fab-sub" title="Publicar Letra" onClick={() => setIsOpen(false)}>
+            <i className="fas fa-feather"></i> Publicar Texto
           </Link>
         </div>
       </div>

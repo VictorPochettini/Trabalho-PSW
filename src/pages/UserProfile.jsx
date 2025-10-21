@@ -2,196 +2,338 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
+import botaoVolta from "../images/botaoVolta.png";
+import styles from "../css/Login.module.css";
 import { fetchUsuarios } from "../redux/usuariosSlice";
+import { fetchPosts } from "../redux/postsSlice";
+import { fetchFollowCounts, selectFollowCounts } from "../redux/followsSlice";
+
+import PostCard from "../components/PostCard";
 import FloatingActionButton from "../components/FloatingActionButton";
-import "../css/UserProfile.css";
+import MonetizationPopup from "../components/MonetizationPopup";
+import CommentsPopup from "../components/CommentsPopup";
+
+const BackButton = () => {
+  const navigate = useNavigate();
+  return (
+    <button
+      type="button"
+      className={styles.backButton}
+      onClick={() => navigate(-1)}
+    >
+      <img src={botaoVolta} alt="Voltar" />
+    </button>
+  );
+};
 
 const UserProfile = () => {
-  const { username } = useParams(); // pega o username da URL
+  // ---------- hooks no topo ----------
+  const { username } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // ✅ Ajuste: usa 'usuarios' em vez de 'users'
+  
+
   const usuarios = useSelector((state) => state.user.usuarios || []);
   const posts = useSelector((state) => state.posts.lista || []);
   const currentUser = useSelector((state) => state.user.currentUser);
 
-  // 🔹 busca usuários caso o estado esteja vazio
-  useEffect(() => {
-    if (!usuarios.length) {
-      dispatch(fetchUsuarios());
-    }
-  }, [dispatch, usuarios.length]);
+  // loading flags para “ready”
+  const usersLoading = useSelector((s) => s.user.loading);
+  const postsLoading = useSelector((s) => s.posts.loading);
+  const ready = !usersLoading && !postsLoading;
 
-  // 🔹 memoriza user e userPosts para evitar rerenders
-  const user = useMemo(
-    () => usuarios.find((u) => u.username === username),
-    [usuarios, username]
-  );
-
-  const userPosts = useMemo(
-    () => posts.filter((p) => p.usuarioId === user?.id),
-    [posts, user?.id]
-  );
-
-  // 🔹 define o estado inicial
-  const [userData, setUserData] = useState({
-    name: user?.nome || "",
-    username: user ? "@" + user.username : "",
-    followers: user?.followers || 0,
-    following: user?.following || 0,
-    profilePhoto: user?.fotoPerfil || null,
-    posts: userPosts,
-  });
-
-  // 🔹 atualiza posts quando mudar
-  useEffect(() => {
-    if (user) {
-      setUserData((prev) => ({
-        ...prev,
-        name: user.nome,
-        username: "@" + user.username,
-        posts: userPosts,
-      }));
-    }
-  }, [user, userPosts]);
-
+  const [profilePhoto, setProfilePhoto] = useState(null);
   const fileInputRef = useRef(null);
 
+  // Popups (iguais ao Feed) — DEVEM vir antes de qualquer return condicional
+  const [showMonetization, setShowMonetization] = useState(false);
+  const [monetizationUsername, setMonetizationUsername] = useState("");
+  const [showComments, setShowComments] = useState(false);
+  const [currentPostIdForComments, setCurrentPostIdForComments] = useState(null);
+
+  // Buscas iniciais (protegido contra StrictMode em dev)
+  const didInitRef = useRef(false);
+  useEffect(() => {
+    if (didInitRef.current) return;
+    didInitRef.current = true;
+    if (!usuarios.length) dispatch(fetchUsuarios());
+    if (!posts.length) dispatch(fetchPosts());
+  }, [dispatch, usuarios.length, posts.length]);
+
+  // ---------- derivação com memo, só quando “ready” ----------
+  const user = useMemo(() => {
+    if (!ready) return null;
+    return usuarios.find((u) => u.username === username) || null;
+  }, [ready, usuarios, username]);
+
+  // dispara contagem de seguidores/seguindo quando soubermos o user.id (sem duplicar)
+  const lastCountUserIdRef = useRef(null);
+  useEffect(() => {
+    if (!ready || !user?.id) return;
+    if (lastCountUserIdRef.current === user.id) return;
+    lastCountUserIdRef.current = user.id;
+    dispatch(fetchFollowCounts({ userId: user.id }));
+  }, [dispatch, ready, user?.id]);
+
+  // lê as contagens do Redux (usa seu selector)
+  const followCounts = useSelector((state) =>
+    selectFollowCounts(user?.id || 0)(state)
+  );
+  const followersCount = followCounts.followersCount || 0;
+  const followingCount = followCounts.followingCount || 0;
+
+  // foto de perfil (preview local) – mantém seu comportamento original
+  useEffect(() => {
+    if (user?.fotoPerfil) setProfilePhoto(user.fotoPerfil);
+  }, [user?.fotoPerfil]);
+
   const handlePhotoChange = (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files?.[0];
     if (file && file.type.startsWith("image/")) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setUserData((prev) => ({
-          ...prev,
-          profilePhoto: e.target.result,
-        }));
-      };
+      reader.onload = (e) => setProfilePhoto(e.target.result);
       reader.readAsDataURL(file);
     }
   };
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
+  // Fechar popups ao trocar de perfil + cleanup overflow
+  useEffect(() => {
+    setShowMonetization(false);
+    setMonetizationUsername("");
+    setShowComments(false);
+    setCurrentPostIdForComments(null);
+    document.body.style.overflow = "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [username]);
 
-  const handleEditProfile = () => {
-    navigate("/edit-profile");
-  };
+  const handleEditProfile = () => navigate("/edit-profile");
 
-  // 🔹 se usuário não existir
-  if (!user) {
-    return (
-      <div className="container-fluid text-center py-5">
-        <h2>Usuário "{username}" não encontrado 😢</h2>
-        <button className="btn btn-primary mt-3" onClick={() => navigate(-1)}>
-          Voltar
-        </button>
-      </div>
+  // mapear posts do usuário → formato do PostCard (se user for null, vira lista vazia)
+  const userPostsRaw = user
+    ? posts.filter((p) => Number(p.usuarioId) === Number(user.id))
+    : [];
+  const userPosts = userPostsRaw
+    .map((p) => {
+      const isTexto = p.tipo === "texto" || p.tipo === "letra";
+      const isMusica = p.tipo === "musica";
+      const isImagem = p.tipo === "visual";
+
+      const content = p.titulo
+        ? isTexto && p.conteudo
+          ? `${p.conteudo}`
+          : p.titulo
+        : isTexto
+        ? p.conteudo || ""
+        : "";
+
+      return {
+        ...p,
+        time: new Date(p.data).toLocaleString("pt-BR"),
+        content,
+        mediaType: isMusica ? "audio" : isImagem ? "image" : isTexto ? "text" : undefined,
+        mediaSrc: isMusica || isImagem ? `/media/${p.conteudo}` : undefined,
+        mediaAlt: p.titulo || "Mídia do post",
+        texto: isTexto ? (p.texto ?? p.conteudo ?? "") : undefined,
+      };
+    })
+    // 👇 ÚNICA ADIÇÃO: ordenar do mais recente para o mais antigo (usa p.data / createdAt / time)
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(b.data ?? b.createdAt ?? b.time) -
+        new Date(a.data ?? a.createdAt ?? a.time)
     );
-  }
 
-  // 🔹 renderiza posts
-  const renderPosts = () => {
-    if (!userPosts.length) {
-      return (
-        <div className="card text-center text-muted py-5">
-          <i className="fas fa-images display-4 mb-3"></i>
-          <p className="mb-0">Nenhuma publicação ainda.</p>
-        </div>
-      );
-    }
+  // Handlers dos popups (iguais ao Feed)
+  const handleMonetizeClick = (uname) => {
+    setMonetizationUsername(uname || username);
+    setShowMonetization(true);
+    document.body.style.overflow = "hidden";
+  };
+  const handleCloseMonetization = () => {
+    setShowMonetization(false);
+    document.body.style.overflow = "";
+  };
 
-    return userPosts.map((post) => (
-      <div className="card mb-3" key={post.id}>
-        <div className="card-body">
-          {post.titulo && <h5 className="post-title">{post.titulo}</h5>}
-          {post.tipo === "texto" && (
-            <p className="post-content">{post.conteudo}</p>
-          )}
-          {post.tipo === "visual" && (
-            <img
-              src={`/media/${post.conteudo}`}
-              className="post-image img-fluid rounded mb-2"
-              alt="Post visual"
-            />
-          )}
-          {post.tipo === "musica" && (
-            <audio controls className="post-audio w-100 mb-2">
-              <source src={`/media/${post.conteudo}`} type="audio/mpeg" />
-            </audio>
-          )}
-          <div className="post-date">
-            Publicado em: {new Date(post.data).toLocaleString("pt-BR")}
-          </div>
-        </div>
-      </div>
-    ));
+  const handleCommentClick = (postId) => {
+    setCurrentPostIdForComments(postId);
+    setShowComments(true);
+    document.body.style.overflow = "hidden";
+  };
+  const handleCloseComments = () => {
+    setShowComments(false);
+    setCurrentPostIdForComments(null);
+    document.body.style.overflow = "";
   };
 
   return (
-    <>
+    <><BackButton/>
       <div className="container-fluid">
         <div className="row justify-content-center">
-          <div className="col-12 col-md-8 col-lg-6">
-            <div className="profile-container">
-              <div className="profile-header position-relative">
-                {/* Mostra lápis apenas se for o próprio usuário */}
-                {user.username === currentUser?.username && (
-                  <button className="lapis" onClick={handleEditProfile}>
-                    <i
-                      className="fa-solid fa-pencil fa-lg"
-                      style={{ color: "#ffffff" }}
-                    ></i>
+          <div className="col-12">
+            {/* key força remount ao trocar de username */}
+            <div className="profile-container profile-shell glass-header" key={`profile-${username}`}>
+              {/* Se não houver usuário, só mostra aviso quando “ready” estiver true */}
+              {(ready && usuarios.length > 0 && !user) ? (
+                <div className="container-fluid text-center py-5">
+                  <h2>Usuário "{username}" não encontrado 😢</h2>
+                  <button className="btn btn-primary mt-3" onClick={() => navigate(-1)}>
+                    Voltar
                   </button>
-                )}
-
-                <div
-                  className="profile-picture-container"
-                  onClick={triggerFileInput}
-                  style={{ cursor: "pointer" }}
-                >
-                  {userData.profilePhoto ? (
-                    <img
-                      src={userData.profilePhoto}
-                      alt="Foto de perfil"
-                      className="profile-picture rounded-circle"
-                    />
-                  ) : (
-                    <i className="fas fa-user-circle profile-icon"></i>
-                  )}
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="file-input"
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                  />
                 </div>
+              ) : (
+                <>
+                  {/* Header / capa do perfil */}
+                  <div className="profile-header position-relative profile-header-glass banner-narrow">
+                    {user?.username === currentUser?.username && (
+                      <button className="lapis" onClick={handleEditProfile} title="Editar perfil">
+                        <i className="fa-solid fa-pencil fa-lg" style={{ color: "#ffffff" }} />
+                      </button>
+                    )}
 
-                <h1 className="profile-name">{userData.name}</h1>
-                <div className="profile-username">{userData.username}</div>
+                    <div className="profile-picture-container avatar-wrap">
+                      {profilePhoto ? (
+                        <img
+                          src={profilePhoto}
+                          alt="Foto de perfil"
+                          className="profile-picture rounded-circle avatar-photo"
+                        />
+                      ) : (
+                        <div className="avatar-fallback rounded-circle">
+                          <i className="fas fa-user" />
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="file-input"
+                        accept="image/*"
+                        onChange={handlePhotoChange}
+                        style={{ display: "none" }}
+                      />
+                    </div>
 
-                <div className="profile-stats">
-                  <div className="stat">
-                    <div className="stat-number">{userData.followers}</div>
-                    <div className="stat-label">Seguidores</div>
+                    <h1 className="profile-name">{user?.nome || user?.username}</h1>
+                    <div className="profile-username subtle-username">@{user?.username}</div>
+
+                    <div className="profile-stats">
+                      <div className="stat">
+                        <div className="stat-number">{followersCount}</div>
+                        <div className="stat-label">Seguidores</div>
+                      </div>
+                      <div className="stat">
+                        <div className="stat-number">{followingCount}</div>
+                        <div className="stat-label">Seguindo</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="stat">
-                    <div className="stat-number">{userData.following}</div>
-                    <div className="stat-label">Seguindo</div>
-                  </div>
-                </div>
-              </div>
 
-              <div className="posts-container">{renderPosts()}</div>
+                  {/* Feed de posts com PostCard real */}
+                  <div className="posts-container posts-feed">
+                    {userPosts.length === 0 ? (
+                      <div className="card text-center text-muted py-5 empty-card">
+                        <i className="fas fa-images display-4 mb-3"></i>
+                        <p className="mb-0">Nenhuma publicação ainda.</p>
+                      </div>
+                    ) : (
+                      userPosts.map((p) => (
+                        <div key={p.id} className="mb-3">
+                          <PostCard
+                            post={p}
+                            onMonetizeClick={handleMonetizeClick}
+                            onCommentClick={handleCommentClick}
+                          />
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
       </div>
 
+      {/* Popups iguais ao Feed */}
+      <MonetizationPopup
+        show={showMonetization}
+        onClose={handleCloseMonetization}
+        username={monetizationUsername}
+      />
+      <CommentsPopup
+        show={showComments}
+        onClose={handleCloseComments}
+        postId={currentPostIdForComments}
+      />
+
       <FloatingActionButton />
+
+      <style>{`
+        .banner-narrow {
+          max-width: clamp(640px, 88vw, 840px);
+          width: 100%;
+          margin: 0 auto;
+          padding-left: 16px;
+          padding-right: 16px;
+        }
+
+        .glass-header .profile-header-glass {
+          position: relative;
+          background: rgba(255,255,255,.10);
+          border: 1px solid rgba(255,255,255,.14);
+          border-radius: 20px;
+          padding: 24px 16px 16px;
+          box-shadow: 0 12px 26px rgba(0,0,0,.18);
+          backdrop-filter: blur(10px) saturate(1.05);
+        }
+        .avatar-wrap {
+          width: 112px; height: 112px; margin: 0 auto 12px; position: relative;
+          border-radius: 999px; padding: 4px;
+          background: linear-gradient(135deg, rgba(106,90,224,.55), rgba(140,127,242,.45));
+          box-shadow: 0 10px 24px rgba(106,90,224,.28);
+        }
+        .avatar-photo {
+          width: 100%; height: 100%; object-fit: cover; display: block;
+          border: 3px solid rgba(255,255,255,.75);
+        }
+        .avatar-fallback {
+          width: 100%; height: 100%; display: grid; place-items: center; color: #fff;
+          background: linear-gradient(135deg, var(--roxo, #6a5ae0), #8c7ff2);
+          font-size: 42px; box-shadow: inset 0 0 30px rgba(0,0,0,.18);
+          border: 3px solid rgba(255,255,255,.75);
+        }
+        .profile-name {
+          text-align: center; margin: 10px 0 2px;
+          color: var(--text-color, #f3f5ff);
+          text-shadow: 0 2px 14px rgba(0,0,0,.25);
+        }
+        .subtle-username {
+          text-align: center; color: rgba(255,255,255,.85);
+          font-weight: 500; letter-spacing: .2px; margin-bottom: 10px;
+          text-shadow: 0 1px 10px rgba(0,0,0,.22);
+        }
+        .profile-stats {
+          display: grid; grid-auto-flow: column; justify-content: center; gap: 24px;
+          margin: 8px 0 2px;
+        }
+        .stat { text-align: center; }
+        .stat-number {
+          font-size: 20px; font-weight: 700; color: #fff;
+          text-shadow: 0 2px 12px rgba(0,0,0,.25);
+        }
+        .stat-label { color: rgba(255,255,255,.8); font-size: 13px; }
+
+        .empty-card {
+          background: rgba(255,255,255,.08);
+          border: 1px solid rgba(255,255,255,.14);
+          border-radius: 16px;
+          backdrop-filter: blur(6px);
+        }
+        
+      `}</style>
     </>
   );
 };

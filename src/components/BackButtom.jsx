@@ -1,19 +1,15 @@
-import { useNavigate } from 'react-router-dom';
-import botaoVolta from '../images/para/botaoVolta.png';
-import styles from './SeuStyles.module.css';
+import React from "react";
+import { Link } from "react-router-dom";
+import styles from "../css/Login.module.css"; // reutiliza .entrarbtn
 
-const BackButton = () => {
-  const navigate = useNavigate();
-
+/**
+ * Botão-link com o estilo do "Entrar"
+ * Uso: <CTAButtonLink to="/minha-rota">Ir para página</CTAButtonLink>
+ */
+export default function CTAButtonLink({ to, children }) {
   return (
-    <button
-      type="button"
-      className={styles.backButton}
-      onClick={() => navigate(-1)} // volta uma página
-    >
-      <img src={botaoVolta} alt="Voltar" />
-    </button>
+    <Link to={to} className={styles.entrarbtn} role="button">
+      {children}
+    </Link>
   );
-};
-
-export default BackButton;
+}

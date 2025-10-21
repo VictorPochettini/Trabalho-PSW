@@ -25,8 +25,14 @@ const GeneroSelect = ({ tipo = "arte", value, onChange }) => {
     { value: "trap", label: "Trap" }
   ];
 
-  const opcoes = tipo === "musica" ? opcoesMusica : opcoesArte;
-  const placeholder = tipo === "musica" ? "Gênero" : "Estilo de Arte";
+  const opcoesTexto = [
+    { value: "letra", label: "Letra" },
+    { value: "poema", label: "Poema"},
+    { value: "historia", label: "História"}
+  ];
+
+  const opcoes = tipo === "musica" ? opcoesMusica : tipo==="texto" ? opcoesTexto : opcoesArte;
+  const placeholder = tipo === "arte" ? "Estilo de Arte" : "Gênero";
 
   return (
     <div className="genero-container">

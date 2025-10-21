@@ -53,6 +53,11 @@ const Feed = () => {
           time: new Date(post.data).toLocaleString()
         };
       });
+
+      // 👇 ÚNICA ADIÇÃO: ordena do mais recente para o mais antigo
+      const getDate = (p) => p?.data ?? p?.createdAt ?? p?.time;
+      combinados.sort((a, b) => new Date(getDate(b)) - new Date(getDate(a)));
+
       setPostsComUsuario(combinados);
     }
   }, [loadingPosts, loadingUsuarios, posts, usuarios]);

@@ -16,8 +16,6 @@ const FooterAL = () => {
               <li><a href="/">Início</a></li>
               <li><a href="/artistas">Artistas</a></li>
               <li><a href="/desafios">Desafios</a></li>
-              <li><a href="/privacidade">Políticas de Privacidade</a></li>
-              <li><a href="/termos">Termos De Uso</a></li>
             </ul>
           </div>
         </div>

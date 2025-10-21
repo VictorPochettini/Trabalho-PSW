@@ -1,3 +1,4 @@
+// src/redux/postsSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
@@ -18,10 +19,21 @@ export const addPost = createAsyncThunk(
   async (novoPost) => {
     const postComData = {
       ...novoPost,
-      data: new Date().toISOString() // gera timestamp atual
+      data: new Date().toISOString()
     };
     const res = await axios.post(API_URL, postComData);
     return res.data;
+  }
+);
+
+// ✅ Remover um post
+export const deletePost = createAsyncThunk(
+  "posts/delete",
+  async (id) => {
+    // json-server: DELETE /posts/:id
+    await axios.delete(`${API_URL}/${id}`);
+    // retornamos o id para facilitar remover do estado
+    return id;
   }
 );
 
@@ -35,17 +47,35 @@ const postsSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchPosts.pending, (state) => { state.loading = true; })
+      // fetch
+      .addCase(fetchPosts.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(fetchPosts.fulfilled, (state, action) => {
         state.loading = false;
         state.lista = action.payload;
       })
       .addCase(fetchPosts.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.error.message || "Erro ao carregar posts";
       })
+
+      // add
       .addCase(addPost.fulfilled, (state, action) => {
         state.lista.push(action.payload);
+      })
+
+      // ✅ delete
+      .addCase(deletePost.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deletePost.fulfilled, (state, action) => {
+        state.loading = false;
+        const removedId = String(action.payload);
+        state.lista = state.lista.filter(p => String(p.id) !== removedId);
+      })
+      .addCase(deletePost.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Erro ao excluir post";
       });
   }
 });
