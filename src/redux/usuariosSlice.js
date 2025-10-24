@@ -30,6 +30,24 @@ export const fetchUsuarios = createAsyncThunk(
   }
 );
 
+export const updateUser = createAsyncThunk(
+  "user/updateUser",
+  async (dadosAtualizados, { getState, rejectWithValue }) => {
+    try {
+      const { currentUser } = getState().user;
+
+      const res = await axios.put(`${API_URL}/${currentUser.id}`, {
+        ...currentUser,
+        ...dadosAtualizados,
+      });
+
+      return res.data;
+    } catch (err) {
+      return rejectWithValue("Erro ao atualizar o usuário");
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: "user",
   initialState: {
@@ -75,6 +93,27 @@ const userSlice = createSlice({
       .addCase(fetchUsuarios.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
+      })
+      // updateUser
+      .addCase(updateUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentUser = action.payload;
+
+        // também atualiza o array de usuários, se existir
+        const index = state.usuarios.findIndex(
+          (u) => u.id === action.payload.id
+        );
+        if (index !== -1) {
+          state.usuarios[index] = action.payload;
+        }
+      })
+      .addCase(updateUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   }
 });
