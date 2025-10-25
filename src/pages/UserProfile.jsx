@@ -257,7 +257,7 @@ const UserProfile = () => {
         </div>
       </div>
 
-      {/* Popups iguais ao Feed */}
+      {/* Popups iguais ao Feed*/}
       <MonetizationPopup
         show={showMonetization}
         onClose={handleCloseMonetization}

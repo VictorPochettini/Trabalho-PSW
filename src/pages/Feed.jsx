@@ -62,6 +62,19 @@ const Feed = () => {
     }
   }, [loadingPosts, loadingUsuarios, posts, usuarios]);
 
+  // Filtra posts para mostrar APENAS de pessoas que segue
+  {/*useEffect(() => {
+    if (postsComUsuario.length > 0 && currentUser) {
+      const postsFiltrados = postsComUsuario.filter(post => {
+        const key = `${Number(currentUser.id)}-${Number(post.usuarioId)}`;
+        return followsByPair[key]?.isFollowing === true;
+      });
+      setPostsDosSeguidos(postsFiltrados);
+    } else {
+      setPostsDosSeguidos([]);
+    }
+  }, [postsComUsuario, currentUser, followsByPair]);*/}
+
   const handleMonetizeClick = (username) => {
     setMonetizationUsername(username);
     setShowMonetization(true);
@@ -91,6 +104,7 @@ const Feed = () => {
   return (
     <>
       <Header />
+
       <div className="feed-content-wrapper">
         {postsComUsuario.map(post => (
           <PostCard
@@ -101,6 +115,31 @@ const Feed = () => {
           />
         ))}
       </div>
+
+      {/*<div className="feed-content-wrapper">
+        {postsDosSeguidos.length === 0 ? (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '40px', 
+            color: 'rgba(255,255,255,0.7)' 
+          }}>
+            <h3>Nenhuma publicação de pessoas que você segue</h3>
+            <p>Comece a seguir alguns artistas para ver suas publicações aqui!</p>
+            <p style={{ fontSize: '0.9rem', marginTop: '10px', color: 'rgba(255,255,255,0.5)' }}>
+              Você está seguindo 0 pessoas
+            </p>
+          </div>
+        ) : (
+          postsDosSeguidos.map(post => (
+            <PostCard
+              key={post.id}
+              post={post}
+              onMonetizeClick={handleMonetizeClick}
+              onCommentClick={handleCommentClick}
+            />
+          ))
+        )}
+      </div>*/}
 
       <MonetizationPopup
         show={showMonetization}

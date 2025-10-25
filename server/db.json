@@ -20,7 +20,8 @@
       "username": "vpochettini",
       "senha": "654321",
       "email": "victor@email.com",
-      "admin": false
+      "admin": false,
+      "followersCount": 2
     },
     {
       "id": "3",
@@ -28,7 +29,9 @@
       "username": "mlvsantiago",
       "email": "malusantiago@email.com",
       "senha": "789987",
-      "admin": false
+      "admin": false,
+      "followersCount": 2,
+      "followingCount": 2
     },
     {
       "id": "4",
@@ -41,9 +44,10 @@
       "generosMusicais": "blues",
       "estilosArte": "arte-grafica",
       "fotoPerfil": "blob:http://localhost:5173/96d76fcf-9e6d-46b1-b969-3d5791f70fbe",
-      "followingCount": 1,
+      "followingCount": 3,
       "ratingAvgRecebida": 0,
-      "ratingCountRecebida": 0
+      "ratingCountRecebida": 0,
+      "followersCount": 1
     },
     {
       "id": "5",
@@ -132,7 +136,7 @@
       "genero": "funk",
       "data": "2025-10-21T00:37:12.876Z",
       "ratingAvg": 4,
-      "ratingCount": 3
+      "ratingCount": 5
     },
     {
       "id": "8",
@@ -142,8 +146,17 @@
       "tipo": "musica",
       "genero": "rock",
       "data": "2025-10-21T00:39:10.200Z",
-      "ratingAvg": 4.75,
-      "ratingCount": 4
+      "ratingAvg": 4.6,
+      "ratingCount": 5
+    },
+    {
+      "id": "5ceb",
+      "usuarioId": "3",
+      "titulo": "Guardado a um tempo",
+      "conteudo": "Captura de tela 2025-10-10 163355.png",
+      "tipo": "visual",
+      "genero": "ilustracao-digital",
+      "data": "2025-10-25T20:20:02.817Z"
     }
   ],
   "desafios": [
@@ -316,6 +329,39 @@
       "parentId": null,
       "createdAt": "2025-10-21T01:04:17.045Z",
       "updatedAt": "2025-10-21T01:04:17.045Z",
+      "deletedAt": null,
+      "likes": 0
+    },
+    {
+      "id": "33e2",
+      "postId": null,
+      "usuarioId": 4,
+      "texto": "Adorei",
+      "parentId": null,
+      "createdAt": "2025-10-25T20:26:30.644Z",
+      "updatedAt": "2025-10-25T20:26:30.644Z",
+      "deletedAt": null,
+      "likes": 0
+    },
+    {
+      "id": "ff40",
+      "postId": 1,
+      "usuarioId": 4,
+      "texto": "arrasou",
+      "parentId": null,
+      "createdAt": "2025-10-25T20:49:20.778Z",
+      "updatedAt": "2025-10-25T20:49:20.778Z",
+      "deletedAt": null,
+      "likes": 0
+    },
+    {
+      "id": "6b5d",
+      "postId": 5,
+      "usuarioId": 4,
+      "texto": "teste",
+      "parentId": null,
+      "createdAt": "2025-10-25T20:49:42.140Z",
+      "updatedAt": "2025-10-25T20:49:42.140Z",
       "deletedAt": null,
       "likes": 0
     }
@@ -509,9 +555,9 @@
       "id": "8-4",
       "postId": 8,
       "usuarioId": 4,
-      "estrelas": 5,
+      "estrelas": 4,
       "createdAt": "2025-10-24T23:55:13.555Z",
-      "updatedAt": "2025-10-24T23:55:17.332Z"
+      "updatedAt": "2025-10-25T21:35:45.616Z"
     },
     {
       "id": "6-4",
@@ -520,6 +566,22 @@
       "estrelas": 5,
       "createdAt": "2025-10-25T00:32:43.847Z",
       "updatedAt": "2025-10-25T00:32:43.847Z"
+    },
+    {
+      "id": "NaN-4",
+      "postId": null,
+      "usuarioId": 4,
+      "estrelas": 5,
+      "createdAt": "2025-10-25T20:25:59.026Z",
+      "updatedAt": "2025-10-25T21:36:03.774Z"
+    },
+    {
+      "id": "7-4",
+      "postId": 7,
+      "usuarioId": 4,
+      "estrelas": 4,
+      "createdAt": "2025-10-25T20:36:14.365Z",
+      "updatedAt": "2025-10-25T20:36:54.764Z"
     }
   ],
   "seguidores": [
@@ -542,10 +604,28 @@
       "createdAt": "2025-10-20T21:18:55.267Z"
     },
     {
+      "id": "4-3",
+      "followerId": 4,
+      "followingId": 3,
+      "createdAt": "2025-10-25T20:00:33.719Z"
+    },
+    {
+      "id": "4-2",
+      "followerId": 4,
+      "followingId": 2,
+      "createdAt": "2025-10-25T20:00:43.487Z"
+    },
+    {
+      "id": "3-4",
+      "followerId": 3,
+      "followingId": 4,
+      "createdAt": "2025-10-25T20:20:46.921Z"
+    },
+    {
       "id": "4-1",
       "followerId": 4,
       "followingId": 1,
-      "createdAt": "2025-10-25T01:14:59.028Z"
+      "createdAt": "2025-10-25T20:28:23.451Z"
     }
   ]
 }
