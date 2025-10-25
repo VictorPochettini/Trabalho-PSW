@@ -272,6 +272,11 @@ const UserProfile = () => {
       <FloatingActionButton />
 
       <style>{`
+        .lapis{
+          border: none;
+          background: none;
+          padding-left: 16px;
+        }
         .banner-narrow {
           max-width: clamp(640px, 88vw, 840px);
           width: 100%;

@@ -9,7 +9,10 @@
       "admin": true,
       "bio": "aaaa",
       "generosMusicais": [],
-      "estilosArte": []
+      "estilosArte": [],
+      "ratingAvgRecebida": 0,
+      "ratingCountRecebida": 0,
+      "followersCount": 2
     },
     {
       "id": "2",
@@ -33,7 +36,14 @@
       "username": "biamanhaes",
       "email": "bia@email.com",
       "senha": "456654",
-      "admin": false
+      "admin": false,
+      "bio": "Oi gente",
+      "generosMusicais": "blues",
+      "estilosArte": "arte-grafica",
+      "fotoPerfil": "blob:http://localhost:5173/96d76fcf-9e6d-46b1-b969-3d5791f70fbe",
+      "followingCount": 1,
+      "ratingAvgRecebida": 0,
+      "ratingCountRecebida": 0
     },
     {
       "id": "5",
@@ -110,8 +120,8 @@
       "tipo": "texto",
       "genero": "poema",
       "data": "2025-10-20T23:54:43.611Z",
-      "ratingAvg": 4.5,
-      "ratingCount": 2
+      "ratingAvg": 4.67,
+      "ratingCount": 3
     },
     {
       "id": "7",
@@ -132,8 +142,8 @@
       "tipo": "musica",
       "genero": "rock",
       "data": "2025-10-21T00:39:10.200Z",
-      "ratingAvg": 4.67,
-      "ratingCount": 3
+      "ratingAvg": 4.75,
+      "ratingCount": 4
     }
   ],
   "desafios": [
@@ -494,6 +504,22 @@
       "estrelas": 5,
       "createdAt": "2025-10-21T01:01:40.356Z",
       "updatedAt": "2025-10-21T01:01:41.046Z"
+    },
+    {
+      "id": "8-4",
+      "postId": 8,
+      "usuarioId": 4,
+      "estrelas": 5,
+      "createdAt": "2025-10-24T23:55:13.555Z",
+      "updatedAt": "2025-10-24T23:55:17.332Z"
+    },
+    {
+      "id": "6-4",
+      "postId": 6,
+      "usuarioId": 4,
+      "estrelas": 5,
+      "createdAt": "2025-10-25T00:32:43.847Z",
+      "updatedAt": "2025-10-25T00:32:43.847Z"
     }
   ],
   "seguidores": [
@@ -514,6 +540,12 @@
       "followerId": 1,
       "followingId": 3,
       "createdAt": "2025-10-20T21:18:55.267Z"
+    },
+    {
+      "id": "4-1",
+      "followerId": 4,
+      "followingId": 1,
+      "createdAt": "2025-10-25T01:14:59.028Z"
     }
   ]
 }
