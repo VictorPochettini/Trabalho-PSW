@@ -152,6 +152,15 @@
       "tipo": "visual",
       "genero": "ilustracao-digital",
       "data": "2025-10-25T20:20:02.817Z"
+    },
+    {
+      "id": "NaN",
+      "usuarioId": "4",
+      "titulo": "Testando testando!",
+      "conteudo": "Testando testando!",
+      "tipo": "texto",
+      "genero": "letra",
+      "data": "2025-10-26T20:49:46.989Z"
     }
   ],
   "desafios": [
@@ -328,17 +337,6 @@
       "likes": 0
     },
     {
-      "id": "33e2",
-      "postId": null,
-      "usuarioId": 4,
-      "texto": "Adorei",
-      "parentId": null,
-      "createdAt": "2025-10-25T20:26:30.644Z",
-      "updatedAt": "2025-10-25T20:26:30.644Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
       "id": "ff40",
       "postId": 1,
       "usuarioId": 4,
@@ -357,6 +355,17 @@
       "parentId": null,
       "createdAt": "2025-10-25T20:49:42.140Z",
       "updatedAt": "2025-10-25T20:49:42.140Z",
+      "deletedAt": null,
+      "likes": 0
+    },
+    {
+      "id": "9c21",
+      "postId": 7,
+      "usuarioId": 4,
+      "texto": "Adorei",
+      "parentId": null,
+      "createdAt": "2025-10-26T20:52:16.190Z",
+      "updatedAt": "2025-10-26T20:52:16.190Z",
       "deletedAt": null,
       "likes": 0
     }
@@ -566,9 +575,9 @@
       "id": "NaN-4",
       "postId": null,
       "usuarioId": 4,
-      "estrelas": 5,
+      "estrelas": 4,
       "createdAt": "2025-10-25T20:25:59.026Z",
-      "updatedAt": "2025-10-25T21:36:03.774Z"
+      "updatedAt": "2025-10-26T20:48:42.620Z"
     },
     {
       "id": "7-4",

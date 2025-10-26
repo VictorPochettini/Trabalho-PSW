@@ -160,10 +160,7 @@ const PostCard = ({
     '';
 
   // ✅ pode excluir se for admin OU dono do post
-  const canDelete =
-    !!currentUser &&
-    (currentUser.admin === true ||
-      Number(currentUser.id) === Number(post?.usuarioId));
+  const canDelete = !!currentUser && (currentUser.admin === true || Number(currentUser.id) === Number(post?.usuarioId));
 
   const handleDeletePost = async () => {
     if (!canDelete) return;
@@ -275,8 +272,7 @@ const PostCard = ({
                       </button>
                     )}
 
-                    {/* ✅ Botões de Editar e Excluir (usando canEdit e canDelete) */}
-                    {(canEdit || canDelete) && !isEditing && (
+                     {!isEditing && (
                       <div className="post-owner-actions">
                         {/* Botão Editar - apenas dono do post */}
                         {canEdit && (
@@ -331,38 +327,60 @@ const PostCard = ({
                   </div>
                 </div>
 
-                {/* Conteúdo - Modo Normal */}
-                {!isEditing && (
-                  <div className={`post-content readable ${isText ? 'prewrap' : ''}`}>
-                    <span className="quote-start">"</span>
-                    {content}
-                    <span className="quote-end">"</span>
-                  </div>
-                )}
-
-                {/* Conteúdo - Modo Edição */}
-                {isEditing && (
-                  <div className="edit-mode">
-                    <textarea
-                      className="edit-textarea"
-                      value={localEditText}
-                      onChange={handleLocalEditChange}
-                      rows="4"
-                      placeholder="Edite seu post..."
-                      autoFocus
-                    />
-                    <div className="edit-char-count">
-                      {localEditText.length} caracteres
-                    </div>
-                  </div>
-                )}
-
-                {/* Mídia - Ocultar durante edição se for texto */}
-                {!isEditing && (
+                {/* ✅ CORREÇÃO: REMOVIDAS AS DUPLICAÇÕES - Conteúdo Único */}
+                {!isEditing ? (
                   <>
+                    {/* Modo Normal */}
+                    <div className={`post-content readable ${isText ? 'prewrap' : ''}`}>
+                      <span className="quote-start">"</span>
+                      {content}
+                      <span className="quote-end">"</span>
+                    </div>
+
+                    {/* Mídia */}
                     {mediaType === 'audio' && mediaSrc && (
                       <div className="media-container audio-modern newskin glass">
-                        {/* ... player de audio existente ... */}
+                        <audio
+                          ref={audioRef}
+                          src={mediaSrc}
+                          onLoadedMetadata={onLoadedMetadata}
+                          onTimeUpdate={onTimeUpdate}
+                          onEnded={() => setIsPlaying(false)}
+                        />
+                        <div className="audio-ui">
+                          <button className="au-btn" onClick={togglePlay} aria-label={isPlaying ? 'Pausar' : 'Reproduzir'} type="button">
+                            {isPlaying ? '❚❚' : '▶'}
+                          </button>
+                          <div className="au-times">
+                            <span className="au-time">{fmt(current)}</span>
+                          </div>
+                          <input
+                            className="au-seek"
+                            type="range"
+                            min="0"
+                            max={Math.max(0, duration)}
+                            step="1"
+                            value={Math.min(current, duration || 0)}
+                            onChange={seek}
+                            aria-label="Linha do tempo"
+                          />
+                          <div className="au-times">
+                            <span className="au-time">{fmt(duration)}</span>
+                          </div>
+                          <div className="au-vol">
+                            <span className="au-vol-ico">{volume === 0 ? '🔇' : volume < 0.6 ? '🔉' : '🔊'}</span>
+                            <input
+                              className="au-vol-range"
+                              type="range"
+                              min="0"
+                              max="1"
+                              step="0.01"
+                              value={volume}
+                              onChange={changeVolume}
+                              aria-label="Volume"
+                            />
+                          </div>
+                        </div>
                       </div>
                     )}
 
@@ -379,109 +397,49 @@ const PostCard = ({
                         </small>
                       </div>
                     )}
-                  </>
-                )}
 
-                {/* Footer - Ocultar durante edição */}
-                {!isEditing && (
-                  <div className="post-footer">
-                    {/* ... rating e comentários existentes ... */}
-                  </div>
-                )}
+                    {/* Footer */}
+                    <div className="post-footer">
+                      <div className="rating-section">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            className="star-button elegant-star"
+                            onClick={() => handleStarClick(star)}
+                            disabled={!usuarioId || submitting || ratingState.saving}
+                            style={{ color: star <= myStars ? 'var(--star-on, #fbbf24)' : 'var(--star-off, #b8bec9)' }}
+                            title={usuarioId ? `Dar ${star} estrela${star>1?'s':''}` : 'Faça login para avaliar'}
+                            aria-label={`Avaliar com ${star} estrela${star>1?'s':''}`}
+                            type="button"
+                          >
+                            ★
+                          </button>
+                        ))}
+                        <small className="rating-text muted">{myStars > 0 ? `(${myStars}/5)` : 'Avaliar'}</small>
+                      </div>
 
-                {/* Conteúdo */}
-                <div className={`post-content readable ${isText ? 'prewrap' : ''}`}>
-                  <span className="quote-start">"</span>
-                  {content}
-                  <span className="quote-end">"</span>
-                </div>
-
-                {/* Mídia */}
-                {mediaType === 'audio' && mediaSrc && (
-                  <div className="media-container audio-modern newskin glass">
-                    <audio
-                      ref={audioRef}
-                      src={mediaSrc}
-                      onLoadedMetadata={onLoadedMetadata}
-                      onTimeUpdate={onTimeUpdate}
-                      onEnded={() => setIsPlaying(false)}
-                    />
-                    <div className="audio-ui">
-                      <button className="au-btn" onClick={togglePlay} aria-label={isPlaying ? 'Pausar' : 'Reproduzir'} type="button">
-                        {isPlaying ? '❚❚' : '▶'}
+                      <button className="btn comment-button glossy" onClick={() => onCommentClick(id)}>
+                        <i className="far fa-comment-dots"></i>
+                        <span className="comentarioTexto"> Comentar</span>
                       </button>
-                      <div className="au-times">
-                        <span className="au-time">{fmt(current)}</span>
-                      </div>
-                      <input
-                        className="au-seek"
-                        type="range"
-                        min="0"
-                        max={Math.max(0, duration)}
-                        step="1"
-                        value={Math.min(current, duration || 0)}
-                        onChange={seek}
-                        aria-label="Linha do tempo"
-                      />
-                      <div className="au-times">
-                        <span className="au-time">{fmt(duration)}</span>
-                      </div>
-                      <div className="au-vol">
-                        <span className="au-vol-ico">{volume === 0 ? '🔇' : volume < 0.6 ? '🔉' : '🔊'}</span>
-                        <input
-                          className="au-vol-range"
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.01"
-                          value={volume}
-                          onChange={changeVolume}
-                          aria-label="Volume"
-                        />
-                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* Modo Edição */
+                  <div className="edit-mode">
+                    <textarea
+                      className="edit-textarea"
+                      value={localEditText}
+                      onChange={handleLocalEditChange}
+                      rows="4"
+                      placeholder="Edite seu post..."
+                      autoFocus
+                    />
+                    <div className="edit-char-count">
+                      {localEditText.length} caracteres
                     </div>
                   </div>
                 )}
-
-                {mediaType === 'image' && mediaSrc && (
-                  <div className="media-container image-art refined">
-                    <img src={mediaSrc} alt={mediaAlt || 'Imagem do post'} className="post-image art smooth" />
-                  </div>
-                )}
-
-                {mediaType === 'text' && (
-                  <div className="text-media">
-                    <small className="text-muted">
-                      <span className="prewrap">{texto}</span>
-                    </small>
-                  </div>
-                )}
-
-                {/* Footer */}
-                <div className="post-footer">
-                  <div className="rating-section">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        className="star-button elegant-star"
-                        onClick={() => handleStarClick(star)}
-                        disabled={!usuarioId || submitting || ratingState.saving}
-                        style={{ color: star <= myStars ? 'var(--star-on, #fbbf24)' : 'var(--star-off, #b8bec9)' }}
-                        title={usuarioId ? `Dar ${star} estrela${star>1?'s':''}` : 'Faça login para avaliar'}
-                        aria-label={`Avaliar com ${star} estrela${star>1?'s':''}`}
-                        type="button"
-                      >
-                        ★
-                      </button>
-                    ))}
-                    <small className="rating-text muted">{myStars > 0 ? `(${myStars}/5)` : 'Avaliar'}</small>
-                  </div>
-
-                  <button className="btn comment-button glossy" onClick={() => onCommentClick(id)}>
-                    <i className="far fa-comment-dots"></i>
-                    <span className="comentarioTexto"> Comentar</span>
-                  </button>
-                </div>
               </div>
             </div>
           </div>

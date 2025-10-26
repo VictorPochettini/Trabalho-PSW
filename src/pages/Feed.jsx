@@ -116,20 +116,28 @@ const Feed = () => {
     if (!editText.trim()) return;
 
     try {
-      // Atualiza o post via API
-      await axios.put(`http://localhost:5000/posts/${postId}`, {
-        conteudo: editText.trim(),
-        titulo: editText.trim().substring(0, 100) // Limita o título
-      });
-
-      // Recarrega os posts
-      dispatch(fetchPosts());
-      setEditingPost(null);
-      setEditText('');
-    } catch (error) {
-      console.error('Erro ao editar post:', error);
+    // ✅ ENCONTRA O POST ORIGINAL para manter todas as informações
+    const postOriginal = posts.find(p => p.id === postId);
+    
+    if (!postOriginal) {
+      console.error('Post original não encontrado');
+      return;
     }
-  };
+    // ✅ ATUALIZA mantendo TODOS os dados originais importantes
+    await axios.put(`http://localhost:5000/posts/${postId}`, {
+      ...postOriginal, // ✅ MANTÉM todos os dados originais
+      conteudo: editText.trim(),
+      titulo: editText.trim().substring(0, 100),
+      // ✅ NÃO altera usuarioId, data, tipo, etc.
+    });
+    // ✅ Recarrega os posts
+    await dispatch(fetchPosts());
+    setEditingPost(null);
+    setEditText('');
+  } catch (error) {
+    console.error('Erro ao editar post:', error);
+  }
+};
 
   // Função para cancelar edição
   const handleCancelEdit = () => {
