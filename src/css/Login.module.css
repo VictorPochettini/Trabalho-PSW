@@ -322,6 +322,24 @@ div:hover .tooltip {
 }
 
 
+.linkTermos {
+  color: #7b4eff;
+  font-weight: bold;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: transform 0.3s ease, color 0.3s ease, text-shadow 0.3s ease;
+
+}
+
+.linkTermos:hover {
+  transform: scale(1.1);
+  color: #5c3bcc;
+ 
+}
+
+
+
+
 @media (max-width: 768px) {
   .loginPage {
     padding: 20px 15px;

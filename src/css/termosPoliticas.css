@@ -1,0 +1,83 @@
+.pagina-termos {
+  font-family: "Poppins", sans-serif;
+  color: #222;
+  background-color: #fafafa;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topo {
+  background-color: #7b4eff;
+  color: white;
+  padding: 20px 10%;
+  display: flex;               /* Coloca logo e título lado a lado */
+  align-items: center;         /* Centraliza verticalmente */
+  justify-content: flex-start; /* Mantém alinhados à esquerda */
+  gap: 20px;                   /* Espaço entre a logo e o texto */
+}
+
+.logo {
+  width: 60px;
+  height: auto;
+}
+
+.topo h1 {
+  font-size: 1.8rem;
+  margin: 0;
+  white-space: nowrap;         /* Evita quebra de linha */
+}
+
+
+.esp {
+  padding: 40px 15%;
+  line-height: 1.7;
+}
+
+.esp h2 {
+  color: #7b4eff;
+  margin-top: 25px;
+}
+
+.esp h3 {
+  color: #5c3bcc;
+  margin-top: 15px;
+  font-size: 17px;
+}
+
+.esp ul {
+  padding-left: 25px;
+  list-style: disc;
+}
+ .hero h1 {
+        font-size: 2.2rem;
+    
+    }
+.footer {
+  background-color: #111;
+  color: #eee;
+  margin-top: auto;
+  padding: 40px 10%;
+}
+
+.footer-content {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.footer-column h3 {
+  color: #7b4eff;
+  margin-bottom: 10px;
+}
+
+.footer-column a {
+  color: #ccc;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-column a:hover {
+  color: #fff;
+}

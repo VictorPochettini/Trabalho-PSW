@@ -174,19 +174,26 @@ export default function CriacaoConta() {
             {erro && <span className={styles.inputErrorMsg}>{erro}</span>}
           </div>
 
-          <div className={`${styles.formGroup} ${styles.termosContainer}`}>
-            <input
-              type="checkbox"
-              id="termos"
-              checked={aceitouTermos}
-              onChange={(e) => setAceitouTermos(e.target.checked)}
-              className={styles.termosCheckbox}
-              required
-            />
-            <label className={styles.termos} htmlFor="termos">
-              Eu aceito os termos de uso e as políticas de privacidade
-            </label>
-          </div>
+         <div className={`${styles.formGroup} ${styles.termosContainer}`}>
+        <input
+          type="checkbox"
+          id="termos"
+          checked={aceitouTermos}
+          onChange={(e) => setAceitouTermos(e.target.checked)}
+          className={styles.termosCheckbox}
+          required
+        />
+        <label className={styles.termos} htmlFor="termos">
+          Eu aceito os{" "}
+          <Link to="/termos" className={styles.linkTermos}>
+            termos de uso
+          </Link>{" "}
+          e as{" "}
+          <Link to="/politicas" className={styles.linkTermos}>
+            políticas de privacidade
+          </Link>
+        </label>
+      </div>
 
           <button
             type="submit"
