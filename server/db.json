@@ -44,7 +44,7 @@
       "generosMusicais": "blues",
       "estilosArte": "arte-grafica",
       "fotoPerfil": "blob:http://localhost:5173/96d76fcf-9e6d-46b1-b969-3d5791f70fbe",
-      "followingCount": 3,
+      "followingCount": 4,
       "ratingAvgRecebida": 0,
       "ratingCountRecebida": 0,
       "followersCount": 1
@@ -55,7 +55,8 @@
       "username": "joaoc",
       "email": "joao@email.com",
       "senha": "987654",
-      "admin": false
+      "admin": false,
+      "followersCount": 1
     },
     {
       "id": "6",
@@ -117,15 +118,9 @@
       "ratingCount": 3
     },
     {
-      "id": "6",
-      "usuarioId": 4,
-      "titulo": "Tava lembrando desse poema esses dias",
-      "conteudo": "Poeminho do Contra\nTodos esses que aí estão\nAtravancando meu caminho,\nEles passarão...\nEu passarinho!",
-      "tipo": "texto",
-      "genero": "poema",
-      "data": "2025-10-20T23:54:43.611Z",
-      "ratingAvg": 4.67,
-      "ratingCount": 3
+      "conteudo": "Poeminho do Contra\nTodos esses que aí estão\nAtravancando meu caminho,\nEles passarão...\nEu passarinho!!!",
+      "titulo": "Poeminho do Contra\nTodos esses que aí estão\nAtravancando meu caminho,\nEles passarão...\nEu passarinho",
+      "id": "6"
     },
     {
       "id": "7",
@@ -626,6 +621,12 @@
       "followerId": 4,
       "followingId": 1,
       "createdAt": "2025-10-25T20:28:23.451Z"
+    },
+    {
+      "id": "4-5",
+      "followerId": 4,
+      "followingId": 5,
+      "createdAt": "2025-10-26T16:46:54.933Z"
     }
   ]
 }

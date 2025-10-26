@@ -15,6 +15,7 @@ const Feed = () => {
   const posts = useSelector((state) => state.posts.lista);
   const loadingPosts = useSelector((state) => state.posts.loading);
   const errorPosts = useSelector((state) => state.posts.error);
+  const currentUser = useSelector((state) => state.user.currentUser);
 
   const [usuarios, setUsuarios] = useState([]);
   const [loadingUsuarios, setLoadingUsuarios] = useState(true);
@@ -25,6 +26,9 @@ const Feed = () => {
   const [monetizationUsername, setMonetizationUsername] = useState('');
   const [showComments, setShowComments] = useState(false);
   const [currentPostIdForComments, setCurrentPostIdForComments] = useState(null);
+
+  const [editingPost, setEditingPost] = useState(null);
+  const [editText, setEditText] = useState('');
 
   // Busca posts e usuários
   useEffect(() => {
@@ -101,19 +105,63 @@ const Feed = () => {
   if (loadingPosts || loadingUsuarios) return <p>Carregando...</p>;
   if (errorPosts) return <p>{errorPosts}</p>;
 
+  // Função para iniciar a edição
+  const handleEditClick = (post) => {
+    setEditingPost(post.id);
+    setEditText(post.texto || post.content || '');
+  };
+
+  // Função para salvar a edição
+  const handleSaveEdit = async (postId) => {
+    if (!editText.trim()) return;
+
+    try {
+      // Atualiza o post via API
+      await axios.put(`http://localhost:5000/posts/${postId}`, {
+        conteudo: editText.trim(),
+        titulo: editText.trim().substring(0, 100) // Limita o título
+      });
+
+      // Recarrega os posts
+      dispatch(fetchPosts());
+      setEditingPost(null);
+      setEditText('');
+    } catch (error) {
+      console.error('Erro ao editar post:', error);
+    }
+  };
+
+  // Função para cancelar edição
+  const handleCancelEdit = () => {
+    setEditingPost(null);
+    setEditText('');
+  };
+
   return (
     <>
       <Header />
 
       <div className="feed-content-wrapper">
-        {postsComUsuario.map(post => (
-          <PostCard
-            key={post.id}
-            post={post}
-            onMonetizeClick={handleMonetizeClick}
-            onCommentClick={handleCommentClick}
-          />
-        ))}
+        {postsComUsuario.map(post => {
+          // 🔥 Define se é uma publicação do próprio usuário
+          const isOwnProfile = currentUser && Number(currentUser.id) === Number(post.usuarioId);
+          
+          return (
+            <PostCard
+              key={post.id}
+              post={post}
+              onMonetizeClick={handleMonetizeClick}
+              onCommentClick={handleCommentClick}
+              onEditClick={handleEditClick} 
+              onSaveEdit={handleSaveEdit} 
+              onCancelEdit={handleCancelEdit} 
+              isEditing={editingPost === post.id} 
+              editText={editText} 
+              onEditTextChange={setEditText}
+              isOwnProfile={isOwnProfile} 
+            />
+          );
+        })}
       </div>
 
       {/*<div className="feed-content-wrapper">

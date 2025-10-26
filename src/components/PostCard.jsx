@@ -26,9 +26,16 @@ const PostCard = ({
   onMonetizeClick, 
   onCommentClick, 
   onDeleteClick,
-  isOwnProfile = false // ← ADICIONE ESTA PROP
+  onEditClick, 
+  onSaveEdit, 
+  onCancelEdit, 
+  isEditing, 
+  editText, 
+  onEditTextChange,
+  isOwnProfile = false
 }) => {
   const [submitting, setSubmitting] = useState(false);
+  const [localEditText, setLocalEditText] = useState('');
 
   // 🎵 player custom (inalterado)
   const audioRef = useRef(null);
@@ -40,8 +47,7 @@ const PostCard = ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { currentUser, usuarios: usuariosState } =
-    useSelector((s) => s.user) || { currentUser: null, usuarios: [] };
+  const { currentUser, usuarios: usuariosState } = useSelector((s) => s.user) || { currentUser: null, usuarios: [] };
   const usuarios = Array.isArray(usuariosState) ? usuariosState : [];
   const usuarioId = currentUser?.id;
 
@@ -50,8 +56,7 @@ const PostCard = ({
   }, [dispatch, usuarios.length]);
 
   // autor
-  const author =
-    usuarios.find((u) => Number(u.id) === Number(post?.usuarioId)) || null;
+  const author = usuarios.find((u) => Number(u.id) === Number(post?.usuarioId)) || null;
   const authorName = author?.nome || author?.name || 'Usuário';
   const authorUsername = author?.username || post?.username || '';
 
@@ -178,6 +183,33 @@ const PostCard = ({
     }
   };
 
+  // Efeito para sincronizar o texto de edição
+  useEffect(() => {
+    if (isEditing) {
+      setLocalEditText(editText);
+    }
+  }, [isEditing, editText]);
+
+  const handleLocalEditChange = (e) => {
+    setLocalEditText(e.target.value);
+    onEditTextChange(e.target.value);
+  };
+
+  const handleSaveClick = () => {
+    onSaveEdit(post.id);
+  };
+
+  const handleCancelClick = () => {
+    onCancelEdit();
+  };
+
+  const handleEditClick = () => {
+    onEditClick(post);
+  };
+
+  // ✅ pode editar se for dono do post
+  const canEdit = !!currentUser && Number(currentUser.id) === Number(post?.usuarioId);
+
   return (
     <div className="post-container" data-created={createdDataAttr}>
       <div className="container">
@@ -243,20 +275,119 @@ const PostCard = ({
                       </button>
                     )}
 
-                    {/* ✅ Excluir (apenas admin ou autor) */}
-                    {canDelete && (
-                      <button
-                        type="button"
-                        className="btn btn-sm delete-button danger"
-                        onClick={handleDeletePost}
-                        title="Excluir post"
-                        aria-label="Excluir post"
-                      >
-                        <i className="fas fa-trash-alt"></i>
-                      </button>
+                    {/* ✅ Botões de Editar e Excluir (usando canEdit e canDelete) */}
+                    {(canEdit || canDelete) && !isEditing && (
+                      <div className="post-owner-actions">
+                        {/* Botão Editar - apenas dono do post */}
+                        {canEdit && (
+                          <button
+                            type="button"
+                            className="btn btn-sm edit-button primary"
+                            onClick={handleEditClick}
+                            title="Editar post"
+                            aria-label="Editar post"
+                          >
+                            <i className="fas fa-edit"></i>
+                          </button>
+                        )}
+                        
+                        {/* Botão Excluir - admin ou dono do post */}
+                        {canDelete && (
+                          <button
+                            type="button"
+                            className="btn btn-sm delete-button danger"
+                            onClick={handleDeletePost}
+                            title="Excluir post"
+                            aria-label="Excluir post"
+                          >
+                            <i className="fas fa-trash-alt"></i>
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ✅ Botões de Salvar/Cancelar durante edição */}
+                    {isEditing && (
+                      <div className="edit-actions">
+                        <button
+                          type="button"
+                          className="btn btn-sm save-button success"
+                          onClick={handleSaveClick}
+                          disabled={!localEditText.trim()}
+                          title="Salvar edição"
+                        >
+                          <i className="fas fa-check"></i>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm cancel-button secondary"
+                          onClick={handleCancelClick}
+                          title="Cancelar edição"
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
+
+                {/* Conteúdo - Modo Normal */}
+                {!isEditing && (
+                  <div className={`post-content readable ${isText ? 'prewrap' : ''}`}>
+                    <span className="quote-start">"</span>
+                    {content}
+                    <span className="quote-end">"</span>
+                  </div>
+                )}
+
+                {/* Conteúdo - Modo Edição */}
+                {isEditing && (
+                  <div className="edit-mode">
+                    <textarea
+                      className="edit-textarea"
+                      value={localEditText}
+                      onChange={handleLocalEditChange}
+                      rows="4"
+                      placeholder="Edite seu post..."
+                      autoFocus
+                    />
+                    <div className="edit-char-count">
+                      {localEditText.length} caracteres
+                    </div>
+                  </div>
+                )}
+
+                {/* Mídia - Ocultar durante edição se for texto */}
+                {!isEditing && (
+                  <>
+                    {mediaType === 'audio' && mediaSrc && (
+                      <div className="media-container audio-modern newskin glass">
+                        {/* ... player de audio existente ... */}
+                      </div>
+                    )}
+
+                    {mediaType === 'image' && mediaSrc && (
+                      <div className="media-container image-art refined">
+                        <img src={mediaSrc} alt={mediaAlt || 'Imagem do post'} className="post-image art smooth" />
+                      </div>
+                    )}
+
+                    {mediaType === 'text' && (
+                      <div className="text-media">
+                        <small className="text-muted">
+                          <span className="prewrap">{texto}</span>
+                        </small>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Footer - Ocultar durante edição */}
+                {!isEditing && (
+                  <div className="post-footer">
+                    {/* ... rating e comentários existentes ... */}
+                  </div>
+                )}
 
                 {/* Conteúdo */}
                 <div className={`post-content readable ${isText ? 'prewrap' : ''}`}>
@@ -429,6 +560,102 @@ const PostCard = ({
           box-shadow: 0 12px 26px rgba(214,48,49,.45);
           filter: brightness(1.03);
           border-color: rgba(255,255,255,.28);
+        }
+
+        .post-owner-actions {
+          display: flex;
+          gap: 8px;
+          margin-left: 8px;
+        }
+
+        .edit-actions {
+          display: flex;
+          gap: 8px;
+          margin-left: 8px;
+        }
+
+        .edit-button.primary {
+          border: 1px solid rgba(255,255,255,.18);
+          background: linear-gradient(180deg, rgba(59, 130, 246, .85), rgba(37, 99, 235, .85));
+          color: #fff;
+          box-shadow: 0 8px 20px rgba(37, 99, 235, .35);
+          transition: transform .15s ease, box-shadow .25s ease, filter .2s ease, border-color .2s ease;
+        }
+
+        .edit-button.primary:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 12px 26px rgba(37, 99, 235, .45);
+          filter: brightness(1.03);
+          border-color: rgba(255,255,255,.28);
+        }
+
+        .save-button.success {
+          border: 1px solid rgba(255,255,255,.18);
+          background: linear-gradient(180deg, rgba(34, 197, 94, .85), rgba(22, 163, 74, .85));
+          color: #fff;
+          box-shadow: 0 8px 20px rgba(22, 163, 74, .35);
+          transition: transform .15s ease, box-shadow .25s ease, filter .2s ease, border-color .2s ease;
+        }
+
+        .save-button.success:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 12px 26px rgba(22, 163, 74, .45);
+          filter: brightness(1.03);
+          border-color: rgba(255,255,255,.28);
+        }
+
+        .save-button.success:disabled {
+          background: rgba(255,255,255,.2);
+          cursor: not-allowed;
+        }
+
+        .cancel-button.secondary {
+          border: 1px solid rgba(255,255,255,.18);
+          background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.08));
+          color: #fff;
+          transition: transform .15s ease, box-shadow .25s ease, filter .2s ease, border-color .2s ease;
+        }
+
+        .cancel-button.secondary:hover {
+          transform: translateY(-1px);
+          background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.10));
+          box-shadow: 0 8px 22px rgba(0,0,0,.25);
+          border-color: rgba(255,255,255,.28);
+        }
+
+        .edit-mode {
+          margin: 15px 0;
+        }
+
+        .edit-textarea {
+          width: 100%;
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 8px;
+          color: white;
+          padding: 12px;
+          resize: vertical;
+          font-family: inherit;
+          font-size: inherit;
+        }
+
+        .edit-textarea:focus {
+          outline: none;
+          border-color: #5e17eb;
+          box-shadow: 0 0 0 2px rgba(94, 23, 235, 0.2);
+        }
+
+        .edit-char-count {
+          text-align: right;
+          font-size: 0.8rem;
+          color: rgba(255,255,255,0.6);
+          margin-top: 5px;
+        }
+
+        .post-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
 
         /* conteúdo */
