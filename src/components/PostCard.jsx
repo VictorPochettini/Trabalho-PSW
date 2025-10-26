@@ -21,7 +21,13 @@ import { deletePost } from '../redux/postsSlice';
 
 import { fetchUsuarios } from '../redux/usuariosSlice';
 
-const PostCard = ({ post, onMonetizeClick, onCommentClick, onDeleteClick }) => {
+const PostCard = ({ 
+  post, 
+  onMonetizeClick, 
+  onCommentClick, 
+  onDeleteClick,
+  isOwnProfile = false // ← ADICIONE ESTA PROP
+}) => {
   const [submitting, setSubmitting] = useState(false);
 
   // 🎵 player custom (inalterado)
@@ -207,28 +213,35 @@ const PostCard = ({ post, onMonetizeClick, onCommentClick, onDeleteClick }) => {
                   </div>
 
                   <div className="post-actions">
-                    <button
-                      className="btn btn-sm support-button soft"
-                      onClick={() => onMonetizeClick(authorUsername || authorName)}
-                    >
-                      <i className="fas fa-dollar-sign me-1"></i>Apoiar
-                    </button>
-                    <button
-                      className={`btn btn-sm follow-button ${isFollowing ? 'following' : 'notfollowing'} soft`}
-                      onClick={handleFollowToggle}
-                      disabled={!usuarioId || !targetUserId || usuarioId === targetUserId}
-                      title={
-                        !usuarioId
-                          ? 'Faça login para seguir'
-                          : usuarioId === targetUserId
-                          ? 'Você não pode seguir a si mesmo'
-                          : isFollowing
-                          ? 'Deixar de seguir'
-                          : 'Seguir'
-                      }
-                    >
-                      {isFollowing ? 'Seguindo' : 'Seguir'}
-                    </button>
+                    {/* Botão Apoiar - SOMENTE se NÃO for o próprio perfil */}
+                    {!isOwnProfile && (
+                      <button
+                        className="btn btn-sm support-button soft"
+                        onClick={() => onMonetizeClick(authorUsername || authorName)}
+                      >
+                        <i className="fas fa-dollar-sign me-1"></i>Apoiar
+                      </button>
+                    )}
+                    
+                    {/* Botão Seguir - SOMENTE se NÃO for o próprio perfil */}
+                    {!isOwnProfile && (
+                      <button
+                        className={`btn btn-sm follow-button ${isFollowing ? 'following' : 'notfollowing'} soft`}
+                        onClick={handleFollowToggle}
+                        disabled={!usuarioId || !targetUserId || usuarioId === targetUserId}
+                        title={
+                          !usuarioId
+                            ? 'Faça login para seguir'
+                            : usuarioId === targetUserId
+                            ? 'Você não pode seguir a si mesmo'
+                            : isFollowing
+                            ? 'Deixar de seguir'
+                            : 'Seguir'
+                        }
+                      >
+                        {isFollowing ? 'Seguindo' : 'Seguir'}
+                      </button>
+                    )}
 
                     {/* ✅ Excluir (apenas admin ou autor) */}
                     {canDelete && (

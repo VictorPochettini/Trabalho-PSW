@@ -97,11 +97,90 @@ export const unfollowUser = createAsyncThunk(
   }
 );
 
+// NOVAS FUNÇÕES para buscar listas de seguidores e seguindo
+export const fetchFollowersList = createAsyncThunk(
+  "follows/fetchFollowersList",
+  async (userId) => {
+    // Busca todos os seguidores do usuário
+    const followersRes = await fetch(`${BASE}/seguidores?followingId=${Number(userId)}`);
+    if (!followersRes.ok) throw new Error("Erro ao carregar lista de seguidores");
+    const followers = await followersRes.json();
+    
+    // Para cada seguidor, busca os detalhes do usuário
+    const followersWithDetails = await Promise.all(
+      followers.map(async (follow) => {
+        try {
+          const userRes = await fetch(`${BASE}/usuarios/${Number(follow.followerId)}`);
+          if (userRes.ok) {
+            const userData = await userRes.json();
+            return {
+              id: userData.id,
+              nome: userData.nome || userData.name || 'Usuário',
+              username: userData.username,
+              fotoPerfil: userData.fotoPerfil
+            };
+          }
+        } catch (error) {
+          console.error(`Erro ao buscar detalhes do usuário ${follow.followerId}:`, error);
+        }
+        return {
+          id: follow.followerId,
+          nome: 'Usuário',
+          username: 'usuario',
+          fotoPerfil: null
+        };
+      })
+    );
+    
+    return { userId: Number(userId), followers: followersWithDetails.filter(Boolean) };
+  }
+);
+
+export const fetchFollowingList = createAsyncThunk(
+  "follows/fetchFollowingList",
+  async (userId) => {
+    // Busca todas as pessoas que o usuário está seguindo
+    const followingRes = await fetch(`${BASE}/seguidores?followerId=${Number(userId)}`);
+    if (!followingRes.ok) throw new Error("Erro ao carregar lista de seguindo");
+    const following = await followingRes.json();
+    
+    // Para cada pessoa seguida, busca os detalhes do usuário
+    const followingWithDetails = await Promise.all(
+      following.map(async (follow) => {
+        try {
+          const userRes = await fetch(`${BASE}/usuarios/${Number(follow.followingId)}`);
+          if (userRes.ok) {
+            const userData = await userRes.json();
+            return {
+              id: userData.id,
+              nome: userData.nome || userData.name || 'Usuário',
+              username: userData.username,
+              fotoPerfil: userData.fotoPerfil
+            };
+          }
+        } catch (error) {
+          console.error(`Erro ao buscar detalhes do usuário ${follow.followingId}:`, error);
+        }
+        return {
+          id: follow.followingId,
+          nome: 'Usuário',
+          username: 'usuario',
+          fotoPerfil: null
+        };
+      })
+    );
+    
+    return { userId: Number(userId), following: followingWithDetails.filter(Boolean) };
+  }
+);
+
 const followsSlice = createSlice({
   name: "follows",
   initialState: {
     byPair: {}, // `${followerId}-${followingId}` -> { isFollowing, loading, error }
     counts: {}, // userId -> { followersCount, followingCount, loading }
+    followersLists: {}, // userId -> { list: [], loading: boolean, error: string }
+    followingLists: {}, // userId -> { list: [], loading: boolean, error: string }
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -137,6 +216,41 @@ const followsSlice = createSlice({
       .addCase(fetchFollowCounts.fulfilled, (state, action) => {
         const { userId, followersCount, followingCount } = action.payload;
         state.counts[Number(userId)] = { followersCount, followingCount, loading: false };
+      })
+      // NOVOS CASOS para fetchFollowersList
+      .addCase(fetchFollowersList.pending, (state, action) => {
+        const userId = Number(action.meta.arg);
+        state.followersLists[userId] = { list: [], loading: true, error: null };
+      })
+      .addCase(fetchFollowersList.fulfilled, (state, action) => {
+        const { userId, followers } = action.payload;
+        state.followersLists[userId] = { list: followers, loading: false, error: null };
+      })
+      .addCase(fetchFollowersList.rejected, (state, action) => {
+        const userId = Number(action.meta.arg);
+        state.followersLists[userId] = { 
+          list: [], 
+          loading: false, 
+          error: action.error?.message || "Erro ao carregar seguidores" 
+        };
+      })
+      
+      // NOVOS CASOS para fetchFollowingList
+      .addCase(fetchFollowingList.pending, (state, action) => {
+        const userId = Number(action.meta.arg);
+        state.followingLists[userId] = { list: [], loading: true, error: null };
+      })
+      .addCase(fetchFollowingList.fulfilled, (state, action) => {
+        const { userId, following } = action.payload;
+        state.followingLists[userId] = { list: following, loading: false, error: null };
+      })
+      .addCase(fetchFollowingList.rejected, (state, action) => {
+        const userId = Number(action.meta.arg);
+        state.followingLists[userId] = { 
+          list: [], 
+          loading: false, 
+          error: action.error?.message || "Erro ao carregar lista de seguindo" 
+        };
       });
   },
 });
@@ -149,3 +263,9 @@ export const selectIsFollowing = (followerId, followingId) => (state) =>
 
 export const selectFollowCounts = (userId) => (state) =>
   state.follows.counts[Number(userId)] || { followersCount: 0, followingCount: 0, loading: false };
+// NOVOS SELECTORS para as listas
+export const selectFollowersList = (userId) => (state) =>
+  state.follows.followersLists[Number(userId)] || { list: [], loading: false, error: null };
+
+export const selectFollowingList = (userId) => (state) =>
+  state.follows.followingLists[Number(userId)] || { list: [], loading: false, error: null };
