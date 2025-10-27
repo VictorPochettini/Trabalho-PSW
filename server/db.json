@@ -12,7 +12,7 @@
       "estilosArte": [],
       "ratingAvgRecebida": 0,
       "ratingCountRecebida": 0,
-      "followersCount": 3,
+      "followersCount": 4,
       "followingCount": 3
     },
     {
@@ -31,7 +31,7 @@
       "email": "malusantiago@email.com",
       "senha": "789987",
       "admin": false,
-      "followersCount": 2,
+      "followersCount": 3,
       "followingCount": 2
     },
     {
@@ -57,7 +57,7 @@
       "senha": "987654",
       "admin": false,
       "followersCount": 1,
-      "followingCount": 1
+      "followingCount": 3
     },
     {
       "id": "6",
@@ -104,8 +104,8 @@
       "tipo": "texto",
       "genero": "informativo",
       "data": "2025-10-13T10:00:00Z",
-      "ratingAvg": 4.38,
-      "ratingCount": 8
+      "ratingAvg": 4.44,
+      "ratingCount": 9
     },
     {
       "id": "3",
@@ -115,8 +115,8 @@
       "tipo": "visual",
       "genero": "abstrato",
       "data": "2025-10-13T12:00:00Z",
-      "ratingAvg": 4.29,
-      "ratingCount": 7
+      "ratingAvg": 4.25,
+      "ratingCount": 8
     },
     {
       "id": "5",
@@ -126,7 +126,7 @@
       "tipo": "visual",
       "genero": "ilustracao-digital",
       "data": "2025-10-13T20:03:15.182Z",
-      "ratingAvg": 3.86,
+      "ratingAvg": 3.71,
       "ratingCount": 7
     },
     {
@@ -142,8 +142,8 @@
       "tipo": "musica",
       "genero": "funk",
       "data": "2025-10-21T00:37:12.876Z",
-      "ratingAvg": 4,
-      "ratingCount": 5
+      "ratingAvg": 3.86,
+      "ratingCount": 7
     },
     {
       "id": "8",
@@ -153,8 +153,17 @@
       "tipo": "musica",
       "genero": "rock",
       "data": "2025-10-21T00:39:10.200Z",
-      "ratingAvg": 4.29,
-      "ratingCount": 7
+      "ratingAvg": 4.13,
+      "ratingCount": 8
+    },
+    {
+      "id": "9",
+      "usuarioId": "5",
+      "titulo": "Cheguei",
+      "conteudo": "Cheguei",
+      "tipo": "texto",
+      "genero": "historia",
+      "data": "2025-10-27T20:08:44.314Z"
     }
   ],
   "desafios": [
@@ -586,15 +595,15 @@
       "usuarioId": 5,
       "estrelas": 5,
       "createdAt": "2025-10-21T00:54:18.475Z",
-      "updatedAt": "2025-10-21T00:54:41.857Z"
+      "updatedAt": "2025-10-27T20:58:23.729Z"
     },
     {
       "id": "7-5",
       "postId": 7,
       "usuarioId": 5,
-      "estrelas": 5,
+      "estrelas": 4,
       "createdAt": "2025-10-21T00:54:46.339Z",
-      "updatedAt": "2025-10-21T00:54:46.339Z"
+      "updatedAt": "2025-10-27T20:58:14.960Z"
     },
     {
       "id": "6-5",
@@ -608,9 +617,9 @@
       "id": "5-5",
       "postId": 5,
       "usuarioId": 5,
-      "estrelas": 5,
+      "estrelas": 4,
       "createdAt": "2025-10-21T00:54:49.503Z",
-      "updatedAt": "2025-10-21T00:54:49.503Z"
+      "updatedAt": "2025-10-27T20:46:07.913Z"
     },
     {
       "id": "3-3",
@@ -699,6 +708,22 @@
       "estrelas": 5,
       "createdAt": "2025-10-27T14:20:53.043Z",
       "updatedAt": "2025-10-27T14:20:53.043Z"
+    },
+    {
+      "id": "1-5",
+      "postId": 1,
+      "usuarioId": 5,
+      "estrelas": 5,
+      "createdAt": "2025-10-27T20:31:22.282Z",
+      "updatedAt": "2025-10-27T20:31:23.206Z"
+    },
+    {
+      "id": "3-5",
+      "postId": 3,
+      "usuarioId": 5,
+      "estrelas": 4,
+      "createdAt": "2025-10-27T20:33:18.127Z",
+      "updatedAt": "2025-10-27T20:33:18.127Z"
     }
   ],
   "seguidores": [
@@ -767,6 +792,18 @@
       "followerId": 1,
       "followingId": 4,
       "createdAt": "2025-10-27T17:39:57.446Z"
+    },
+    {
+      "id": "5-1",
+      "followerId": 5,
+      "followingId": 1,
+      "createdAt": "2025-10-27T20:08:19.906Z"
+    },
+    {
+      "id": "5-3",
+      "followerId": 5,
+      "followingId": 3,
+      "createdAt": "2025-10-27T20:18:42.232Z"
     }
   ],
   "participacoes": [
