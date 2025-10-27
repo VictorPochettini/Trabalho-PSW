@@ -47,7 +47,7 @@
       "followingCount": 4,
       "ratingAvgRecebida": 0,
       "ratingCountRecebida": 0,
-      "followersCount": 1
+      "followersCount": 2
     },
     {
       "id": "5",
@@ -56,7 +56,8 @@
       "email": "joao@email.com",
       "senha": "987654",
       "admin": false,
-      "followersCount": 1
+      "followersCount": 1,
+      "followingCount": 1
     },
     {
       "id": "6",
@@ -160,7 +161,18 @@
       "conteudo": "Testando testando!",
       "tipo": "texto",
       "genero": "letra",
-      "data": "2025-10-26T20:49:46.989Z"
+      "data": "2025-10-26T20:49:46.989Z",
+      "ratingAvg": 4.5,
+      "ratingCount": 2
+    },
+    {
+      "id": "NaN",
+      "usuarioId": "5",
+      "titulo": "Testando publicação",
+      "conteudo": "Teste",
+      "tipo": "texto",
+      "genero": "letra",
+      "data": "2025-10-27T01:23:02.317Z"
     }
   ],
   "desafios": [
@@ -586,6 +598,14 @@
       "estrelas": 4,
       "createdAt": "2025-10-25T20:36:14.365Z",
       "updatedAt": "2025-10-25T20:36:54.764Z"
+    },
+    {
+      "id": "NaN-3",
+      "postId": null,
+      "usuarioId": 3,
+      "estrelas": 5,
+      "createdAt": "2025-10-26T21:40:52.785Z",
+      "updatedAt": "2025-10-26T21:40:52.785Z"
     }
   ],
   "seguidores": [
@@ -636,6 +656,12 @@
       "followerId": 4,
       "followingId": 5,
       "createdAt": "2025-10-26T16:46:54.933Z"
+    },
+    {
+      "id": "5-4",
+      "followerId": 5,
+      "followingId": 4,
+      "createdAt": "2025-10-27T01:21:53.253Z"
     }
   ]
 }
