@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import botaoVolta from "../images/botaoVolta.png";
 import styles from "../css/Login.module.css";
+import axios from 'axios';
 import { fetchUsuarios } from "../redux/usuariosSlice";
 import { fetchPosts } from "../redux/postsSlice";
 import { fetchFollowCounts, selectFollowCounts, fetchFollowersList, fetchFollowingList } from '../redux/followsSlice';
@@ -58,6 +59,10 @@ const UserProfile = () => {
   const [showFollowing, setShowFollowing] = useState(false);
   const [followersList, setFollowersList] = useState([]);
   const [followingList, setFollowingList] = useState([]);
+
+  //referente a edição do texto
+  const [editingPost, setEditingPost] = useState(null);
+  const [editText, setEditText] = useState('');
 
   // Buscas iniciais (protegido contra StrictMode em dev)
   const didInitRef = useRef(false);
@@ -217,6 +222,75 @@ const UserProfile = () => {
     document.body.style.overflow = "";
   };
 
+  // Função para iniciar a edição
+  const handleEditClick = (post) => {
+    setEditingPost(post.id);
+    setEditText(post.texto || post.content || '');
+  };
+
+  // Função para salvar a edição
+  const handleSaveEdit = async (postId) => {
+    {/*para debbug
+    console.log('=== INICIANDO EDIÇÃO ===');
+    console.log('postId:', postId);
+    console.log('editText:', editText);
+    console.log('posts disponíveis:', posts.length);
+    console.log('userPosts disponíveis:', userPosts.length);*/}
+
+    if (!editText.trim()) {
+      console.log('Texto vazio - cancelando');
+      alert('O texto não pode estar vazio!');
+      return;
+    }
+
+    try {
+      // Busca o post original na lista do Redux (posts)
+      const postToUpdate = posts.find(p => p.id === postId);
+      
+      if (!postToUpdate) {
+        console.error('Post não encontrado para edição');
+        alert('Post não encontrado');
+        return;
+      }
+
+      console.log('Post encontrado:', postToUpdate);
+
+      // Prepara os dados para atualização mantendo TODOS os campos originais
+      const updateData = {
+        ...postToUpdate, // ✅ Mantém todos os dados originais
+        conteudo: editText.trim(),
+        titulo: editText.trim().substring(0, 100),
+        // NÃO altera: usuarioId, data, tipo, etc.
+      };
+
+      console.log('Enviando atualização para API:', updateData);
+
+      // ✅ FAZ A REQUISIÇÃO PUT
+      const response = await axios.put(`http://localhost:5000/posts/${postId}`, updateData);
+      console.log('Resposta da API:', response.data);
+
+      // ✅ RECARREGA OS POSTS para atualizar a interface
+      await dispatch(fetchPosts());
+      
+      // ✅ LIMPA O ESTADO de edição
+      setEditingPost(null);
+      setEditText('');
+
+      console.log('Post editado com sucesso!');
+      
+    } catch (error) {
+      console.error('Erro ao editar post:', error);
+      console.error('Detalhes do erro:', error.response?.data || error.message);
+      alert('Erro ao salvar a edição. Verifique o console para mais detalhes.');
+    }
+  };
+
+  // Função para cancelar edição
+  const handleCancelEdit = () => {
+    setEditingPost(null);
+    setEditText('');
+  };
+
   return (
     <><BackButton/>
       <div className="container-fluid">
@@ -293,6 +367,12 @@ const UserProfile = () => {
                             post={p}
                             onMonetizeClick={handleMonetizeClick}
                             onCommentClick={handleCommentClick}
+                            onEditClick={handleEditClick}
+                            onSaveEdit={handleSaveEdit}
+                            onCancelEdit={handleCancelEdit}
+                            isEditing={editingPost === p.id}
+                            editText={editText}
+                            onEditTextChange={setEditText}
                             isOwnProfile={isOwnProfile} //referente tirar botoes apoiar e seguir no proprio perfil
                           />
                         </div>

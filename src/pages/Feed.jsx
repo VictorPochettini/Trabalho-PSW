@@ -30,8 +30,6 @@ const Feed = () => {
   const [showComments, setShowComments] = useState(false);
   const [currentPostIdForComments, setCurrentPostIdForComments] = useState(null);
 
-  const [editingPost, setEditingPost] = useState(null);
-  const [editText, setEditText] = useState('');
 
   // ✅ 1. BUSCA SEGUIDORES DA API (com persistência no localStorage)
   useEffect(() => {
@@ -109,6 +107,7 @@ const Feed = () => {
     }
   }, [loadingPosts, loadingUsuarios, posts, usuarios]);
 
+  // ✅ 4. FILTRA POSTS DOS SEGUIDORES + PRÓPRIAS PUBLICAÇÕES
   useEffect(() => {
     if (postsComUsuario.length > 0 && seguindoIds.length > 0) {
       console.log('Filtrando posts...');
@@ -156,46 +155,6 @@ const Feed = () => {
   if (loadingPosts || loadingUsuarios) return <p>Carregando...</p>;
   if (errorPosts) return <p>{errorPosts}</p>;
 
-  // Função para iniciar a edição
-  const handleEditClick = (post) => {
-    setEditingPost(post.id);
-    setEditText(post.texto || post.content || '');
-  };
-
-  // Função para salvar a edição
-  const handleSaveEdit = async (postId) => {
-    if (!editText.trim()) return;
-
-    try {
-    // ✅ ENCONTRA O POST ORIGINAL para manter todas as informações
-    const postOriginal = posts.find(p => p.id === postId);
-    
-    if (!postOriginal) {
-      console.error('Post original não encontrado');
-      return;
-    }
-    // ✅ ATUALIZA mantendo TODOS os dados originais importantes
-    await axios.put(`http://localhost:5000/posts/${postId}`, {
-      ...postOriginal, // ✅ MANTÉM todos os dados originais
-      conteudo: editText.trim(),
-      titulo: editText.trim().substring(0, 100),
-      // ✅ NÃO altera usuarioId, data, tipo, etc.
-    });
-    // ✅ Recarrega os posts
-    await dispatch(fetchPosts());
-    setEditingPost(null);
-    setEditText('');
-  } catch (error) {
-    console.error('Erro ao editar post:', error);
-  }
-};
-
-  // Função para cancelar edição
-  const handleCancelEdit = () => {
-    setEditingPost(null);
-    setEditText('');
-  };
-
   return (
     <>
       <Header />
@@ -223,7 +182,6 @@ const Feed = () => {
           </div>
         ) : (
           postsDosSeguidos.map(post => {
-            const isOwnProfile = currentUser && Number(currentUser.id) === Number(post.usuarioId);
             
             return (
               <PostCard
@@ -231,13 +189,6 @@ const Feed = () => {
                 post={post}
                 onMonetizeClick={handleMonetizeClick}
                 onCommentClick={handleCommentClick}
-                onEditClick={handleEditClick}
-                onSaveEdit={handleSaveEdit}
-                onCancelEdit={handleCancelEdit}
-                isEditing={editingPost === post.id}
-                editText={editText}
-                onEditTextChange={setEditText}
-                isOwnProfile={isOwnProfile}
               />
             );
           })
