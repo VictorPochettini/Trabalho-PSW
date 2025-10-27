@@ -2,6 +2,7 @@
 import { updateUser } from "../redux/usuariosSlice";
 import { useNavigate } from "react-router-dom";
 import React, { useEffect, useState } from 'react';
+import avatarPadrao from '../images/avatarPadrao.png';
 
 const EdicaoDeConta = () => {
   const dispatch = useDispatch();
@@ -12,9 +13,9 @@ const EdicaoDeConta = () => {
   const [bio, setBio] = useState(currentUser.bio);
   const [generosMusicais, setGenerosMusicais] = useState(currentUser.generosMusicais || []);
   const [estilosArte, setEstilosArte] = useState(currentUser.estilosArte || []);
-  const [previewUrl, setPreviewUrl] = useState(currentUser.fotoPerfil);
+  const [previewUrl, setPreviewUrl] = useState(currentUser.fotoPerfil ?? avatarPadrao);
 
-    const handleFileChange = (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setPreviewUrl(URL.createObjectURL(file));
@@ -35,6 +36,7 @@ const EdicaoDeConta = () => {
     await dispatch(updateUser(dadosAtualizados));
     navigate(`/user/${nomeUsuario}`);
   };
+
   return (
     <div style={styles.body}>
       <div style={styles.container}>
@@ -46,13 +48,17 @@ const EdicaoDeConta = () => {
           ← Voltar
         </button>
 
-        <center>
+        <div style={styles.avatarWrapper}>
           <div style={styles.avatarContainer}>
             <img 
               id="fotoPerfil" 
-              src={previewUrl} 
+              src={previewUrl}
               alt="Foto de perfil" 
               style={styles.fotoPerfil}
+              onError={(e) => {
+                console.log("Erro ao carregar imagem:", previewUrl);
+                e.target.src = "../images/avatarPadrao.png";
+              }}
             />
             <label htmlFor="fileInput" style={styles.uploadBtn}>
               +
@@ -65,7 +71,7 @@ const EdicaoDeConta = () => {
               style={{ display: 'none' }}
             />
           </div>
-        </center>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <label style={styles.label}>Nome de usuário:</label>
@@ -181,20 +187,25 @@ const styles = {
     borderRadius: '8px',
     transition: 'background 0.3s',
   },
-    avatarContainer: {
+  avatarWrapper: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: '30px',
+    width: '100%',
+  },
+  avatarContainer: {
     position: 'relative',
-    display: 'block',
     width: '150px',
     height: '150px',
-    marginBottom: '30px',
-    margin: '0 auto 30px auto',
+    flexShrink: 0,
   },
   fotoPerfil: {
-    width: '150px',
-    height: '150px',
+    width: '100%',
+    height: '100%',
     borderRadius: '50%',
     objectFit: 'cover',
     border: '3px solid #4713af',
+    display: 'block',
   },
   uploadBtn: {
     position: 'absolute',
