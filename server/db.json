@@ -153,8 +153,8 @@
       "tipo": "musica",
       "genero": "rock",
       "data": "2025-10-21T00:39:10.200Z",
-      "ratingAvg": 4.13,
-      "ratingCount": 8
+      "ratingAvg": 4,
+      "ratingCount": 7
     },
     {
       "id": "9",
@@ -164,6 +164,15 @@
       "tipo": "texto",
       "genero": "historia",
       "data": "2025-10-27T20:08:44.314Z"
+    },
+    {
+      "id": "10",
+      "usuarioId": "5",
+      "titulo": "OI",
+      "conteudo": "OIIIIIIIIIIIIIIIIIIIII",
+      "tipo": "texto",
+      "genero": "historia",
+      "data": "2025-10-27T21:55:07.230Z"
     }
   ],
   "desafios": [
@@ -590,20 +599,12 @@
       "updatedAt": "2025-10-21T00:51:36.425Z"
     },
     {
-      "id": "8-5",
-      "postId": 8,
-      "usuarioId": 5,
-      "estrelas": 5,
-      "createdAt": "2025-10-21T00:54:18.475Z",
-      "updatedAt": "2025-10-27T20:58:23.729Z"
-    },
-    {
       "id": "7-5",
       "postId": 7,
       "usuarioId": 5,
       "estrelas": 4,
       "createdAt": "2025-10-21T00:54:46.339Z",
-      "updatedAt": "2025-10-27T20:58:14.960Z"
+      "updatedAt": "2025-10-27T21:40:14.465Z"
     },
     {
       "id": "6-5",
@@ -619,7 +620,7 @@
       "usuarioId": 5,
       "estrelas": 4,
       "createdAt": "2025-10-21T00:54:49.503Z",
-      "updatedAt": "2025-10-27T20:46:07.913Z"
+      "updatedAt": "2025-10-27T21:44:11.102Z"
     },
     {
       "id": "3-3",

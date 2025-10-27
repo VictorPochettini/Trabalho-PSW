@@ -1,4 +1,3 @@
-// src/components/CommentsPopup.jsx
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -6,12 +5,13 @@ import {
   createComment,
   selectCommentsState,
   clearCommentsOfPost,
-  // ✅ importe o thunk real se existir no seu slice:
-  deleteComment, // <-- certifique-se que este thunk existe no commentsSlice
+  deleteComment,
 } from "../redux/commentsSlice";
 import {
   fetchMyRatingForPost,
+  fetchPostRating,
   upsertRating,
+  removeRating,
   selectRatingState,
 } from "../redux/ratingsSlice";
 import { fetchUsuarios } from "../redux/usuariosSlice";
@@ -48,6 +48,7 @@ const CommentsPopup = ({ show, onClose, postId }) => {
   const ratingState = useSelector(selectRatingState(postId));
 
   const [newCommentText, setNewCommentText] = useState("");
+  const [lastStarClickTime, setLastStarClickTime] = useState(0);
 
   const usuarioId = currentUser?.id;
   const canComment = Boolean(usuarioId);
@@ -60,17 +61,23 @@ const CommentsPopup = ({ show, onClose, postId }) => {
     }
   }, [show, usuarios.length, dispatch]);
 
-  // Carregar comentários + meu voto quando o popup abre
+  // Carregar comentários + avaliações quando o popup abre
   useEffect(() => {
     if (!show || !postId) return;
+    
     dispatch(fetchCommentsByPost(postId));
+    
     if (usuarioId) {
+      // Se usuário logado, busca avaliação pessoal + média do post
       dispatch(fetchMyRatingForPost({ postId, usuarioId }));
+    } else {
+      // Se não logado, busca apenas a média do post
+      dispatch(fetchPostRating(postId));
     }
+    
     return () => {
       dispatch(clearCommentsOfPost(postId));
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show, postId, usuarioId, dispatch]);
 
   const handleAddComment = async (e) => {
@@ -83,19 +90,25 @@ const CommentsPopup = ({ show, onClose, postId }) => {
 
   const handleSetStars = async (value) => {
     if (!usuarioId) return;
-    const v = Math.min(5, Math.max(1, Number(value)));
-    await dispatch(upsertRating({ postId, usuarioId, estrelas: v }));
+    
+    const currentTime = new Date().getTime();
+    const isDoubleClick = currentTime - lastStarClickTime < 300; // 300ms para double click
+    
+    if (isDoubleClick && ratingState.myStars > 0) {
+      // Double click: remove avaliação
+      await dispatch(removeRating({ postId, usuarioId }));
+    } else {
+      // Single click: avalia normalmente
+      const v = Math.min(5, Math.max(1, Number(value)));
+      await dispatch(upsertRating({ postId, usuarioId, estrelas: v }));
+    }
+    
+    setLastStarClickTime(currentTime);
   };
 
   const myStars = ratingState.myStars || 0;
-
-  const postFromStore = useSelector((s) =>
-    Array.isArray(s.posts?.items)
-      ? s.posts.items.find((p) => Number(p.id) === Number(postId))
-      : null
-  );
-  const ratingAvg = postFromStore?.ratingAvg ?? ratingState.postAvg ?? 0;
-  const ratingCount = postFromStore?.ratingCount ?? ratingState.postCount ?? 0;
+  const ratingAvg = ratingState.postAvg || 0;
+  const ratingCount = ratingState.postCount || 0;
 
   const resolveUserLabel = (uid) => {
     const user =
@@ -132,7 +145,6 @@ const CommentsPopup = ({ show, onClose, postId }) => {
       if (typeof deleteComment === "function") {
         await dispatch(deleteComment({ id: comment.id, postId })).unwrap?.();
       } else {
-        // fallback caso seu slice ainda não tenha o thunk:
         dispatch({ type: "comments/deleteRequested", payload: { id: comment.id, postId } });
       }
     } catch (e) {
@@ -174,6 +186,11 @@ const CommentsPopup = ({ show, onClose, postId }) => {
               </div>
               {!usuarioId && (
                 <small className="muted">Faça login para avaliar</small>
+              )}
+              {usuarioId && (
+                <small className="muted" style={{ display: 'block', marginTop: '4px' }}>
+                  Double click para remover
+                </small>
               )}
             </div>
             <div className="post-rating">

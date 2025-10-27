@@ -1,11 +1,12 @@
-// src/components/PostCard.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import '../index.css';
 
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchMyRatingForPost,
+  fetchPostRating,
   upsertRating,
+  removeRating,
   selectRatingState,
 } from '../redux/ratingsSlice';
 
@@ -36,8 +37,9 @@ const PostCard = ({
 }) => {
   const [submitting, setSubmitting] = useState(false);
   const [localEditText, setLocalEditText] = useState('');
+  const [lastStarClickTime, setLastStarClickTime] = useState(0);
 
-  // 🎵 player custom (inalterado)
+  // 🎵 player custom
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -62,10 +64,18 @@ const PostCard = ({
 
   // rating
   const ratingState = useSelector(selectRatingState(post?.id));
-  const myStars = ratingState.myStars || 0;
+  
+  // Buscar avaliação do usuário e média do post quando o componente monta
   useEffect(() => {
-    if (!post?.id || !usuarioId) return;
-    dispatch(fetchMyRatingForPost({ postId: post.id, usuarioId }));
+    if (!post?.id) return;
+    
+    if (usuarioId) {
+      // Se usuário logado, busca avaliação pessoal + média do post
+      dispatch(fetchMyRatingForPost({ postId: post.id, usuarioId }));
+    } else {
+      // Se não logado, busca apenas a média do post
+      dispatch(fetchPostRating(post.id));
+    }
   }, [dispatch, post?.id, usuarioId]);
 
   // seguidores
@@ -91,15 +101,34 @@ const PostCard = ({
 
   const handleStarClick = async (value) => {
     if (!usuarioId || submitting) return;
-    const estrelas = Math.min(5, Math.max(1, Number(value)));
-    try {
-      setSubmitting(true);
-      await dispatch(upsertRating({ postId: post.id, usuarioId, estrelas })).unwrap();
-    } catch (err) {
-      console.error('[PostCard] upsertRating error:', err);
-    } finally {
-      setSubmitting(false);
+    
+    const currentTime = new Date().getTime();
+    const isDoubleClick = currentTime - lastStarClickTime < 300; // 300ms para double click
+    
+    if (isDoubleClick && ratingState.myStars > 0) {
+      // Double click: remove avaliação
+      try {
+        setSubmitting(true);
+        await dispatch(removeRating({ postId: post.id, usuarioId })).unwrap();
+      } catch (err) {
+        console.error('[PostCard] removeRating error:', err);
+      } finally {
+        setSubmitting(false);
+      }
+    } else {
+      // Single click: avalia normalmente
+      const estrelas = Math.min(5, Math.max(1, Number(value)));
+      try {
+        setSubmitting(true);
+        await dispatch(upsertRating({ postId: post.id, usuarioId, estrelas })).unwrap();
+      } catch (err) {
+        console.error('[PostCard] upsertRating error:', err);
+      } finally {
+        setSubmitting(false);
+      }
     }
+    
+    setLastStarClickTime(currentTime);
   };
 
   // perfil → /user/username
@@ -153,7 +182,6 @@ const PostCard = ({
   const { time, content, mediaType, mediaSrc, mediaAlt, id, texto } = post;
   const isText = mediaType === 'text';
 
-  // ⚠️ NÃO reordena irmãos aqui. Apenas expõe um possível timestamp para uso no componente pai.
   const createdDataAttr =
     (post?.createdAt && String(post.createdAt)) ||
     (time && String(time)) ||
@@ -171,8 +199,6 @@ const PostCard = ({
       if (typeof onDeleteClick === 'function') {
         await onDeleteClick(post.id);
       } else {
-        // Fallback: dispare uma action genérica para o seu postsSlice, se existir.
-        // Ajuste para o seu thunk real, ex: deletePost(post.id)
         await dispatch(deletePost(post.id)).unwrap();
       }
     } catch (e) {
@@ -206,6 +232,10 @@ const PostCard = ({
 
   // ✅ pode editar se for dono do post
   const canEdit = !!currentUser && Number(currentUser.id) === Number(post?.usuarioId);
+
+  const myStars = ratingState.myStars || 0;
+  const ratingAvg = ratingState.postAvg || 0;
+  const ratingCount = ratingState.postCount || 0;
 
   return (
     <div className="post-container" data-created={createdDataAttr}>
@@ -327,7 +357,7 @@ const PostCard = ({
                   </div>
                 </div>
 
-                {/* ✅ CORREÇÃO: REMOVIDAS AS DUPLICAÇÕES - Conteúdo Único */}
+                {/* ✅ Conteúdo Único */}
                 {!isEditing ? (
                   <>
                     {/* Modo Normal */}
@@ -408,14 +438,21 @@ const PostCard = ({
                             onClick={() => handleStarClick(star)}
                             disabled={!usuarioId || submitting || ratingState.saving}
                             style={{ color: star <= myStars ? 'var(--star-on, #fbbf24)' : 'var(--star-off, #b8bec9)' }}
-                            title={usuarioId ? `Dar ${star} estrela${star>1?'s':''}` : 'Faça login para avaliar'}
+                            title={usuarioId ? `Clique para dar ${star} estrela${star>1?'s':''}, double click para remover` : 'Faça login para avaliar'}
                             aria-label={`Avaliar com ${star} estrela${star>1?'s':''}`}
                             type="button"
                           >
                             ★
                           </button>
                         ))}
-                        <small className="rating-text muted">{myStars > 0 ? `(${myStars}/5)` : 'Avaliar'}</small>
+                        <small className="rating-text muted">
+                          {myStars > 0 ? `(${myStars}/5)` : 'Avaliar'}
+                          {ratingCount > 0 && (
+                            <span style={{ marginLeft: '8px', opacity: 0.7 }}>
+                              Média: {ratingAvg.toFixed(1)} ({ratingCount})
+                            </span>
+                          )}
+                        </small>
                       </div>
 
                       <button className="btn comment-button glossy" onClick={() => onCommentClick(id)}>
@@ -446,9 +483,8 @@ const PostCard = ({
         </div>
       </div> 
 
-      {/* 🎨 Repaginação visual (mesmo layout e tamanhos) */}
+      {/* 🎨 Estilos */}
       <style>{`
-        /* Paleta baseada em variáveis do site com fallbacks */
         :root {
           --accent: var(--roxo, #5e17eb);
           --accent-2: #7b3ff2;
@@ -504,7 +540,7 @@ const PostCard = ({
         }
         .subtle { opacity: .8; }
 
-        /* ▶️ botão excluir */
+        /* botões */
         .delete-button.danger {
           margin-left: 8px;
           border: 1px solid rgba(255,255,255,.18);
@@ -757,7 +793,7 @@ const PostCard = ({
           background: #fff; border: 2px solid rgba(0,0,0,.15); box-shadow: 0 2px 6px rgba(0,0,0,.25); cursor: pointer; margin-top: -3px;
         }
 
-        /* 📱 RESPONSIVIDADE DO PLAYER — sem alterar HTML */
+        /* 📱 RESPONSIVIDADE DO PLAYER */
         @media (max-width: 576px) {
           .audio-ui {
             grid-template-columns: 44px 1fr 56px;
@@ -778,7 +814,6 @@ const PostCard = ({
           .au-seek::-webkit-slider-thumb { width: 20px; height: 20px; margin-top: -5px; }
           .au-vol-range::-webkit-slider-thumb { width: 16px; height: 16px; margin-top: -4px; }
 
-          /* evita overflow horizontal em cards estreitos */
           .media-container.audio-modern.newskin.glass { padding: 10px; }
         }
 
@@ -788,8 +823,8 @@ const PostCard = ({
           .elegant-star, .image-art.refined::after { transition: none !important; animation: none !important; }
         }
           .prewrap {
-  white-space: pre-wrap;      /* preserva \n */
-  word-break: break-word;     /* evita overflow em palavras longas */
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
       `}</style>
