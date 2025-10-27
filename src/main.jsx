@@ -16,10 +16,13 @@ import UserProfile from './pages/UserProfile.jsx';
 import Login from './pages/Login.jsx';
 import CreateAccount from './pages/CreateAccount.jsx';
 import ForYou from './pages/ForYou.jsx';
-import L_ChallengePage from './pages/L_ChallengePage.jsx';
 import EditProfile from './pages/EdicaodeConta.jsx';
 import TermosDeUso from './pages/TermosDeUso.jsx';
 import PoliticasPrivacidade from './pages/PoliticasPrivacidade.jsx';
+import ChallengesPage from "./pages/L_ChallengePage.jsx";
+import ChallengeDetail from "./pages/ChallengeDetail.jsx";
+import { ParticipatePage } from "./pages/ParticipatePage.jsx";
+import CreateChallenge from "./pages/CreateChallenge.jsx";
 
 
 
@@ -32,7 +35,7 @@ const router = createBrowserRouter([
   { path: "/", element: <InitialPage/> },
   { path: "/feed", element: <ProtectedRoute><Feed/></ProtectedRoute> },
   { path: "/discover", element: <ProtectedRoute><DiscoverArtist/></ProtectedRoute> },
-  { path: "/desafios", element: <ChallengePage/> },
+  { path: "/previa_desafios", element: <ChallengePage/> },
   { path: "/publicar/imagem", element: <ProtectedRoute><PublicarImagem/></ProtectedRoute> },
   { path: "/publicar/texto", element: <ProtectedRoute><PublicarLetra/></ProtectedRoute> },
   { path: "/publicar/musica", element: <ProtectedRoute><PublicarMusica/></ProtectedRoute> },
@@ -41,10 +44,13 @@ const router = createBrowserRouter([
   { path: "/login", element: <Login/> }, // público
   { path: "/cadastro", element: <CreateAccount/> }, // público
   { path: "/populares", element: <ProtectedRoute><ForYou/></ProtectedRoute> },
-    { path: "/Ldesafios", element: <ProtectedRoute><L_ChallengePage/></ProtectedRoute> },
   { path: "/edit-profile", element: <ProtectedRoute><EditProfile/></ProtectedRoute>},
   { path: "/termos", element: <TermosDeUso/> },
-  { path: "/politicas", element: <PoliticasPrivacidade/> }
+  { path: "/politicas", element: <PoliticasPrivacidade/> },
+  {path: "/desafios", element: <ProtectedRoute><ChallengesPage /></ProtectedRoute>},
+  {path:"/desafios/:id", element: <ProtectedRoute><ChallengeDetail /></ProtectedRoute>},
+  {path: "/desafios/:id/participar", element: <ProtectedRoute><ParticipatePage /></ProtectedRoute>},
+  {path: "/desafios/criar", element: <ProtectedRoute><CreateChallenge /></ProtectedRoute>}
 ]);
 
 

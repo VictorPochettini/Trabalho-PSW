@@ -12,7 +12,8 @@
       "estilosArte": [],
       "ratingAvgRecebida": 0,
       "ratingCountRecebida": 0,
-      "followersCount": 3
+      "followersCount": 3,
+      "followingCount": 3
     },
     {
       "id": "2",
@@ -46,7 +47,7 @@
       "followingCount": 4,
       "ratingAvgRecebida": 0,
       "ratingCountRecebida": 0,
-      "followersCount": 2
+      "followersCount": 3
     },
     {
       "id": "5",
@@ -216,6 +217,44 @@
       },
       "dataInicio": "2025-10-05",
       "dataFim": "2025-10-12"
+    },
+    {
+      "id": "5ab1",
+      "tipo": "comunidade",
+      "status": "publicado",
+      "criadorId": 9,
+      "titulo": "Batalha de Beats",
+      "descricao": "Duelo entre beats de trap!",
+      "thumbUrl": null,
+      "dataInicio": "2025-10-27",
+      "dataFim": "2025-11-20",
+      "createdAt": "2025-10-27T17:55:13.021Z",
+      "updatedAt": "2025-10-27T18:34:10.230Z"
+    },
+    {
+      "id": "eb4f",
+      "tipo": "comunidade",
+      "status": "publicado",
+      "criadorId": 9,
+      "titulo": "Batalha de Beats",
+      "descricao": "Batalha entre beats de Trap!",
+      "thumbUrl": null,
+      "dataInicio": "2025-10-27",
+      "dataFim": "2025-11-27",
+      "createdAt": "2025-10-27T17:57:06.833Z",
+      "updatedAt": "2025-10-27T17:57:06.833Z"
+    },
+    {
+      "id": "0cc0",
+      "tipo": "comunidade",
+      "status": "publicado",
+      "criadorId": 9,
+      "titulo": "Arte Digital",
+      "descricao": "Melhor pintura digital ganha!",
+      "dataInicio": "2025-10-27",
+      "dataFim": "2025-10-28",
+      "createdAt": "2025-10-27T18:40:48.559Z",
+      "updatedAt": "2025-10-27T18:40:48.559Z"
     }
   ],
   "comentarios": [
@@ -722,6 +761,21 @@
       "followerId": 9,
       "followingId": 1,
       "createdAt": "2025-10-27T13:58:33.355Z"
+    },
+    {
+      "id": "1-4",
+      "followerId": 1,
+      "followingId": 4,
+      "createdAt": "2025-10-27T17:39:57.446Z"
+    }
+  ],
+  "participacoes": [
+    {
+      "id": "3-1-1",
+      "desafioId": "3",
+      "usuarioId": "1",
+      "postId": 1,
+      "createdAt": "2025-10-27T16:53:19.489Z"
     }
   ]
 }

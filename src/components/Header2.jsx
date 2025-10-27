@@ -45,7 +45,7 @@ const HeaderForYou = () => {
               <Link to="/discover" className={`${styles.navLink} ${isActiveLink('discover') ? styles.enfase : ''}`} aria-current={isActiveLink('discover') ? 'page' : undefined}>Aleatórios</Link>
             </li>
             <li>
-              <Link to="/Ldesafios" className={`${styles.navLink} ${isActiveLink('desafios') ? styles.enfase : ''}`} aria-current={isActiveLink('desafios') ? 'page' : undefined}>Desafios</Link>
+              <Link to="/desafios" className={`${styles.navLink} ${isActiveLink('desafios') ? styles.enfase : ''}`} aria-current={isActiveLink('desafios') ? 'page' : undefined}>Desafios</Link>
             </li>
           </ul>
 
