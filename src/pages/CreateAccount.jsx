@@ -39,7 +39,7 @@ export default function CriacaoConta() {
       .catch(err => console.error(err));
   }, []);
 
-  const id = usuarios.length > 0 ? Math.max(...usuarios.map(u => u.id)) + 1 : 1;
+  const id = (usuarios.length > 0 ? Math.max(...usuarios.map(u => u.id)) + 1 : 1).toString();
 
   const handleSubmit = async (e) => {
     e.preventDefault();

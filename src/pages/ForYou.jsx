@@ -142,7 +142,7 @@ const ForYou = () => {
   // Navegação para perfil (como no Feed)
   const handleProfileClick = (username, e) => {
     if (e) e.stopPropagation();
-    navigate(`/profile/${username}`);
+    navigate(`/user/${username}`);
   };
 
   // Sistema de follow (mantido)

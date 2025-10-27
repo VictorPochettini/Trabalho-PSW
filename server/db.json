@@ -12,7 +12,7 @@
       "estilosArte": [],
       "ratingAvgRecebida": 0,
       "ratingCountRecebida": 0,
-      "followersCount": 2
+      "followersCount": 3
     },
     {
       "id": "2",
@@ -43,7 +43,6 @@
       "bio": "Oi gente",
       "generosMusicais": "blues",
       "estilosArte": "arte-grafica",
-      "fotoPerfil": "blob:http://localhost:5173/96d76fcf-9e6d-46b1-b969-3d5791f70fbe",
       "followingCount": 4,
       "ratingAvgRecebida": 0,
       "ratingCountRecebida": 0,
@@ -82,6 +81,17 @@
       "email": "ttt@tt.com",
       "senha": "ttt",
       "admin": false
+    },
+    {
+      "id": "9",
+      "nome": "Paulo Melotti",
+      "username": "pmm",
+      "email": "pmm@email.com",
+      "senha": "123",
+      "admin": false,
+      "bio": "123",
+      "generosMusicais": "new-age",
+      "estilosArte": "pop-art"
     }
   ],
   "posts": [
@@ -93,8 +103,8 @@
       "tipo": "texto",
       "genero": "informativo",
       "data": "2025-10-13T10:00:00Z",
-      "ratingAvg": 4.5,
-      "ratingCount": 4
+      "ratingAvg": 4.38,
+      "ratingCount": 8
     },
     {
       "id": "3",
@@ -104,8 +114,8 @@
       "tipo": "visual",
       "genero": "abstrato",
       "data": "2025-10-13T12:00:00Z",
-      "ratingAvg": 4.33,
-      "ratingCount": 3
+      "ratingAvg": 4.29,
+      "ratingCount": 7
     },
     {
       "id": "5",
@@ -115,8 +125,8 @@
       "tipo": "visual",
       "genero": "ilustracao-digital",
       "data": "2025-10-13T20:03:15.182Z",
-      "ratingAvg": 3.33,
-      "ratingCount": 3
+      "ratingAvg": 3.86,
+      "ratingCount": 7
     },
     {
       "conteudo": "Poeminho do Contra\nTodos esses que aí estão\nAtravancando meu caminho,\nEles passarão...\nEu passarinho!!!",
@@ -127,7 +137,7 @@
       "id": "7",
       "usuarioId": 1,
       "titulo": "Minha música nova, espero que gostem",
-      "conteudo": "Demo1.mp3",
+      "conteudo": "Minha música nova, espero que gostem",
       "tipo": "musica",
       "genero": "funk",
       "data": "2025-10-21T00:37:12.876Z",
@@ -137,42 +147,13 @@
     {
       "id": "8",
       "usuarioId": 1,
-      "titulo": "Essa tava em produção há um tempinho...",
-      "conteudo": "Lupe de Lupe - Goiânia (áudio oficial) [ ezmp3.cc ].mp3",
+      "titulo": "Essa tava em produção há um tempinho... :)",
+      "conteudo": "Essa tava em produção há um tempinho... :)",
       "tipo": "musica",
       "genero": "rock",
       "data": "2025-10-21T00:39:10.200Z",
-      "ratingAvg": 4.6,
-      "ratingCount": 5
-    },
-    {
-      "id": "5ceb",
-      "usuarioId": "3",
-      "titulo": "Guardado a um tempo",
-      "conteudo": "Captura de tela 2025-10-10 163355.png",
-      "tipo": "visual",
-      "genero": "ilustracao-digital",
-      "data": "2025-10-25T20:20:02.817Z"
-    },
-    {
-      "id": "NaN",
-      "usuarioId": "4",
-      "titulo": "Testando testando!!!<3",
-      "conteudo": "Testando testando!!!<3",
-      "tipo": "texto",
-      "genero": "letra",
-      "data": "2025-10-26T20:49:46.989Z",
-      "ratingAvg": 4.5,
-      "ratingCount": 2
-    },
-    {
-      "id": "NaN",
-      "usuarioId": "5",
-      "titulo": "Testando publicação",
-      "conteudo": "Teste",
-      "tipo": "texto",
-      "genero": "letra",
-      "data": "2025-10-27T01:23:02.317Z"
+      "ratingAvg": 4.29,
+      "ratingCount": 7
     }
   ],
   "desafios": [
@@ -378,6 +359,39 @@
       "parentId": null,
       "createdAt": "2025-10-26T20:52:16.190Z",
       "updatedAt": "2025-10-26T20:52:16.190Z",
+      "deletedAt": null,
+      "likes": 0
+    },
+    {
+      "id": "26df",
+      "postId": 5,
+      "usuarioId": 9,
+      "texto": "oi",
+      "parentId": null,
+      "createdAt": "2025-10-27T13:59:34.180Z",
+      "updatedAt": "2025-10-27T13:59:34.180Z",
+      "deletedAt": null,
+      "likes": 0
+    },
+    {
+      "id": "4d68",
+      "postId": null,
+      "usuarioId": 9,
+      "texto": "oi",
+      "parentId": null,
+      "createdAt": "2025-10-27T14:09:28.900Z",
+      "updatedAt": "2025-10-27T14:09:28.900Z",
+      "deletedAt": null,
+      "likes": 0
+    },
+    {
+      "id": "4054",
+      "postId": null,
+      "usuarioId": 9,
+      "texto": "teste",
+      "parentId": null,
+      "createdAt": "2025-10-27T14:09:45.587Z",
+      "updatedAt": "2025-10-27T14:09:45.587Z",
       "deletedAt": null,
       "likes": 0
     }
@@ -606,6 +620,46 @@
       "estrelas": 5,
       "createdAt": "2025-10-26T21:40:52.785Z",
       "updatedAt": "2025-10-26T21:40:52.785Z"
+    },
+    {
+      "id": "8-9",
+      "postId": 8,
+      "usuarioId": 9,
+      "estrelas": 3,
+      "createdAt": "2025-10-27T13:59:19.700Z",
+      "updatedAt": "2025-10-27T13:59:24.187Z"
+    },
+    {
+      "id": "3-9",
+      "postId": 3,
+      "usuarioId": 9,
+      "estrelas": 5,
+      "createdAt": "2025-10-27T13:59:45.956Z",
+      "updatedAt": "2025-10-27T14:20:58.114Z"
+    },
+    {
+      "id": "NaN-9",
+      "postId": null,
+      "usuarioId": 9,
+      "estrelas": 3,
+      "createdAt": "2025-10-27T14:08:53.283Z",
+      "updatedAt": "2025-10-27T14:09:42.508Z"
+    },
+    {
+      "id": "1-9",
+      "postId": 1,
+      "usuarioId": 9,
+      "estrelas": 5,
+      "createdAt": "2025-10-27T14:20:37.973Z",
+      "updatedAt": "2025-10-27T14:20:39.668Z"
+    },
+    {
+      "id": "5-9",
+      "postId": 5,
+      "usuarioId": 9,
+      "estrelas": 5,
+      "createdAt": "2025-10-27T14:20:53.043Z",
+      "updatedAt": "2025-10-27T14:20:53.043Z"
     }
   ],
   "seguidores": [
@@ -662,6 +716,12 @@
       "followerId": 5,
       "followingId": 4,
       "createdAt": "2025-10-27T01:21:53.253Z"
+    },
+    {
+      "id": "9-1",
+      "followerId": 9,
+      "followingId": 1,
+      "createdAt": "2025-10-27T13:58:33.355Z"
     }
   ]
 }

@@ -41,7 +41,7 @@ const PublicarImagem = () => {
     }
 
     const novoPost = {
-      id: (posts.length > 0 ? Math.max(...posts.map((p) => p.id)) + 1 : 1).toString,
+      id: (posts.length > 0 ? Math.max(...posts.map((p) => p.id)) + 1 : 1).toString(),
       usuarioId: currentUser.id,
       titulo: descricao,
       conteudo: arquivo.name,
