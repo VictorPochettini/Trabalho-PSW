@@ -173,6 +173,17 @@
       "tipo": "texto",
       "genero": "historia",
       "data": "2025-10-27T21:55:07.230Z"
+    },
+    {
+      "id": "11",
+      "usuarioId": "1",
+      "titulo": "Demo da música nova da Erosão Fluvial (minha banda :O)",
+      "conteudo": "Miragem Demo1.mp3",
+      "tipo": "musica",
+      "genero": "rock",
+      "data": "2025-10-27T23:13:46.696Z",
+      "ratingAvg": 4.25,
+      "ratingCount": 4
     }
   ],
   "desafios": [
@@ -427,28 +438,6 @@
       "parentId": null,
       "createdAt": "2025-10-27T13:59:34.180Z",
       "updatedAt": "2025-10-27T13:59:34.180Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "4d68",
-      "postId": null,
-      "usuarioId": 9,
-      "texto": "oi",
-      "parentId": null,
-      "createdAt": "2025-10-27T14:09:28.900Z",
-      "updatedAt": "2025-10-27T14:09:28.900Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "4054",
-      "postId": null,
-      "usuarioId": 9,
-      "texto": "teste",
-      "parentId": null,
-      "createdAt": "2025-10-27T14:09:45.587Z",
-      "updatedAt": "2025-10-27T14:09:45.587Z",
       "deletedAt": null,
       "likes": 0
     }
@@ -725,6 +714,14 @@
       "estrelas": 4,
       "createdAt": "2025-10-27T20:33:18.127Z",
       "updatedAt": "2025-10-27T20:33:18.127Z"
+    },
+    {
+      "id": "11-1",
+      "postId": 11,
+      "usuarioId": 1,
+      "estrelas": 5,
+      "createdAt": "2025-10-27T23:14:05.689Z",
+      "updatedAt": "2025-10-27T23:14:05.689Z"
     }
   ],
   "seguidores": [
