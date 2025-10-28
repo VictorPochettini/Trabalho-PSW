@@ -262,7 +262,7 @@ const ForYou = () => {
                 if (isSearching) handleSearch("");
               }}
             >
-              Letra
+              Texto
             </button>
             <button
               className={`fy-filter-btn ${activeFilter === "arte" ? "active" : ""}`}
