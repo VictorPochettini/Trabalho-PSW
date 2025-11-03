@@ -32,6 +32,11 @@ export default function ChallengesPage() {
     setIsSearching(!!term.trim());
   };
 
+  // ===== Helpers para status derivado "finalizado" quando dataFim já passou =====
+  const toTime = (v) => (v ? new Date(v).getTime() : 0);
+  const isExpired = (d) => (d?.dataFim ? toTime(d.dataFim) < Date.now() : false);
+  const getDerivedStatus = (d) => (isExpired(d) ? "finalizado" : (d.status || "aberto"));
+
   const filteredAndSorted = useMemo(() => {
     let list = desafios.filter(matchesTab);
     if (isSearching) {
@@ -42,7 +47,6 @@ export default function ChallengesPage() {
           String(d.descricao || "").toLowerCase().includes(term)
       );
     }
-    const toTime = (v) => (v ? new Date(v).getTime() : 0);
     const now = Date.now();
     const sorted = [...list];
     if (sortBy === "recentes") {
@@ -50,13 +54,24 @@ export default function ChallengesPage() {
     } else if (sortBy === "proximos") {
       sorted.sort((a, b) => (toTime(a.dataFim) - now) - (toTime(b.dataFim) - now));
     } else if (sortBy === "encerrados") {
-      sorted.sort((a, b) => (b.status === "encerrado") - (a.status === "encerrado") || toTime(b.dataFim) - toTime(a.dataFim));
+      const closed = (x) => {
+        const s = getDerivedStatus(x);
+        return s === "finalizado" || s === "encerrado";
+      };
+      // Primeiro os encerrados/finalizados, depois por dataFim mais recente
+      sorted.sort((a, b) => (closed(b) - closed(a)) || toTime(b.dataFim) - toTime(a.dataFim));
     }
     return sorted;
   }, [desafios, activeTab, sortBy, isSearching, searchTerm, currentUser?.id]);
 
   const loading = loadingDesafios;
-  const statusBadgeClass = (d) => `ch-badge status ${d.status === "encerrado" ? "encerrado" : "aberto"}`;
+
+  // Usa o status derivado para classe; "finalizado" herda o estilo de "encerrado"
+  const statusBadgeClass = (d) => {
+    const s = getDerivedStatus(d);
+    const isClosed = s === "finalizado" || s === "encerrado";
+    return `ch-badge status ${isClosed ? "encerrado" : "aberto"}`;
+  };
   const tipoBadgeClass  = (d) => `ch-badge ${d.tipo === "oficial" ? "oficial" : "comunidade"}`;
 
   return (
@@ -148,7 +163,8 @@ export default function ChallengesPage() {
                   <div className="ch-info">
                     <div className="ch-badges">
                       <span className={tipoBadgeClass(d)}>{d.tipo}</span>
-                      <span className={statusBadgeClass(d)}>{d.status}</span>
+                      {/* Usa o status derivado aqui */}
+                      <span className={statusBadgeClass(d)}>{getDerivedStatus(d)}</span>
                     </div>
 
                     <h3 className="ch-title">{d.titulo}</h3>
