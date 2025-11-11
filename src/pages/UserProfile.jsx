@@ -640,6 +640,7 @@ const UserProfile = () => {
           border: 1px solid rgba(255,255,255,.14);
           border-radius: 16px;
           backdrop-filter: blur(6px);
+          margin-top: 10px;
         }
 
         .clickable-stat {
