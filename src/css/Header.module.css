@@ -32,6 +32,12 @@
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 14px;
+  position: relative;
+}
+
+.navLeft {
+  display: flex;
+  align-items: center;
 }
 
 /* BRAND */
@@ -62,6 +68,7 @@
   padding: 0;
   justify-content: center;
 }
+
 .navLink {
   position: relative;
   font-weight: 600;
@@ -69,17 +76,25 @@
   color: rgba(255,255,255,0.85);
   padding: 10px 12px;
   border-radius: 12px;
-  transition: transform .15s ease, background-color .15s ease, color .15s ease;
+  transition:
+    transform var(--fx-fast) ease,
+    background-color var(--fx-fast) ease,
+    color var(--fx-fast) ease,
+    box-shadow var(--fx-fast) ease;
+  will-change: transform;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.navLink:hover {
-  transform: translateY(-1px);
-  color: var(--white);
-  background: rgba(255,255,255,0.06);
+
+.navLink i {
+  font-size: 16px;
+  width: 16px;
+  text-align: center;
 }
-.enfase {
-  color: var(--white);
-}
-.enfase::after {
+
+/* sublinhado elástico + glow sutil */
+.navLink::after {
   content: "";
   position: absolute;
   left: 12px;
@@ -88,7 +103,37 @@
   height: 2px;
   border-radius: 2px;
   background: linear-gradient(90deg, var(--roxo), var(--azul));
+  box-shadow: 0 0 0 rgba(94,23,235,0);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition:
+    transform var(--fx-med) cubic-bezier(.2,.8,.2,1),
+    box-shadow var(--fx-med) ease,
+    opacity var(--fx-med) ease;
+  opacity: .55;
+}
+
+.navLink:hover {
+  transform: translateY(-1px);
+  color: var(--white);
+  background: rgba(255,255,255,0.06);
+  box-shadow: 0 6px 16px rgba(0,0,0,.18);
+}
+
+.navLink:hover::after {
+  transform: scaleX(1);
   box-shadow: 0 0 12px rgba(94, 23, 235, 0.6);
+  opacity: 1;
+}
+
+.enfase {
+  color: var(--white);
+  animation: glowPulse var(--fx-slow) ease-in-out infinite;
+}
+.enfase::after {
+  transform: scaleX(1);
+  box-shadow: 0 0 12px rgba(94, 23, 235, 0.6);
+  opacity: 1;
 }
 
 /* RIGHT SIDE (profile + logout) */
@@ -145,88 +190,219 @@
   border-color: rgba(255,255,255,0.2);
   background: linear-gradient(120deg, rgba(94,23,235,0.28), rgba(46,37,115,0.28));
 }
-.logoutText {
-  display: none;
-}
 
-/* RESPONSIVO */
-@media (min-width: 520px) {
-  .logoutText { display: inline; }
-}
-@media (max-width: 820px) {
-  .menu {
-    gap: 10px;
-  }
-  .navLink {
-    padding: 8px 10px;
-  }
-  .brandText { display: none; }
-}
-
-/* =====✨ Animações aprimoradas ===== */
+/* =====✨ Animações ===== */
 :root {
   --fx-fast: 140ms;
   --fx-med: 260ms;
   --fx-slow: 2200ms;
 }
 
-/* Substitua o bloco .navLink, .navLink:hover, .enfase e .enfase::after por estes */
-.navLink {
-  position: relative;
-  font-weight: 600;
-  text-decoration: none;
-  color: rgba(255,255,255,0.85);
-  padding: 10px 12px;
-  border-radius: 12px;
-  transition:
-    transform var(--fx-fast) ease,
-    background-color var(--fx-fast) ease,
-    color var(--fx-fast) ease,
-    box-shadow var(--fx-fast) ease;
-  will-change: transform;
+@keyframes glowPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.9; }
 }
 
-/* sublinhado elástico + glow sutil */
-.navLink::after {
-  content: "";
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 6px;
+/* =====📱 RESPONSIVIDADE MELHORADA ===== */
+
+/* Menu Hamburger */
+.menuToggle {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 24px;
+  height: 18px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1001;
+}
+
+.menuToggle span {
+  display: block;
   height: 2px;
+  width: 100%;
+  background-color: var(--white);
   border-radius: 2px;
-  background: linear-gradient(90deg, var(--roxo), var(--azul));
-  box-shadow: 0 0 0 rgba(94,23,235,0);           /* inicia sem glow */
-  transform: scaleX(0);
-  transform-origin: left;
-  transition:
-    transform var(--fx-med) cubic-bezier(.2,.8,.2,1),
-    box-shadow var(--fx-med) ease,
-    opacity var(--fx-med) ease;
-  opacity: .55;
+  transition: all 0.3s ease;
 }
 
-.navLink:hover {
-  transform: translateY(-1px);
-  color: var(--white);
-  background: rgba(255,255,255,0.06);
-  box-shadow: 0 6px 16px rgba(0,0,0,.18);
+.menuToggle:hover span {
+  background-color: var(--roxo);
 }
 
-/* linha “cresce” no hover */
-.navLink:hover::after {
-  transform: scaleX(1);
-  box-shadow: 0 0 12px rgba(94, 23, 235, 0.6);
-  opacity: 1;
+/* Overlay para mobile */
+.menuOverlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
 }
 
-/* link ativo com pulso de brilho bem discreto */
-.enfase {
-  color: var(--white);
-  animation: glowPulse var(--fx-slow) ease-in-out infinite;
+/* Tablet (820px para baixo) */
+@media (max-width: 820px) {
+  .navbar {
+    grid-template-columns: auto 1fr auto;
+    gap: 20px;
+  }
+  
+  .brandText { 
+    display: none; 
+  }
+  
+  .menu {
+    gap: 8px;
+  }
+  
+  .navLink {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+  
+  .navLink span {
+    display: none;
+  }
+  
+  .navLink i {
+    font-size: 18px;
+    width: 18px;
+  }
+  
+  .profileName {
+    display: none;
+  }
+  
+  .profileBtn {
+    padding: 8px;
+  }
 }
-.enfase::after {
-  transform: scaleX(1);                            /* sempre visível no ativo */
-  box-shadow: 0 0 12px rgba(94, 23, 235, 0.6);
-  opacity: 1;
+
+/* Mobile (768px para baixo) */
+@media (max-width: 768px) {
+  .headerWrap {
+    padding: 8px 16px;
+  }
+  
+  .menuToggle {
+    display: flex;
+  }
+  
+  .menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background: linear-gradient(135deg, var(--azul), var(--roxoMEsc));
+    border-left: 1px solid var(--glass-border);
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 80px 20px 20px;
+    gap: 8px;
+    transition: right 0.3s ease;
+    z-index: 999;
+    margin: 0;
+  }
+  
+  .menuOpen {
+    right: 0;
+  }
+  
+  .menuOpen ~ .menuOverlay {
+    display: block;
+  }
+  
+  .menu li {
+    width: 100%;
+  }
+  
+  .navLink {
+    padding: 14px 16px;
+    border-radius: 10px;
+    justify-content: flex-start;
+    width: 100%;
+    font-size: 16px;
+    border: 1px solid transparent;
+  }
+  
+  .navLink span {
+    display: inline-block;
+  }
+  
+  .navLink i {
+    font-size: 18px;
+    width: 24px;
+  }
+  
+  .navLink::after {
+    display: none;
+  }
+  
+  .navLink:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: var(--glass-border);
+  }
+  
+  .rightBox {
+    gap: 8px;
+  }
+  
+  .logoutText {
+    display: none;
+  }
+}
+
+/* Mobile pequeno (480px para baixo) */
+@media (max-width: 480px) {
+  .headerWrap {
+    padding: 6px 12px;
+  }
+  
+  .navbar {
+    gap: 12px;
+  }
+  
+  .logo {
+    height: 32px;
+  }
+  
+  .menu {
+    width: 100%;
+    right: -100%;
+  }
+  
+  .profileBtn {
+    min-width: auto;
+    padding: 6px;
+  }
+  
+  .logoutBtn {
+    padding: 6px 8px;
+  }
+  
+  .perfilIcon {
+    font-size: 18px;
+    margin: 0;
+  }
+}
+
+/* Desktop - texto do logout aparece apenas em telas maiores */
+@media (min-width: 1024px) {
+  .logoutText { 
+    display: inline; 
+  }
+}
+
+/* Ajustes para telas muito grandes */
+@media (min-width: 1440px) {
+  .headerWrap {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
 }

@@ -557,6 +557,30 @@ const UserProfile = () => {
           background: none;
           padding-left: 16px;
         }
+        @media (max-width: 768px) {
+          .lapis {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            left: auto;
+            padding-left: 0;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+          }
+
+          .lapis:hover {
+            transform: scale(1.1);
+          }
+
+          .lapis i {
+            font-size: 18px !important;
+          }
+        }
         .banner-narrow {
           max-width: clamp(640px, 88vw, 840px);
           width: 100%;
