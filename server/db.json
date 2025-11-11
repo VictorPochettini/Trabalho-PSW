@@ -12,7 +12,7 @@
       "estilosArte": "surrealismo",
       "ratingAvgRecebida": 0,
       "ratingCountRecebida": 0,
-      "followersCount": 1,
+      "followersCount": 2,
       "followingCount": 1,
       "fotoPerfil": "/src/images/avatarPadrao.png"
     },
@@ -58,7 +58,7 @@
       "bio": "Oi gente",
       "generosMusicais": "blues",
       "estilosArte": "arte-grafica",
-      "followingCount": 4,
+      "followingCount": 1,
       "ratingAvgRecebida": 0,
       "ratingCountRecebida": 0,
       "followersCount": 3
@@ -160,8 +160,8 @@
       "tipo": "musica",
       "genero": "rock",
       "data": "2025-11-03T13:41:08.375Z",
-      "ratingAvg": 5,
-      "ratingCount": 2
+      "ratingAvg": 4.67,
+      "ratingCount": 3
     }
   ],
   "desafios": [
@@ -375,6 +375,14 @@
       "estrelas": 5,
       "createdAt": "2025-11-03T14:35:08.911Z",
       "updatedAt": "2025-11-03T14:35:09.839Z"
+    },
+    {
+      "id": "10-4",
+      "postId": 10,
+      "usuarioId": 4,
+      "estrelas": 4,
+      "createdAt": "2025-11-11T22:08:41.161Z",
+      "updatedAt": "2025-11-11T22:08:41.161Z"
     }
   ],
   "seguidores": [
@@ -401,6 +409,12 @@
       "followerId": 2,
       "followingId": 1,
       "createdAt": "2025-11-03T13:51:32.870Z"
+    },
+    {
+      "id": "4-1",
+      "followerId": 4,
+      "followingId": 1,
+      "createdAt": "2025-11-11T21:41:53.463Z"
     }
   ],
   "participacoes": [

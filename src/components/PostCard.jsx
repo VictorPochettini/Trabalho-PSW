@@ -491,7 +491,7 @@ const PostCard = ({
           --surface: var(--surface, rgba(255,255,255,0.06));
           --surface-2: rgba(255,255,255,0.08);
           --border: rgba(255,255,255,0.10);
-          --text: var(--text-color, #ffffff);
+          --text: var(--text-color, #rgba(0,0,0,.08));
           --muted: rgba(255,255,255,0.7);
           --comment-btn-bg: var(--comment-btn-bg, var(--accent));
           --shadow: 0 12px 30px rgba(0,0,0,.28);
@@ -796,25 +796,102 @@ const PostCard = ({
         /* 📱 RESPONSIVIDADE DO PLAYER */
         @media (max-width: 576px) {
           .audio-ui {
-            grid-template-columns: 44px 1fr 56px;
+            grid-template-columns: 44px 1fr 44px;
+            grid-template-rows: auto auto;
             grid-template-areas:
               "play seek vol"
               "timeL seek timeR";
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            padding: 4px 0;
           }
-          .audio-ui > .au-btn { grid-area: play; }
-          .audio-ui > .au-seek { grid-area: seek; height: 12px; }
-          .audio-ui > .au-vol { grid-area: vol; justify-self: end; min-width: auto; }
-          .audio-ui > .au-times:first-of-type { grid-area: timeL; justify-content: flex-start; }
-          .audio-ui > .au-times:last-of-type { grid-area: timeR; justify-content: flex-end; }
+          
+          .audio-ui > .au-btn { 
+            grid-area: play; 
+            width: 40px;
+            height: 40px;
+          }
+          
+          .audio-ui > .au-seek { 
+            grid-area: seek; 
+            height: 10px; 
+            width: 210px;
+            margin: 0;
+            margin-bottom: 15px;
+            align-self: center;
+          }
+          
+          .audio-ui > .au-vol { 
+            grid-area: vol; 
+            justify-self: end; 
+            min-width: auto;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            height: 40px;
+            margin: 0;
+            padding: 0;
+          }
+          
+          .audio-ui > .au-vol-btn {
+            width: 36px;
+            height: 36px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          
+          .audio-ui > .au-times:first-of-type { 
+            grid-area: timeL; 
+            justify-content: flex-start; 
+            align-self: start;
+            margin-top: 2px;
+          }
+          
+          .audio-ui > .au-times:last-of-type { 
+            grid-area: timeR; 
+            justify-content: flex-end; 
+            align-self: start;
+            margin-top: 2px;
+          }
 
-          .au-time { font-size: 12px; opacity: .9; }
-          .au-vol-range { width: 84px; height: 10px; }
-          .au-seek::-webkit-slider-thumb { width: 20px; height: 20px; margin-top: -5px; }
-          .au-vol-range::-webkit-slider-thumb { width: 16px; height: 16px; margin-top: -4px; }
+          .au-time { 
+            font-size: 11px; 
+            opacity: .9; 
+            line-height: 1;
+          }
+          
+          .au-vol-range { 
+            width: 70px; 
+            height: 10px; 
+            margin-left: 4px;
+          }
+          
+          .au-seek::-webkit-slider-thumb { 
+            width: 16px; 
+            height: 16px; 
+            margin-top: -3px; 
+          }
+          
+          .au-vol-range::-webkit-slider-thumb { 
+            width: 14px; 
+            height: 14px; 
+            margin-top: -3px; 
+          }
 
-          .media-container.audio-modern.newskin.glass { padding: 10px; }
+          .media-container.audio-modern.newskin.glass { 
+            padding: 10px; 
+          }
+          
+          /* Garantir que o container de volume fique alinhado */
+          .au-vol-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            height: 100%;
+            gap: 6px;
+          }
         }
 
         /* acessibilidade: menos movimento */
