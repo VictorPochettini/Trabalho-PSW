@@ -12,7 +12,7 @@
       "estilosArte": "surrealismo",
       "ratingAvgRecebida": 0,
       "ratingCountRecebida": 0,
-      "followersCount": 2,
+      "followersCount": 3,
       "followingCount": 1,
       "fotoPerfil": "/src/images/avatarPadrao.png"
     },
@@ -23,7 +23,7 @@
       "senha": "654321",
       "email": "victor@email.com",
       "admin": false,
-      "followersCount": 2,
+      "followersCount": 3,
       "ratingAvgRecebida": 0,
       "ratingCountRecebida": 0,
       "followingCount": 2,
@@ -39,7 +39,7 @@
       "email": "malusantiago@email.com",
       "senha": "789987",
       "admin": false,
-      "followersCount": 2,
+      "followersCount": 3,
       "followingCount": 1,
       "bio": "Artista digital, trabalho fazendo capas de album! #OpenForComissions",
       "generosMusicais": "hiphop",
@@ -72,6 +72,17 @@
       "admin": false,
       "followersCount": 1,
       "followingCount": 3
+    },
+    {
+      "id": "6",
+      "nome": "teste",
+      "username": "teste",
+      "email": "teste@gmail.com",
+      "senha": "teste",
+      "admin": false,
+      "generosMusicais": [],
+      "estilosArte": [],
+      "fotoPerfil": "blob:http://localhost:5173/741ba43f-62f0-454f-8e01-ca07a20a5de6"
     }
   ],
   "posts": [
@@ -94,8 +105,8 @@
       "tipo": "musica",
       "genero": "pop",
       "data": "2025-10-28T16:17:20.549Z",
-      "ratingAvg": 5,
-      "ratingCount": 2
+      "ratingAvg": 4.67,
+      "ratingCount": 3
     },
     {
       "id": "5",
@@ -139,7 +150,7 @@
       "genero": "historia",
       "data": "2025-10-28T19:33:56.570Z",
       "ratingAvg": 5,
-      "ratingCount": 2
+      "ratingCount": 3
     },
     {
       "id": "9",
@@ -160,8 +171,17 @@
       "tipo": "musica",
       "genero": "rock",
       "data": "2025-11-03T13:41:08.375Z",
-      "ratingAvg": 4.67,
-      "ratingCount": 3
+      "ratingAvg": 4.75,
+      "ratingCount": 4
+    },
+    {
+      "id": "11",
+      "usuarioId": "6",
+      "titulo": "o",
+      "conteudo": "arte dn.png",
+      "tipo": "visual",
+      "genero": "ilustracao-digital",
+      "data": "2025-11-16T23:59:25.114Z"
     }
   ],
   "desafios": [
@@ -246,6 +266,17 @@
       "parentId": null,
       "createdAt": "2025-11-11T22:34:19.121Z",
       "updatedAt": "2025-11-11T22:34:19.121Z",
+      "deletedAt": null,
+      "likes": 0
+    },
+    {
+      "id": "93b3",
+      "postId": 7,
+      "usuarioId": 6,
+      "texto": "teste",
+      "parentId": null,
+      "createdAt": "2025-11-16T23:51:54.862Z",
+      "updatedAt": "2025-11-16T23:51:54.862Z",
       "deletedAt": null,
       "likes": 0
     }
@@ -402,6 +433,30 @@
       "estrelas": 4,
       "createdAt": "2025-11-11T22:34:30.200Z",
       "updatedAt": "2025-11-11T22:34:30.200Z"
+    },
+    {
+      "id": "10-6",
+      "postId": 10,
+      "usuarioId": 6,
+      "estrelas": 5,
+      "createdAt": "2025-11-16T23:59:45.875Z",
+      "updatedAt": "2025-11-16T23:59:45.875Z"
+    },
+    {
+      "id": "3-6",
+      "postId": 3,
+      "usuarioId": 6,
+      "estrelas": 4,
+      "createdAt": "2025-11-16T23:59:47.634Z",
+      "updatedAt": "2025-11-16T23:59:47.634Z"
+    },
+    {
+      "id": "8-6",
+      "postId": 8,
+      "usuarioId": 6,
+      "estrelas": 5,
+      "createdAt": "2025-11-17T00:00:13.691Z",
+      "updatedAt": "2025-11-17T00:00:13.691Z"
     }
   ],
   "seguidores": [
@@ -440,6 +495,24 @@
       "followerId": 4,
       "followingId": 2,
       "createdAt": "2025-11-11T22:34:03.076Z"
+    },
+    {
+      "id": "6-1",
+      "followerId": 6,
+      "followingId": 1,
+      "createdAt": "2025-11-16T23:51:37.357Z"
+    },
+    {
+      "id": "6-2",
+      "followerId": 6,
+      "followingId": 2,
+      "createdAt": "2025-11-16T23:51:38.921Z"
+    },
+    {
+      "id": "6-3",
+      "followerId": 6,
+      "followingId": 3,
+      "createdAt": "2025-11-16T23:51:40.123Z"
     }
   ],
   "participacoes": [

@@ -1,5 +1,13 @@
 import express from "express";
 import cors from "cors";
+import { conectaDB } from "./server/database.js";
+import dotenv from "dotenv";
+dotenv.config();
+
+// conecta no MongoDB ANTES de tudo
+await conectaDB();
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
