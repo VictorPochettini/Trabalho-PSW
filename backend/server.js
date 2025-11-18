@@ -1,6 +1,15 @@
 import express from "express";
 import cors from "cors";
 import { conectaDB } from "./server/database.js";
+
+import Avaliacao from "./models/Avaliacao.js";
+import Comentario from "./models/Comentario.js";
+import Desafio from "./models/Desafio.js";
+import Participacao from "./models/Participacao.js";
+import Post from "./models/Post.js";
+import Seguidor from "./models/Seguidor.js";
+import Usuario from "./models/Usuario.js";
+
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -20,6 +29,7 @@ let nextNumericId = 1;
 const genId = () => nextNumericId++;
 
 // coleções em memória
+/*
 let usuarios = [
   {
     id: genId(),
@@ -32,6 +42,7 @@ let usuarios = [
     ratingCountRecebida: 0,
   },
 ];
+*/
 
 let posts = [];
 let desafios = [];
@@ -60,143 +71,217 @@ app.get("/", (req, res) => {
 // -----------------------------
 // /usuarios
 // -----------------------------
-app.get("/usuarios", (req, res) => {
-  res.json(usuarios);
+app.get("/usuarios", async (req, res) => {
+  try
+  {
+    const usuarios = await Usuario.find();
+    res.json(usuarios); 
+  }
+  catch(error)
+  {
+    res.status(500).json({error: error.message});
+  }
 });
 
-app.get("/usuarios/:id", (req, res) => {
-  const u = findById(usuarios, req.params.id);
-  if (!u) return res.status(404).json({ error: "Usuário não encontrado" });
-  res.json(u);
+app.get("/usuarios/:id", async (req, res) => {
+  try {
+    const usuario = await Usuario.findById(req.params.id); // usa findById e pega o id da URL
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+    res.json(usuario);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.post("/usuarios", (req, res) => {
-  const body = req.body || {};
-  if (!body.username || !body.senha) {
-    return res.status(400).json({ error: "username e senha são obrigatórios" });
+app.post("/usuarios", async (req, res) => {
+  try {
+    const existe = await Usuario.findOne({ username: req.body.username });
+    if (existe) {
+      return res.status(409).json({ error: "username já existe" });
+    }
+
+    const novo = new Usuario(req.body);
+    await novo.save();
+    res.status(201).json(novo); // retorna o usuário criado
+  } catch (error) {
+    res.status(400).json({ error: error.message }); // trata erros
   }
-  if (usuarios.some((u) => u.username === body.username)) {
-    return res.status(409).json({ error: "username já existe" });
-  }
-  const novo = {
-    id: genId(),
-    nome: body.nome || body.username,
-    followersCount: 0,
-    followingCount: 0,
-    ratingAvgRecebida: 0,
-    ratingCountRecebida: 0,
-    ...body,
-  };
-  usuarios.push(novo);
-  res.status(201).json(novo);
 });
 
 // PUT substitui o usuário
-app.put("/usuarios/:id", (req, res) => {
-  const id = req.params.id;
-  const idx = usuarios.findIndex((u) => String(u.id) === String(id));
-  if (idx === -1) return res.status(404).json({ error: "Usuário não encontrado" });
+app.put("/usuarios/:id", async (req, res) => {
+  try
+  {
+    const usuario = await Usuario.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {new: true, overwrite: true}
+    );
 
-  usuarios[idx] = { ...req.body, id: usuarios[idx].id };
-  res.json(usuarios[idx]);
+    if(!usuario) return res.status(404).json({error: "Usuário não encontrado"});
+    res.json(usuario);
+  }
+  catch(error)
+  {
+    res.status(400).json({ error: error.message });
+  }
 });
 
 // PATCH parcial (followersCount, ratingAvgRecebida, etc)
-app.patch("/usuarios/:id", (req, res) => {
-  const id = req.params.id;
-  const u = findById(usuarios, id);
-  if (!u) return res.status(404).json({ error: "Usuário não encontrado" });
-  Object.assign(u, req.body || {});
-  res.json(u);
+app.patch("/usuarios/:id", async (req, res) => {
+  try
+  {
+  const usuario = await Usuario.findByIdAndUpdate(
+    req.params.id, 
+    req.body, 
+    {new: true});
+
+  if (!usuario) // verifica se encontrou
+      return res.status(404).json({ error: "Usuário não encontrado" });
+
+    res.json(usuario);
+  }
+  catch(error)
+  {
+    res.status(500).json({error: error.message});
+  }
 });
 
 // -----------------------------
 // /posts
 // -----------------------------
-app.get("/posts", (req, res) => {
-  const { usuarioId, _embed } = req.query;
-  let result = posts;
-
-  if (usuarioId) {
-    result = result.filter((p) => String(p.usuarioId) === String(usuarioId));
+app.get("/posts", async (req, res) => {
+  try
+  {
+    const posts = await Post.find();
+    res.json(posts);
   }
-
-  if (_embed === "avaliacoes") {
-    result = result.map((p) => ({
-      ...p,
-      avaliacoes: avaliacoes.filter((a) => Number(a.postId) === Number(p.id)),
-    }));
+  catch(error)
+  {
+    res.status(500).json({error: error.message})
   }
-
-  res.json(result);
+  
 });
 
-app.get("/posts/:id", (req, res) => {
-  const p = findById(posts, req.params.id);
-  if (!p) return res.status(404).json({ error: "Post não encontrado" });
-  res.json(p);
-});
-
-app.post("/posts", (req, res) => {
-  const body = req.body || {};
-  if (!body.usuarioId) {
-    return res.status(400).json({ error: "usuarioId é obrigatório" });
+app.get("/posts/:id", async (req, res) => {
+  try
+  {
+    const post = await Post.findById(req.params.id);
+    if (!p) return res.status(404).json({ error: "Post não encontrado" });
+    res.json(p);
   }
-  const novo = {
-    id: genId(),
-    data: body.data || new Date().toISOString(),
-    ratingAvg: 0,
-    ratingCount: 0,
-    ...body,
-  };
-  posts.push(novo);
-  res.status(201).json(novo);
+  catch(error)
+  {
+    res.status(500).json({error: error.message});
+  }
 });
 
-app.patch("/posts/:id", (req, res) => {
-  const p = findById(posts, req.params.id);
-  if (!p) return res.status(404).json({ error: "Post não encontrado" });
-  Object.assign(p, req.body || {});
-  res.json(p);
+app.post("/posts", async (req, res) => {
+  try
+  {
+    const novo = new Post(req.body);
+    await novo.save();
+    res.status(201).json(novo);
+  }
+  catch(error)
+  {
+    res.status(500).json({error: error.message});
+  }
 });
 
-app.delete("/posts/:id", (req, res) => {
-  removeById(posts, req.params.id);
-  res.status(204).end();
+app.patch("/posts/:id", async (req, res) => {
+  try
+  {
+    const post = await Post.findByIdAndUpdate(
+    req.params.id, 
+    req.body, 
+    {new: true});
+
+  if (!post) // verifica se encontrou
+      return res.status(404).json({ error: "Post não encontrado" });
+
+    res.json(post);
+  }
+  catch(error)
+  {
+    res.status(500).json({error: error.message});
+  }
+});
+
+app.delete("/posts/:id", async (req, res) => {
+  try {
+    const post = await Post.findByIdAndDelete(req.params.id);
+    
+    if (!post) {
+      return res.status(404).json({ error: "Post não encontrado" });
+    }
+    
+    res.status(204).end(); // 204 = sucesso sem conteúdo
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // -----------------------------
 // /desafios
 // -----------------------------
-app.get("/desafios", (req, res) => {
-  res.json(desafios);
-});
-
-app.get("/desafios/:id", (req, res) => {
-  const d = findById(desafios, req.params.id);
-  if (!d) return res.status(404).json({ error: "Desafio não encontrado" });
-  res.json(d);
-});
-
-app.post("/desafios", (req, res) => {
-  const body = req.body || {};
-  if (!body.titulo) {
-    return res.status(400).json({ error: "titulo é obrigatório" });
+app.get("/desafios", async (req, res) => {
+  try
+  {
+    const desafio = await Desafio.find();
+    res.json(desafio);
   }
-  const novo = {
-    id: genId(),
-    createdAt: new Date().toISOString(),
-    ...body,
-  };
-  desafios.push(novo);
-  res.status(201).json(novo);
+  catch(error)
+  {
+    res.status(500).json({error: error.message});
+  }
 });
 
-app.patch("/desafios/:id", (req, res) => {
-  const d = findById(desafios, req.params.id);
-  if (!d) return res.status(404).json({ error: "Desafio não encontrado" });
-  Object.assign(d, req.body || {});
-  res.json(d);
+app.get("/desafios/:id", async (req, res) => {
+  try
+  {
+    const desafio = await Desafio.findById(req.params.id)
+    if(!desafio) return res.status(404).json({error: "Desafio não encontrado"});
+    res.json(desafio);
+  }
+  catch(error)
+  {
+    res.status(500).json({error: error.message});
+  }
+});
+
+app.post("/desafios", async (req, res) => {
+  try
+  {
+    const novo = new Desafio(req.body);
+    await novo.save();
+    res.status(201).json(novo);
+  }
+  catch(error)
+  {
+    res.status(500).json({error: error.message});
+  }
+});
+
+app.patch("/desafios/:id", async (req, res) => {
+  try
+  {
+    const desafio = await Desafio.findByIdAndUpdate(
+    req.params.id, 
+    req.body, 
+    {new: true});
+
+  if (!desafio) // verifica se encontrou
+      return res.status(404).json({ error: "Desafio não encontrado" });
+
+    res.json(desafio);
+  }
+  catch(error)
+  {
+    res.status(500).json({error: error.message});
+  }
 });
 
 // -----------------------------

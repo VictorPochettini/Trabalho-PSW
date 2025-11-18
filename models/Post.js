@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 const PostSchema = new mongoose.Schema({
-  id: String,
   usuarioId: { type: String, required: true },
 
   titulo: String,
