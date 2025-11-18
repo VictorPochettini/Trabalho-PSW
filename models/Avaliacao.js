@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 const AvaliacaoSchema = new mongoose.Schema({
-  id: String,
   postId: { type: String, required: true },
   usuarioId: { type: String, required: true },
 
