@@ -25,36 +25,6 @@ app.use(express.json());
 // -----------------------------
 // "Banco" em memória
 // -----------------------------
-let nextNumericId = 1;
-const genId = () => nextNumericId++;
-
-// coleções em memória
-/*
-let usuarios = [
-  {
-    id: genId(),
-    username: "juan",
-    nome: "Juan",
-    senha: "123",
-    followersCount: 0,
-    followingCount: 0,
-    ratingAvgRecebida: 0,
-    ratingCountRecebida: 0,
-  },
-];
-*/
-
-let posts = [];
-let desafios = [];
-let comentarios = [];
-let seguidores = [];    // { id: "1-2", followerId, followingId, createdAt }
-let participacoes = []; // { id, desafioId, usuarioId, postId, createdAt }
-let avaliacoes = [];    // { id: "postId-usuarioId", postId, usuarioId, estrelas, createdAt, updatedAt }
-
-// -----------------------------
-// Helpers
-// -----------------------------
-const findById = (arr, id) => arr.find((x) => String(x.id) === String(id));
 
 const removeById = (arr, id) => {
   const idx = arr.findIndex((x) => String(x.id) === String(id));
@@ -169,8 +139,8 @@ app.get("/posts/:id", async (req, res) => {
   try
   {
     const post = await Post.findById(req.params.id);
-    if (!p) return res.status(404).json({ error: "Post não encontrado" });
-    res.json(p);
+    if (!post) return res.status(404).json({ error: "Post não encontrado" });
+    res.json(post);
   }
   catch(error)
   {
@@ -323,7 +293,7 @@ app.post("/participacoes", async (req, res) => {
 
 app.delete("/participacoes/:id", async (req, res) => {
   try {
-    const part = await Participacoes.findByIdAndDelete(req.params.id);
+    const part = await Participacao.findByIdAndDelete(req.params.id);
     
     if (!part) {
       return res.status(404).json({ error: "Participação não encontrada" });
@@ -404,102 +374,180 @@ app.delete("/comentarios/:id", async (req, res) => {
 // -----------------------------
 // /seguidores (follows)
 // -----------------------------
-app.get("/seguidores", (req, res) => {
-  const { followerId, followingId } = req.query;
-  let result = seguidores;
-
-  if (followerId) {
-    result = result.filter(
-      (f) => String(f.followerId) === String(followerId)
-    );
+app.get("/seguidores", async (req, res) => {
+  try {
+    const { followerId, followingId } = req.query;
+    
+    // Monta o filtro dinamicamente
+    const filtro = {};
+    if (followerId) filtro.followerId = followerId;
+    if (followingId) filtro.followingId = followingId;
+    
+    // Busca com o filtro
+    const seguidores = await Seguidor.find(filtro);
+    
+    res.json(seguidores);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  if (followingId) {
-    result = result.filter(
-      (f) => String(f.followingId) === String(followingId)
-    );
-  }
-
-  res.json(result);
 });
 
-app.get("/seguidores/:id", (req, res) => {
-  const seg = findById(seguidores, req.params.id); // aqui id é a string "follower-following"
-  if (!seg) return res.status(404).json({ error: "Relação não encontrada" });
-  res.json(seg);
-});
-
-app.post("/seguidores", (req, res) => {
-  const body = req.body || {};
-  if (!body.id || !body.followerId || !body.followingId) {
-    return res.status(400).json({ error: "id, followerId e followingId são obrigatórios" });
+app.get("/seguidores/:id", async (req, res) => {
+  try {
+    const seg = await Seguidor.findById(req.params.id);
+    
+    if (!seg) {
+      return res.status(404).json({ error: "Relação não encontrada" });
+    }
+    
+    res.json(seg);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  if (findById(seguidores, body.id)) {
-    return res.status(409).json({ error: "Relacionamento já existe" });
+});
+
+app.post("/seguidores", async (req, res) => {
+  try {
+    const body = req.body || {};
+    
+    // Validação
+    if (!body.followerId || !body.followingId) {
+      return res.status(400).json({ 
+        error: "followerId e followingId são obrigatórios" 
+      });
+    }
+    
+    // Verifica se relacionamento já existe
+    const existe = await Seguidor.findOne({ 
+      followerId: body.followerId, 
+      followingId: body.followingId 
+    });
+    
+    if (existe) {
+      return res.status(409).json({ error: "Relacionamento já existe" });
+    }
+    
+    // Cria e salva
+    const novo = new Seguidor(body);
+    await novo.save();
+    
+    res.status(201).json(novo);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
-  const now = new Date().toISOString();
-  const novo = {
-    createdAt: now,
-    ...body,
-  };
-  seguidores.push(novo);
-  res.status(201).json(novo);
 });
 
-app.delete("/seguidores/:id", (req, res) => {
-  removeById(seguidores, req.params.id);
-  res.status(204).end();
+app.delete("/seguidores/:id", async (req, res) => {
+  try {
+    const seguidor = await Seguidor.findByIdAndDelete(req.params.id);
+    
+    if (!seguidor) {
+      return res.status(404).json({ error: "Relação não encontrada" });
+    }
+    
+    res.status(204).end();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
-
 // -----------------------------
 // /avaliacoes (ratings)
 // -----------------------------
-app.get("/avaliacoes", (req, res) => {
-  const { postId } = req.query;
-  let result = avaliacoes;
-  if (postId) {
-    result = result.filter(
-      (a) => String(a.postId) === String(postId)
+app.get("/avaliacoes", async (req, res) => {
+  try {
+    const { postId } = req.query;
+    
+    // Monta o filtro
+    const filtro = {};
+    if (postId) filtro.postId = postId;
+    
+    // Busca com o filtro
+    const avaliacoes = await Avaliacao.find(filtro);
+    
+    res.json(avaliacoes);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/avaliacoes/:id", async (req, res) => {
+  try {
+    const avaliacao = await Avaliacao.findById(req.params.id);
+    
+    if (!avaliacao) {
+      return res.status(404).json({ error: "Avaliação não encontrada" });
+    }
+    
+    res.json(avaliacao);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/avaliacoes", async (req, res) => {
+  try {
+    const body = req.body || {};
+    
+    // Validação
+    if (!body.postId || !body.usuarioId) {
+      return res.status(400).json({ 
+        error: "postId e usuarioId são obrigatórios" 
+      });
+    }
+    
+    // Verifica se avaliação já existe (um usuário só pode avaliar um post uma vez)
+    const existe = await Avaliacao.findOne({ 
+      postId: body.postId, 
+      usuarioId: body.usuarioId 
+    });
+    
+    if (existe) {
+      return res.status(409).json({ error: "Avaliação já existe" });
+    }
+    
+    // Cria e salva
+    const nova = new Avaliacao(body);
+    await nova.save();
+    
+    res.status(201).json(nova);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.patch("/avaliacoes/:id", async (req, res) => {
+  try {
+    const avaliacao = await Avaliacao.findByIdAndUpdate(
+      req.params.id,
+      { 
+        ...req.body, 
+        updatedAt: new Date() 
+      },
+      { new: true }
     );
+    
+    if (!avaliacao) {
+      return res.status(404).json({ error: "Avaliação não encontrada" });
+    }
+    
+    res.json(avaliacao);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
-  res.json(result);
 });
 
-app.get("/avaliacoes/:id", (req, res) => {
-  const a = findById(avaliacoes, req.params.id); // id = "postId-usuarioId"
-  if (!a) return res.status(404).json({ error: "Avaliação não encontrada" });
-  res.json(a);
-});
-
-app.post("/avaliacoes", (req, res) => {
-  const body = req.body || {};
-  if (!body.id || !body.postId || !body.usuarioId) {
-    return res
-      .status(400)
-      .json({ error: "id, postId e usuarioId são obrigatórios" });
+app.delete("/avaliacoes/:id", async (req, res) => {
+  try {
+    const avaliacao = await Avaliacao.findByIdAndDelete(req.params.id);
+    
+    if (!avaliacao) {
+      return res.status(404).json({ error: "Avaliação não encontrada" });
+    }
+    
+    res.status(204).end();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  if (findById(avaliacoes, body.id)) {
-    return res.status(409).json({ error: "Avaliação já existe" });
-  }
-  const now = new Date().toISOString();
-  const nova = {
-    createdAt: now,
-    updatedAt: now,
-    ...body,
-  };
-  avaliacoes.push(nova);
-  res.status(201).json(nova);
-});
-
-app.patch("/avaliacoes/:id", (req, res) => {
-  const a = findById(avaliacoes, req.params.id);
-  if (!a) return res.status(404).json({ error: "Avaliação não encontrada" });
-  Object.assign(a, req.body || {}, { updatedAt: new Date().toISOString() });
-  res.json(a);
-});
-
-app.delete("/avaliacoes/:id", (req, res) => {
-  removeById(avaliacoes, req.params.id);
-  res.status(204).end();
 });
 
 // -----------------------------
