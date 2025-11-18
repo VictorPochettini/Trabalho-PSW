@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 const DesafioSchema = new mongoose.Schema({
-  id: String,
   titulo: { type: String, required: true },
   descricao: String,
   tipo: String,       // oficial, comunidade

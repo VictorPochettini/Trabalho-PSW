@@ -287,43 +287,52 @@ app.patch("/desafios/:id", async (req, res) => {
 // -----------------------------
 // /participacoes
 // -----------------------------
-app.get("/participacoes", (req, res) => {
-  const { desafioId, usuarioId } = req.query;
-  let result = participacoes;
-
-  if (desafioId) {
-    result = result.filter(
-      (p) => String(p.desafioId) === String(desafioId)
-    );
+app.get("/participacoes", async (req, res) => {
+  try {
+    const { desafioId, usuarioId } = req.query;
+    
+    // Monta o filtro dinamicamente
+    const filtro = {};
+    if (desafioId) filtro.desafioId = desafioId;
+    if (usuarioId) filtro.usuarioId = usuarioId;
+    
+    // Busca com o filtro (se estiver vazio, traz tudo)
+    const participacoes = await Participacao.find(filtro);
+    
+    res.json(participacoes);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  if (usuarioId) {
-    result = result.filter(
-      (p) => String(p.usuarioId) === String(usuarioId)
-    );
-  }
-
-  res.json(result);
 });
 
-app.post("/participacoes", (req, res) => {
-  const body = req.body || {};
-  if (!body.desafioId || !body.usuarioId || !body.postId) {
-    return res
-      .status(400)
-      .json({ error: "desafioId, usuarioId e postId são obrigatórios" });
+app.post("/participacoes", async (req, res) => {
+  try
+  {
+    const novo = new Participacao(req.body);
+    if(!novo.desafioId || !novo.usuarioId || !novo.postId)
+      return res.status(400).json({error: "desafioId, usuarioId e postId são obrigatórios"});
+
+    await novo.save();
+    res.status(201).json(novo);
   }
-  const nova = {
-    id: genId(),
-    createdAt: new Date().toISOString(),
-    ...body,
-  };
-  participacoes.push(nova);
-  res.status(201).json(nova);
+  catch(error)
+  {
+    res.status(500).json({error: error.message});
+  }
 });
 
-app.delete("/participacoes/:id", (req, res) => {
-  removeById(participacoes, req.params.id);
-  res.status(204).end();
+app.delete("/participacoes/:id", async (req, res) => {
+  try {
+    const part = await Participacoes.findByIdAndDelete(req.params.id);
+    
+    if (!part) {
+      return res.status(404).json({ error: "Participação não encontrada" });
+    }
+    
+    res.status(204).end(); // 204 = sucesso sem conteúdo
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // -----------------------------
