@@ -338,23 +338,29 @@ app.delete("/participacoes/:id", async (req, res) => {
 // -----------------------------
 // /comentarios
 // -----------------------------
-app.get("/comentarios", (req, res) => {
-  const { postId, _sort, _order } = req.query;
-  let result = comentarios;
-
-  if (postId) {
-    result = result.filter((c) => String(c.postId) === String(postId));
+app.get("/comentarios", async (req, res) => {
+  try
+  {
+    const {postId, _sort, _order} = req.query;
+    const filtro = {};
+    if(postId) filtro.postId = postId;
+    
+    let query = Comentario.find(filtro);
+    
+    if(_sort == "createdAt")
+    {
+      const ordem = _order == "desc" ? -1 : 1;
+      query = query.sort({createdAt: ordem});
+    }
+    
+    const comentarios = await query;
+    
+    res.json(comentarios);
   }
-
-  if (_sort === "createdAt") {
-    result = result.slice().sort((a, b) => {
-      const da = new Date(a.createdAt || 0);
-      const db = new Date(b.createdAt || 0);
-      return _order === "desc" ? db - da : da - db;
-    });
+  catch(error)
+  {
+    res.status(500).json({error: error.message});
   }
-
-  res.json(result);
 });
 
 app.post("/comentarios", (req, res) => {
