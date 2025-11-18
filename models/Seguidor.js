@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 const SeguidorSchema = new mongoose.Schema({
-  id: String,
   followerId: String,   // quem segue
   followingId: String,  // quem é seguido
   createdAt: { type: Date, default: Date.now }
