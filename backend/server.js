@@ -363,30 +363,42 @@ app.get("/comentarios", async (req, res) => {
   }
 });
 
-app.post("/comentarios", (req, res) => {
-  const body = req.body || {};
-  if (!body.postId || !body.usuarioId || !body.texto) {
-    return res
-      .status(400)
-      .json({ error: "postId, usuarioId e texto são obrigatórios" });
+app.post("/comentarios", async (req, res) => {
+  try {
+    const body = req.body || {};
+    
+    // Validação
+    if (!body.postId || !body.usuarioId || !body.texto) {
+      return res.status(400).json({ 
+        error: "postId, usuarioId e texto são obrigatórios" 
+      });
+    }
+    
+    // Cria comentário
+    const novo = new Comentario({
+      ...body,
+      updatedAt: new Date() // garante que updatedAt seja atualizado
+    });
+    
+    await novo.save();
+    res.status(201).json(novo);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
-  const now = new Date().toISOString();
-  const novo = {
-    id: genId(),
-    parentId: null,
-    likes: 0,
-    createdAt: now,
-    updatedAt: now,
-    deletedAt: null,
-    ...body,
-  };
-  comentarios.push(novo);
-  res.status(201).json(novo);
 });
 
-app.delete("/comentarios/:id", (req, res) => {
-  removeById(comentarios, req.params.id);
-  res.status(204).end();
+app.delete("/comentarios/:id", async (req, res) => {
+  try {
+    const comentario = await Comentario.findByIdAndDelete(req.params.id);
+    
+    if (!comentario) {
+      return res.status(404).json({ error: "Comentário não encontrado" });
+    }
+    
+    res.status(204).end();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // -----------------------------
