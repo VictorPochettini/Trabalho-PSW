@@ -12,24 +12,27 @@ export function ParticipatePage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const currentUser = useSelector((s) => s.user?.currentUser);
+  // novo formato: currentUserState = { user, token } ou (legacy) currentUser directly
+  const currentUserState = useSelector((s) => s.user?.currentUser);
+  const currentUser = currentUserState?.user ?? currentUserState ?? null;
+  const currentUserId = currentUser ? (currentUser._id ?? currentUser.id) : null;
+
   const desafio = useSelector(selectDesafioById(id));
-  const participacoes = useSelector(selectParticipacoesByDesafio(id));
-  const meusPosts = useSelector((s) => s.posts.lista || []).filter(
-    (p) => String(p.usuarioId) === String(currentUser?.id)
-  );
+  const participacoes = useSelector(selectParticipacoesByDesafio(id)) || [];
+
+  const postsLista = useSelector((s) => s.posts.lista || []);
+  const meusPosts = postsLista.filter((p) => String(p.usuarioId) === String(currentUserId));
 
   const [postId, setPostId] = useState("");
 
-  const jaParticipouComPost = useMemo(
-    () =>
-      new Set(
-        participacoes
-          .filter((p) => String(p.usuarioId) === String(currentUser?.id))
-          .map((p) => String(p.postId))
-      ),
-    [participacoes, currentUser?.id]
-  );
+  const jaParticipouComPost = useMemo(() => {
+    const setIds = new Set(
+      (participacoes || [])
+        .filter((p) => String(p.usuarioId) === String(currentUserId))
+        .map((p) => String(p.postId))
+    );
+    return setIds;
+  }, [participacoes, currentUserId]);
 
   const tiposPermitidos =
     desafio?.tiposPermitidos && desafio.tiposPermitidos.length
@@ -42,16 +45,25 @@ export function ParticipatePage() {
 
   async function onSubmit(e) {
     e.preventDefault();
-    if (!currentUser?.id || !postId) return;
+    if (!currentUserId) return;
+    if (!postId) return;
+
     const novo = {
-      id: `${id}-${currentUser.id}-${postId}`,
+      // deixamos id undefined para o json-server (ou backend) criar
       desafioId: id,
-      usuarioId: currentUser.id,
+      usuarioId: currentUserId,
       postId: Number(postId),
       createdAt: new Date().toISOString(),
     };
-    await dispatch(createParticipacao(novo));
-    navigate(`/desafios/${id}`);
+
+    try {
+      await dispatch(createParticipacao(novo)).unwrap();
+      navigate(`/desafios/${id}`);
+    } catch (err) {
+      console.error("[ParticipatePage] erro ao criar participação:", err);
+      // feedback mínimo — você pode substituir por uma notificação mais elegante
+      alert("Não foi possível se inscrever. Tente novamente.");
+    }
   }
 
   // ESTADOS: precisa login / carregando desafio
@@ -141,7 +153,7 @@ export function ParticipatePage() {
                   <option value="">— selecione —</option>
                   {postsElegiveis.map((p) => (
                     <option key={p.id} value={p.id}>
-                      [{p.tipo}] {p.titulo} — {new Date(p.data).toLocaleString()}
+                      [{p.tipo}] {p.titulo || p.conteudo || `Post ${p.id}`} — {p.data ? new Date(p.data).toLocaleString() : (p.createdAt ? new Date(p.createdAt).toLocaleString() : "")}
                     </option>
                   ))}
                 </select>
@@ -276,3 +288,5 @@ label{ font-weight:800; }
   .ch-meta{ gap:10px; }
 }
 `;
+
+export default ParticipatePage;

@@ -1,53 +1,100 @@
 // src/redux/postsSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../api/axios";
 
-const API_URL = "http://localhost:5000/posts";
+const API_URL = "/posts";
 
-// Buscar todos os posts
+// Thunks
 export const fetchPosts = createAsyncThunk(
   "posts/fetchAll",
-  async () => {
-    const res = await axios.get(API_URL);
-    return res.data;
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get(API_URL);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao carregar posts");
+    }
   }
 );
 
-// Adicionar um post (data incluída automaticamente)
-export const addPost = createAsyncThunk(
-  "posts/add",
-  async (novoPost) => {
-    const postComData = {
-      ...novoPost,
-      data: new Date().toISOString()
-    };
-    const res = await axios.post(API_URL, postComData);
-    return res.data;
+export const fetchPostsByUser = createAsyncThunk(
+  "posts/fetchByUser",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`${API_URL}?usuarioId=${userId}`);
+      return { userId, posts: res.data };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao carregar posts do usuário");
+    }
   }
 );
 
-// ✅ Remover um post
+export const createPost = createAsyncThunk(
+  "posts/create",
+  async (novoPost, { rejectWithValue }) => {
+    try {
+      const res = await api.post(API_URL, novoPost);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao criar post");
+    }
+  }
+);
+
+export const updatePost = createAsyncThunk(
+  "posts/update",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const res = await api.patch(`${API_URL}/${id}`, data);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao atualizar post");
+    }
+  }
+);
+
 export const deletePost = createAsyncThunk(
   "posts/delete",
-  async (id) => {
-    // json-server: DELETE /posts/:id
-    await axios.delete(`${API_URL}/${id}`);
-    // retornamos o id para facilitar remover do estado
-    return id;
+  async (id, { rejectWithValue }) => {
+    try {
+      await api.delete(`${API_URL}/${id}`);
+      return id;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao excluir post");
+    }
   }
 );
 
+// Slice
 const postsSlice = createSlice({
   name: "posts",
   initialState: {
     lista: [],
+    byUser: {},
     loading: false,
-    error: null
+    error: null,
   },
-  reducers: {},
+  reducers: {
+    // ação síncrona exportada para uso local/otimista
+    // payload: post object
+    addPost(state, action) {
+      // insere no topo
+      const post = action.payload;
+      state.lista.unshift(post);
+      const uid = post.usuarioId || post.author || post.userId;
+      if (uid) {
+        state.byUser[uid] = state.byUser[uid] || [];
+        state.byUser[uid].unshift(post);
+      }
+    },
+
+    // ação para sobrescrever lista (útil em formulários locais)
+    setPosts(state, action) {
+      state.lista = action.payload || [];
+    }
+  },
   extraReducers: (builder) => {
     builder
-      // fetch
       .addCase(fetchPosts.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(fetchPosts.fulfilled, (state, action) => {
         state.loading = false;
@@ -55,164 +102,57 @@ const postsSlice = createSlice({
       })
       .addCase(fetchPosts.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Erro ao carregar posts";
+        state.error = action.payload || action.error?.message;
       })
 
-      // add
-      .addCase(addPost.fulfilled, (state, action) => {
-        state.lista.push(action.payload);
-      })
-
-      // ✅ delete
-      .addCase(deletePost.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(deletePost.fulfilled, (state, action) => {
-        state.loading = false;
-        const removedId = String(action.payload);
-        state.lista = state.lista.filter(p => String(p.id) !== removedId);
-      })
-      .addCase(deletePost.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || "Erro ao excluir post";
-      });
-  }
-});
-
-export default postsSlice.reducer;
-
-{/*import api from "../api/axios";
-
-// 🔹 Buscar todos os posts
-export const fetchPosts = createAsyncThunk(
-  "posts/fetchAll",
-  async (_, { rejectWithValue }) => {
-    try {
-      const res = await api.get("/posts");
-      return res.data;
-    } catch (err) {
-      return rejectWithValue("Erro ao carregar posts");
-    }
-  }
-);
-
-// 🔹 Buscar posts de um usuário específico
-export const fetchPostsByUser = createAsyncThunk(
-  "posts/fetchByUser",
-  async (userId, { rejectWithValue }) => {
-    try {
-      const res = await api.get(`/posts?usuarioId=${userId}`);
-      return { userId, posts: res.data };
-    } catch (err) {
-      return rejectWithValue("Erro ao carregar posts do usuário");
-    }
-  }
-);
-
-// 🔹 Criar novo post
-export const createPost = createAsyncThunk(
-  "posts/create",
-  async (novoPost, { rejectWithValue }) => {
-    try {
-      const res = await api.post("/posts", novoPost);
-      return res.data;
-    } catch (err) {
-      return rejectWithValue("Erro ao criar post");
-    }
-  }
-);
-
-// 🔹 Atualizar post (por exemplo, título ou conteúdo)
-export const updatePost = createAsyncThunk(
-  "posts/update",
-  async ({ id, data }, { rejectWithValue }) => {
-    try {
-      const res = await api.patch(`/posts/${id}`, data);
-      return res.data;
-    } catch (err) {
-      return rejectWithValue("Erro ao atualizar post");
-    }
-  }
-);
-
-// 🔹 Excluir post
-export const deletePost = createAsyncThunk(
-  "posts/delete",
-  async (id, { rejectWithValue }) => {
-    try {
-      await api.delete(`/posts/${id}`);
-      return id;
-    } catch (err) {
-      return rejectWithValue("Erro ao excluir post");
-    }
-  }
-);
-
-const postsSlice = createSlice({
-  name: "posts",
-  initialState: {
-    lista: [], // todos os posts
-    byUser: {}, // { [userId]: [posts do usuário] }
-    loading: false,
-    error: null,
-  },
-  reducers: {},
-  extraReducers: (builder) => {
-    builder
-      // Buscar todos
-      .addCase(fetchPosts.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchPosts.fulfilled, (state, action) => {
-        state.lista = action.payload;
-        state.loading = false;
-      })
-      .addCase(fetchPosts.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      // Buscar por usuário
       .addCase(fetchPostsByUser.fulfilled, (state, action) => {
         const { userId, posts } = action.payload;
         state.byUser[userId] = posts;
       })
-      // Criar
+
       .addCase(createPost.fulfilled, (state, action) => {
-        state.lista.unshift(action.payload);
-        const { usuarioId } = action.payload;
-        if (!state.byUser[usuarioId]) state.byUser[usuarioId] = [];
-        state.byUser[usuarioId].unshift(action.payload);
-      })
-      // Atualizar
-      .addCase(updatePost.fulfilled, (state, action) => {
-        const updated = action.payload;
-        const idx = state.lista.findIndex((p) => p.id === updated.id);
-        if (idx !== -1) state.lista[idx] = updated;
-        const userPosts = state.byUser[updated.usuarioId];
-        if (userPosts) {
-          const i = userPosts.findIndex((p) => p.id === updated.id);
-          if (i !== -1) userPosts[i] = updated;
+        // o backend retornou o post criado — garante consistência
+        const created = action.payload;
+        // evita duplicata se já tiver sido adicionada otimisticamente
+        const exists = state.lista.findIndex(p => String(p._id || p.id) === String(created._id || created.id));
+        if (exists === -1) {
+          state.lista.unshift(created);
+        } else {
+          state.lista[exists] = created;
+        }
+        const uid = created.usuarioId || created.author || created.userId;
+        if (uid) {
+          state.byUser[uid] = state.byUser[uid] || [];
+          const idx = state.byUser[uid].findIndex(p => String(p._id || p.id) === String(created._id || created.id));
+          if (idx === -1) state.byUser[uid].unshift(created); else state.byUser[uid][idx] = created;
         }
       })
-      // Excluir
+
+      .addCase(updatePost.fulfilled, (state, action) => {
+        const updated = action.payload;
+        const idx = state.lista.findIndex((p) => String(p._id || p.id) === String(updated._id || updated.id));
+        if (idx !== -1) state.lista[idx] = updated;
+        const uid = updated.usuarioId || updated.author || updated.userId;
+        if (uid && state.byUser[uid]) {
+          const i = state.byUser[uid].findIndex(p => String(p._id || p.id) === String(updated._id || updated.id));
+          if (i !== -1) state.byUser[uid][i] = updated;
+        }
+      })
+
       .addCase(deletePost.fulfilled, (state, action) => {
         const id = action.payload;
-        state.lista = state.lista.filter((p) => p.id !== id);
-        for (const userId in state.byUser) {
-          state.byUser[userId] = state.byUser[userId].filter((p) => p.id !== id);
+        state.lista = state.lista.filter((p) => String(p._id || p.id) !== String(id));
+        for (const k in state.byUser) {
+          state.byUser[k] = state.byUser[k].filter((p) => String(p._id || p.id) !== String(id));
         }
       });
   },
 });
 
+export const { addPost, setPosts } = postsSlice.actions;
 export default postsSlice.reducer;
 
-// 🔹 Selectors
+// Selectors
 export const selectAllPosts = (state) => state.posts.lista || [];
-export const selectPostsByUser = (userId) => (state) =>
-  state.posts.byUser[userId] || [];
-export const selectPostById = (id) => (state) =>
-  state.posts.lista.find((p) => p.id === id);
-*/}
+export const selectPostsByUser = (userId) => (state) => state.posts.byUser[userId] || [];
+export const selectPostById = (id) => (state) => state.posts.lista.find((p) => String(p._id || p.id) === String(id));

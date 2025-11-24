@@ -1,9 +1,7 @@
 // src/redux/ratingsSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import api from "../api/axios";
 
-const BASE = "http://localhost:5000";
-
-// Função auxiliar para calcular média
 function calcAvg(avaliacoes) {
   if (!avaliacoes || !avaliacoes.length) return { avg: 0, count: 0 };
   const sum = avaliacoes.reduce((a, r) => a + Number(r.estrelas || 0), 0);
@@ -11,431 +9,95 @@ function calcAvg(avaliacoes) {
   return { avg: Number((sum / count).toFixed(2)), count };
 }
 
-// Buscar avaliação do usuário atual + média do post
-export const fetchMyRatingForPost = createAsyncThunk(
-  "ratings/fetchMyForPost",
-  async ({ postId, usuarioId }) => {
-    const id = `${Number(postId)}-${Number(usuarioId)}`;
-    
-    // Buscar avaliação do usuário
-    let myStars = 0;
-    try {
-      const res = await fetch(`${BASE}/avaliacoes/${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        myStars = data.estrelas || 0;
-      }
-    } catch (error) {
-      console.error("Erro ao buscar avaliação do usuário:", error);
-    }
-
-    // Buscar todas as avaliações do post para calcular média
-    let postRating = { avg: 0, count: 0 };
-    try {
-      const avsRes = await fetch(`${BASE}/avaliacoes?postId=${postId}`);
-      if (avsRes.ok) {
-        const avs = await avsRes.json();
-        postRating = calcAvg(avs);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar avaliações do post:", error);
-    }
-
-    return { 
-      postId: Number(postId), 
-      usuarioId: Number(usuarioId), 
-      estrelas: myStars,
-      postRating 
-    };
-  }
-);
-
-// Buscar apenas a média do post (para quando não há usuário logado)
-export const fetchPostRating = createAsyncThunk(
-  "ratings/fetchPostRating",
-  async (postId) => {
-    let postRating = { avg: 0, count: 0 };
-    try {
-      const avsRes = await fetch(`${BASE}/avaliacoes?postId=${postId}`);
-      if (avsRes.ok) {
-        const avs = await avsRes.json();
-        postRating = calcAvg(avs);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar avaliações do post:", error);
-    }
-
-    return { 
-      postId: Number(postId),
-      postRating 
-    };
-  }
-);
-
-// Remove avaliação + atualiza caches
-export const removeRating = createAsyncThunk(
-  "ratings/remove",
-  async ({ postId, usuarioId }) => {
-    const BASE = import.meta.env?.VITE_API_BASE || "http://localhost:5000";
-    const pid = Number(postId);
-    const uid = Number(usuarioId);
-    const id = `${pid}-${uid}`;
-
-    // 1) Remove a avaliação
-    const deleteRes = await fetch(`${BASE}/avaliacoes/${id}`, {
-      method: "DELETE",
-    });
-    
-    if (!deleteRes.ok && deleteRes.status !== 404) {
-      const t = await deleteRes.text().catch(() => "");
-      throw new Error(`Erro ao remover avaliação (${deleteRes.status}) ${t}`);
-    }
-
-    // 2) Recalcula média do post e cacheia
-    const avsRes = await fetch(`${BASE}/avaliacoes?postId=${pid}`);
-    if (!avsRes.ok) throw new Error("Erro ao obter avaliações do post");
-    const avs = await avsRes.json();
-    const sum = avs.reduce((a, r) => a + Number(r.estrelas || 0), 0);
-    const count = avs.length;
-    const avg = count ? Number((sum / count).toFixed(2)) : 0;
-
-    const patchPost = await fetch(`${BASE}/posts/${pid}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ratingAvg: avg, ratingCount: count }),
-    });
-    if (!patchPost.ok) throw new Error("Erro ao atualizar média do post");
-
-    // 3) Recalcula média recebida do autor e cacheia no usuário
-    const postRes = await fetch(`${BASE}/posts/${pid}`);
-    const post = await postRes.json();
-
-    const postsDoAutorRes = await fetch(
-      `${BASE}/posts?usuarioId=${post.usuarioId}&_embed=avaliacoes`
-    );
-    const postsDoAutor = await postsDoAutorRes.json();
-    const allRatings = postsDoAutor.flatMap((p) => p.avaliacoes || []);
-    const sum2 = allRatings.reduce((a, r) => a + Number(r.estrelas || 0), 0);
-    const count2 = allRatings.length;
-    const avg2 = count2 ? Number((sum2 / count2).toFixed(2)) : 0;
-
-    await fetch(`${BASE}/usuarios/${post.usuarioId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ratingAvgRecebida: avg2,
-        ratingCountRecebida: count2,
-      }),
-    });
-
-    return {
-      postId: pid,
-      usuarioId: uid,
-      estrelas: 0,
-      postRating: { avg, count },
-    };
-  }
-);
-
-// Upsert + atualiza caches do post e do autor do post
-export const upsertRating = createAsyncThunk(
-  "ratings/upsert",
-  async ({ postId, usuarioId, estrelas }) => {
-    const BASE = import.meta.env?.VITE_API_BASE || "http://localhost:5000";
-    const pid = Number(postId);
-    const uid = Number(usuarioId);
-    const id = `${pid}-${uid}`;
-    const now = new Date().toISOString();
-
-    // 1) Verifica se já existe
-    const getRes = await fetch(`${BASE}/avaliacoes/${id}`);
-    let existed = getRes.ok;
-
-    // 2) Cria ou atualiza
-    if (!existed) {
-      // POST cria (com id composto no body)
-      const createRes = await fetch(`${BASE}/avaliacoes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id,
-          postId: pid,
-          usuarioId: uid,
-          estrelas: Number(estrelas),
-          createdAt: now,
-          updatedAt: now,
-        }),
-      });
-      if (!createRes.ok) {
-        const t = await createRes.text().catch(() => "");
-        throw new Error(`Erro ao criar avaliação (${createRes.status}) ${t}`);
-      }
-    } else {
-      // PATCH atualiza somente campos necessários
-      const patchRes = await fetch(`${BASE}/avaliacoes/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          estrelas: Number(estrelas),
-          updatedAt: now,
-        }),
-      });
-      if (!patchRes.ok) {
-        const t = await patchRes.text().catch(() => "");
-        throw new Error(`Erro ao atualizar avaliação (${patchRes.status}) ${t}`);
-      }
-    }
-
-    // 3) Recalcula média do post e cacheia
-    const avsRes = await fetch(`${BASE}/avaliacoes?postId=${pid}`);
-    if (!avsRes.ok) throw new Error("Erro ao obter avaliações do post");
-    const avs = await avsRes.json();
-    const sum = avs.reduce((a, r) => a + Number(r.estrelas || 0), 0);
-    const count = avs.length;
-    const avg = count ? Number((sum / count).toFixed(2)) : 0;
-
-    const patchPost = await fetch(`${BASE}/posts/${pid}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ratingAvg: avg, ratingCount: count }),
-    });
-    if (!patchPost.ok) throw new Error("Erro ao atualizar média do post");
-
-    // 4) Recalcula média recebida do autor e cacheia no usuário
-    const postRes = await fetch(`${BASE}/posts/${pid}`);
-    const post = await postRes.json();
-
-    const postsDoAutorRes = await fetch(
-      `${BASE}/posts?usuarioId=${post.usuarioId}&_embed=avaliacoes`
-    );
-    const postsDoAutor = await postsDoAutorRes.json();
-    const allRatings = postsDoAutor.flatMap((p) => p.avaliacoes || []);
-    const sum2 = allRatings.reduce((a, r) => a + Number(r.estrelas || 0), 0);
-    const count2 = allRatings.length;
-    const avg2 = count2 ? Number((sum2 / count2).toFixed(2)) : 0;
-
-    await fetch(`${BASE}/usuarios/${post.usuarioId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ratingAvgRecebida: avg2,
-        ratingCountRecebida: count2,
-      }),
-    });
-
-    return {
-      postId: pid,
-      usuarioId: uid,
-      estrelas: Number(estrelas),
-      postRating: { avg, count },
-    };
-  }
-);
-
-const ratingsSlice = createSlice({
-  name: "ratings",
-  initialState: {
-    byPostId: {
-      // [postId]: { myStars: 0, saving: false, error: null, postAvg: 0, postCount: 0 }
-    },
-  },
-  reducers: {},
-  extraReducers: (builder) => {
-    builder
-      .addCase(fetchMyRatingForPost.fulfilled, (state, action) => {
-        const { postId, estrelas, postRating } = action.payload;
-        state.byPostId[postId] = state.byPostId[postId] || {
-          myStars: 0,
-          saving: false,
-          error: null,
-          postAvg: 0,
-          postCount: 0,
-        };
-        state.byPostId[postId].myStars = Number(estrelas || 0);
-        if (postRating) {
-          state.byPostId[postId].postAvg = postRating.avg;
-          state.byPostId[postId].postCount = postRating.count;
-        }
-      })
-      .addCase(fetchPostRating.fulfilled, (state, action) => {
-        const { postId, postRating } = action.payload;
-        state.byPostId[postId] = state.byPostId[postId] || {
-          myStars: 0,
-          saving: false,
-          error: null,
-          postAvg: 0,
-          postCount: 0,
-        };
-        if (postRating) {
-          state.byPostId[postId].postAvg = postRating.avg;
-          state.byPostId[postId].postCount = postRating.count;
-        }
-      })
-      .addCase(upsertRating.pending, (state, action) => {
-        const { postId } = action.meta.arg;
-        state.byPostId[postId] = state.byPostId[postId] || {
-          myStars: 0,
-          saving: false,
-          error: null,
-          postAvg: 0,
-          postCount: 0,
-        };
-        state.byPostId[postId].saving = true;
-        state.byPostId[postId].error = null;
-      })
-      .addCase(upsertRating.fulfilled, (state, action) => {
-        const { postId, estrelas, postRating } = action.payload;
-        state.byPostId[postId] = state.byPostId[postId] || {
-          myStars: 0,
-          saving: false,
-          error: null,
-          postAvg: 0,
-          postCount: 0,
-        };
-        state.byPostId[postId].saving = false;
-        state.byPostId[postId].myStars = Number(estrelas);
-        if (postRating) {
-          state.byPostId[postId].postAvg = postRating.avg;
-          state.byPostId[postId].postCount = postRating.count;
-        }
-      })
-      .addCase(upsertRating.rejected, (state, action) => {
-        const { postId } = action.meta.arg;
-        state.byPostId[postId] = state.byPostId[postId] || {
-          myStars: 0,
-          saving: false,
-          error: null,
-          postAvg: 0,
-          postCount: 0,
-        };
-        state.byPostId[postId].saving = false;
-        state.byPostId[postId].error = action.error?.message || "Erro";
-      })
-      .addCase(removeRating.pending, (state, action) => {
-        const { postId } = action.meta.arg;
-        state.byPostId[postId] = state.byPostId[postId] || {
-          myStars: 0,
-          saving: false,
-          error: null,
-          postAvg: 0,
-          postCount: 0,
-        };
-        state.byPostId[postId].saving = true;
-        state.byPostId[postId].error = null;
-      })
-      .addCase(removeRating.fulfilled, (state, action) => {
-        const { postId, estrelas, postRating } = action.payload;
-        state.byPostId[postId] = state.byPostId[postId] || {
-          myStars: 0,
-          saving: false,
-          error: null,
-          postAvg: 0,
-          postCount: 0,
-        };
-        state.byPostId[postId].saving = false;
-        state.byPostId[postId].myStars = Number(estrelas);
-        if (postRating) {
-          state.byPostId[postId].postAvg = postRating.avg;
-          state.byPostId[postId].postCount = postRating.count;
-        }
-      })
-      .addCase(removeRating.rejected, (state, action) => {
-        const { postId } = action.meta.arg;
-        state.byPostId[postId] = state.byPostId[postId] || {
-          myStars: 0,
-          saving: false,
-          error: null,
-          postAvg: 0,
-          postCount: 0,
-        };
-        state.byPostId[postId].saving = false;
-        state.byPostId[postId].error = action.error?.message || "Erro";
-      });
-  },
-});
-
-export default ratingsSlice.reducer;
-
-// Selectors
-export const selectRatingState = (postId) => (state) =>
-  state.ratings.byPostId[Number(postId)] || {
-    myStars: 0,
-    saving: false,
-    error: null,
-    postAvg: 0,
-    postCount: 0,
-  };
-
-{/*import api from "../api/axios";
-
-// 🔹 Buscar avaliação do usuário + média do post
+// Busca avaliação do usuário + média do post
 export const fetchMyRatingForPost = createAsyncThunk(
   "ratings/fetchMyForPost",
   async ({ postId, usuarioId }, { rejectWithValue }) => {
     try {
-      const [myRes, avgRes] = await Promise.all([
-        api.get(`/ratings/user/${usuarioId}/post/${postId}`),
-        api.get(`/ratings/post/${postId}`)
-      ]);
+      // backend: GET /avaliacoes?postId=...&usuarioId=... (ou GET /avaliacoes/:id se usar id composto)
+      const myRes = await api.get(`/avaliacoes?postId=${postId}&usuarioId=${usuarioId}`);
+      const my = Array.isArray(myRes.data) ? myRes.data[0] : myRes.data;
+      const myStars = my ? Number(my.estrelas || 0) : 0;
 
-      return {
-        postId,
-        usuarioId,
-        estrelas: myRes.data?.estrelas || 0,
-        postRating: avgRes.data || { avg: 0, count: 0 }
-      };
+      const avsRes = await api.get(`/avaliacoes?postId=${postId}`);
+      const postRating = calcAvg(avsRes.data);
+
+      return { postId: String(postId), usuarioId: String(usuarioId), estrelas: myStars, postRating };
     } catch (err) {
-      return rejectWithValue("Erro ao buscar avaliação");
+      return rejectWithValue(err.response?.data?.message || "Erro ao carregar avaliações");
     }
   }
 );
 
-// 🔹 Buscar média geral do post
+// Buscar média do post
 export const fetchPostRating = createAsyncThunk(
   "ratings/fetchPostRating",
   async (postId, { rejectWithValue }) => {
     try {
-      const res = await api.get(`/ratings/post/${postId}`);
-      return { postId, postRating: res.data || { avg: 0, count: 0 } };
+      const avsRes = await api.get(`/avaliacoes?postId=${postId}`);
+      const postRating = calcAvg(avsRes.data);
+      return { postId: String(postId), postRating };
     } catch (err) {
-      return rejectWithValue("Erro ao buscar média do post");
+      return rejectWithValue(err.response?.data?.message || "Erro ao carregar média");
     }
   }
 );
 
-// 🔹 Criar ou atualizar avaliação
+// Upsert avaliação
 export const upsertRating = createAsyncThunk(
   "ratings/upsert",
   async ({ postId, usuarioId, estrelas }, { rejectWithValue }) => {
     try {
-      const res = await api.post("/ratings", { postId, usuarioId, estrelas });
-      return {
+      // backend prevents duplicate by checking usuarioId+postId; we POST and backend handles upsert or returns 409
+      const res = await api.post("/avaliacoes", {
         postId,
         usuarioId,
-        estrelas,
-        postRating: res.data?.postRating || { avg: 0, count: 0 }
-      };
+        estrelas: Number(estrelas)
+      });
+      // depois recalc média:
+      const avsRes = await api.get(`/avaliacoes?postId=${postId}`);
+      const postRating = calcAvg(avsRes.data);
+      // update post cached fields
+      await api.patch(`/posts/${postId}`, { ratingAvg: postRating.avg, ratingCount: postRating.count });
+
+      // update author ratingAvgRecebida
+      const postRes = await api.get(`/posts/${postId}`);
+      const post = postRes.data;
+      const postsDoAutor = (await api.get(`/posts?usuarioId=${post.usuarioId}&_embed=avaliacoes`)).data;
+      const allRatings = postsDoAutor.flatMap(p => p.avaliacoes || []);
+      const authorRating = calcAvg(allRatings);
+      await api.patch(`/usuarios/${post.usuarioId}`, { ratingAvgRecebida: authorRating.avg, ratingCountRecebida: authorRating.count });
+
+      return { postId: String(postId), usuarioId: String(usuarioId), estrelas: Number(estrelas), postRating };
     } catch (err) {
-      return rejectWithValue("Erro ao registrar avaliação");
+      return rejectWithValue(err.response?.data?.message || "Erro ao salvar avaliação");
     }
   }
 );
 
-// 🔹 Remover avaliação
+// Remover avaliação
 export const removeRating = createAsyncThunk(
   "ratings/remove",
   async ({ postId, usuarioId }, { rejectWithValue }) => {
     try {
-      await api.delete(`/ratings/${postId}-${usuarioId}`);
-      const res = await api.get(`/ratings/post/${postId}`);
-      return {
-        postId,
-        usuarioId,
-        estrelas: 0,
-        postRating: res.data || { avg: 0, count: 0 }
-      };
+      // backend delete by id composed or by query — here try delete by id composed if backend uses it
+      const id = `${postId}-${usuarioId}`;
+      await api.delete(`/avaliacoes/${id}`);
+      // recalc média do post
+      const avsRes = await api.get(`/avaliacoes?postId=${postId}`);
+      const postRating = calcAvg(avsRes.data);
+      await api.patch(`/posts/${postId}`, { ratingAvg: postRating.avg, ratingCount: postRating.count });
+
+      // recalc author
+      const post = (await api.get(`/posts/${postId}`)).data;
+      const postsDoAutor = (await api.get(`/posts?usuarioId=${post.usuarioId}&_embed=avaliacoes`)).data;
+      const allRatings = postsDoAutor.flatMap(p => p.avaliacoes || []);
+      const authorRating = calcAvg(allRatings);
+      await api.patch(`/usuarios/${post.usuarioId}`, { ratingAvgRecebida: authorRating.avg, ratingCountRecebida: authorRating.count });
+
+      return { postId: String(postId), usuarioId: String(usuarioId), estrelas: 0, postRating };
     } catch (err) {
-      return rejectWithValue("Erro ao remover avaliação");
+      return rejectWithValue(err.response?.data?.message || "Erro ao remover avaliação");
     }
   }
 );
@@ -443,81 +105,59 @@ export const removeRating = createAsyncThunk(
 const ratingsSlice = createSlice({
   name: "ratings",
   initialState: {
-    byPostId: {}, // [postId]: { myStars, postAvg, postCount, saving, error }
+    byPostId: {}, // postId -> { myStars, postAvg, postCount, saving, error }
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Buscar média + avaliação do usuário
-      .addCase(fetchMyRatingForPost.fulfilled, (state, action) => {
-        const { postId, estrelas, postRating } = action.payload;
-        state.byPostId[postId] = {
-          myStars: estrelas || 0,
-          postAvg: postRating.avg || 0,
-          postCount: postRating.count || 0,
-          saving: false,
-          error: null
-        };
+      .addCase(fetchMyRatingForPost.fulfilled, (s, a) => {
+        const { postId, estrelas, postRating } = a.payload;
+        s.byPostId[postId] = s.byPostId[postId] || { myStars: 0, saving: false, error: null, postAvg: 0, postCount: 0 };
+        s.byPostId[postId].myStars = Number(estrelas || 0);
+        s.byPostId[postId].postAvg = postRating.avg;
+        s.byPostId[postId].postCount = postRating.count;
       })
-      // Buscar média apenas
-      .addCase(fetchPostRating.fulfilled, (state, action) => {
-        const { postId, postRating } = action.payload;
-        state.byPostId[postId] = {
-          ...(state.byPostId[postId] || {}),
-          postAvg: postRating.avg || 0,
-          postCount: postRating.count || 0
-        };
+      .addCase(fetchPostRating.fulfilled, (s, a) => {
+        const { postId, postRating } = a.payload;
+        s.byPostId[postId] = s.byPostId[postId] || { myStars: 0, saving: false, error: null, postAvg: 0, postCount: 0 };
+        s.byPostId[postId].postAvg = postRating.avg;
+        s.byPostId[postId].postCount = postRating.count;
       })
-      // Upsert
-      .addCase(upsertRating.pending, (state, action) => {
-        const { postId } = action.meta.arg;
-        if (!state.byPostId[postId])
-          state.byPostId[postId] = { myStars: 0, postAvg: 0, postCount: 0 };
-        state.byPostId[postId].saving = true;
+      .addCase(upsertRating.pending, (s, a) => {
+        const postId = a.meta.arg.postId;
+        s.byPostId[postId] = s.byPostId[postId] || { myStars: 0, saving: false, error: null, postAvg: 0, postCount: 0 };
+        s.byPostId[postId].saving = true;
+        s.byPostId[postId].error = null;
       })
-      .addCase(upsertRating.fulfilled, (state, action) => {
-        const { postId, estrelas, postRating } = action.payload;
-        state.byPostId[postId] = {
-          myStars: estrelas,
-          postAvg: postRating.avg || 0,
-          postCount: postRating.count || 0,
-          saving: false,
-          error: null
-        };
+      .addCase(upsertRating.fulfilled, (s, a) => {
+        const { postId, estrelas, postRating } = a.payload;
+        s.byPostId[postId] = { myStars: estrelas, saving: false, error: null, postAvg: postRating.avg, postCount: postRating.count };
       })
-      .addCase(upsertRating.rejected, (state, action) => {
-        const { postId } = action.meta.arg;
-        state.byPostId[postId].saving = false;
-        state.byPostId[postId].error = action.payload;
+      .addCase(upsertRating.rejected, (s, a) => {
+        const postId = a.meta.arg.postId;
+        s.byPostId[postId] = s.byPostId[postId] || { myStars: 0, saving: false, error: null, postAvg: 0, postCount: 0 };
+        s.byPostId[postId].saving = false;
+        s.byPostId[postId].error = a.payload || a.error?.message;
       })
-      // Remover avaliação
-      .addCase(removeRating.fulfilled, (state, action) => {
-        const { postId, postRating } = action.payload;
-        state.byPostId[postId] = {
-          myStars: 0,
-          postAvg: postRating.avg || 0,
-          postCount: postRating.count || 0,
-          saving: false,
-          error: null
-        };
+      .addCase(removeRating.pending, (s, a) => {
+        const postId = a.meta.arg.postId;
+        s.byPostId[postId] = s.byPostId[postId] || { myStars: 0, saving: false, error: null, postAvg: 0, postCount: 0 };
+        s.byPostId[postId].saving = true;
+        s.byPostId[postId].error = null;
       })
-      .addCase(removeRating.rejected, (state, action) => {
-        const { postId } = action.meta.arg;
-        state.byPostId[postId].saving = false;
-        state.byPostId[postId].error = action.payload;
+      .addCase(removeRating.fulfilled, (s, a) => {
+        const { postId, estrelas, postRating } = a.payload;
+        s.byPostId[postId] = { myStars: estrelas, saving: false, error: null, postAvg: postRating.avg, postCount: postRating.count };
+      })
+      .addCase(removeRating.rejected, (s, a) => {
+        const postId = a.meta.arg.postId;
+        s.byPostId[postId].saving = false;
+        s.byPostId[postId].error = a.payload || a.error?.message;
       });
   },
 });
 
 export default ratingsSlice.reducer;
 
-// 🔹 Selectors
-export const selectRatingState = (postId) => (state) =>
-  state.ratings.byPostId[postId] || {
-    myStars: 0,
-    saving: false,
-    error: null,
-    postAvg: 0,
-    postCount: 0
-  };
-*/}
+// selector
+export const selectRatingState = (postId) => (state) => state.ratings.byPostId[String(postId)] || { myStars: 0, saving: false, error: null, postAvg: 0, postCount: 0 };

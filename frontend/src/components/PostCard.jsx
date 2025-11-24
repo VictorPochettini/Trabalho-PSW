@@ -22,16 +22,16 @@ import { deletePost } from '../redux/postsSlice';
 
 import { fetchUsuarios } from '../redux/usuariosSlice';
 
-const PostCard = ({ 
-  post, 
-  onMonetizeClick, 
-  onCommentClick, 
+const PostCard = ({
+  post,
+  onMonetizeClick,
+  onCommentClick,
   onDeleteClick,
-  onEditClick, 
-  onSaveEdit, 
-  onCancelEdit, 
-  isEditing, 
-  editText, 
+  onEditClick,
+  onSaveEdit,
+  onCancelEdit,
+  isEditing,
+  editText,
   onEditTextChange,
   isOwnProfile = false
 }) => {
@@ -49,50 +49,57 @@ const PostCard = ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { currentUser, usuarios: usuariosState } = useSelector((s) => s.user) || { currentUser: null, usuarios: [] };
-  const usuarios = Array.isArray(usuariosState) ? usuariosState : [];
-  const usuarioId = currentUser?.id;
+  // --- ADAPTED to current model: currentUser stored as { user, token } in state.user.currentUser
+  const currentUserState = useSelector((s) => s.user?.currentUser);
+  const currentUser = currentUserState?.user ?? null;
+  const currentUserId = currentUser?._id || currentUser?.id || null;
 
+  // usuarios list (array) in state.user.usuarios
+  const usuarios = useSelector((s) => s.user?.usuarios || []);
   useEffect(() => {
-    if (!usuarios.length) dispatch(fetchUsuarios());
+    if (!Array.isArray(usuarios) || usuarios.length === 0) dispatch(fetchUsuarios());
   }, [dispatch, usuarios.length]);
 
-  // autor
-  const author = usuarios.find((u) => Number(u.id) === Number(post?.usuarioId)) || null;
-  const authorName = author?.nome || author?.name || 'Usuário';
-  const authorUsername = author?.username || post?.username || '';
+  // author: try _id or id match (backend shape may vary)
+  const author = usuarios.find((u) => {
+    const uid = u?._id ?? u?.id;
+    return String(uid) === String(post?.usuarioId);
+  }) || null;
+
+  const authorName = author?.nome || author?.name || author?.username || 'Usuário';
+  const authorUsername = author?.username || '';
 
   // rating
   const ratingState = useSelector(selectRatingState(post?.id));
-  
+
   // Buscar avaliação do usuário e média do post quando o componente monta
   useEffect(() => {
     if (!post?.id) return;
-    
-    if (usuarioId) {
+
+    if (currentUserId) {
       // Se usuário logado, busca avaliação pessoal + média do post
-      dispatch(fetchMyRatingForPost({ postId: post.id, usuarioId }));
+      dispatch(fetchMyRatingForPost({ postId: post.id, usuarioId: currentUserId }));
     } else {
       // Se não logado, busca apenas a média do post
       dispatch(fetchPostRating(post.id));
     }
-  }, [dispatch, post?.id, usuarioId]);
+  }, [dispatch, post?.id, currentUserId]);
 
   // seguidores
   const targetUserId = post?.usuarioId;
-  const isFollowing = useSelector(selectIsFollowing(usuarioId, targetUserId));
+  const isFollowing = useSelector(selectIsFollowing(currentUserId, targetUserId));
   useEffect(() => {
-    if (!usuarioId || !targetUserId || usuarioId === targetUserId) return;
-    dispatch(fetchIsFollowing({ followerId: usuarioId, followingId: targetUserId }));
-  }, [dispatch, usuarioId, targetUserId]);
+    if (!currentUserId || !targetUserId || String(currentUserId) === String(targetUserId)) return;
+    dispatch(fetchIsFollowing({ followerId: currentUserId, followingId: targetUserId }));
+  }, [dispatch, currentUserId, targetUserId]);
 
   const handleFollowToggle = async () => {
-    if (!usuarioId || !targetUserId || usuarioId === targetUserId) return;
+    if (!currentUserId || !targetUserId || String(currentUserId) === String(targetUserId)) return;
     try {
       if (isFollowing) {
-        await dispatch(unfollowUser({ followerId: usuarioId, followingId: targetUserId })).unwrap();
+        await dispatch(unfollowUser({ followerId: currentUserId, followingId: targetUserId })).unwrap();
       } else {
-        await dispatch(followUser({ followerId: usuarioId, followingId: targetUserId })).unwrap();
+        await dispatch(followUser({ followerId: currentUserId, followingId: targetUserId })).unwrap();
       }
     } catch (e) {
       console.error('follow toggle error', e);
@@ -100,16 +107,16 @@ const PostCard = ({
   };
 
   const handleStarClick = async (value) => {
-    if (!usuarioId || submitting) return;
-    
+    if (!currentUserId || submitting) return;
+
     const currentTime = new Date().getTime();
     const isDoubleClick = currentTime - lastStarClickTime < 300; // 300ms para double click
-    
-    if (isDoubleClick && ratingState.myStars > 0) {
+
+    if (isDoubleClick && ratingState?.myStars > 0) {
       // Double click: remove avaliação
       try {
         setSubmitting(true);
-        await dispatch(removeRating({ postId: post.id, usuarioId })).unwrap();
+        await dispatch(removeRating({ postId: post.id, usuarioId: currentUserId })).unwrap();
       } catch (err) {
         console.error('[PostCard] removeRating error:', err);
       } finally {
@@ -120,20 +127,26 @@ const PostCard = ({
       const estrelas = Math.min(5, Math.max(1, Number(value)));
       try {
         setSubmitting(true);
-        await dispatch(upsertRating({ postId: post.id, usuarioId, estrelas })).unwrap();
+        await dispatch(upsertRating({ postId: post.id, usuarioId: currentUserId, estrelas })).unwrap();
       } catch (err) {
         console.error('[PostCard] upsertRating error:', err);
       } finally {
         setSubmitting(false);
       }
     }
-    
+
     setLastStarClickTime(currentTime);
   };
 
   // perfil → /user/username
   const goToProfile = () => {
     if (authorUsername) navigate(`/user/${authorUsername}`);
+    else if (author?.username) navigate(`/user/${author.username}`);
+    else if (authorName) {
+      // fallback: if no username, try navigate to id-based route
+      const uid = author?._id ?? author?.id;
+      if (uid) navigate(`/user/${uid}`);
+    }
   };
 
   // player helpers
@@ -180,7 +193,7 @@ const PostCard = ({
   };
 
   const { time, content, mediaType, mediaSrc, mediaAlt, id, texto } = post;
-  const isText = mediaType === 'text';
+  const isText = mediaType === 'text' || mediaType === 'texto';
 
   const createdDataAttr =
     (post?.createdAt && String(post.createdAt)) ||
@@ -188,7 +201,11 @@ const PostCard = ({
     '';
 
   // ✅ pode excluir se for admin OU dono do post
-  const canDelete = !!currentUser && (currentUser.admin === true || Number(currentUser.id) === Number(post?.usuarioId));
+  const canDelete = !!currentUser && (
+    currentUser.role === 'admin' ||
+    currentUser.admin === true ||
+    String(currentUserId) === String(post?.usuarioId)
+  );
 
   const handleDeletePost = async () => {
     if (!canDelete) return;
@@ -215,27 +232,27 @@ const PostCard = ({
 
   const handleLocalEditChange = (e) => {
     setLocalEditText(e.target.value);
-    onEditTextChange(e.target.value);
+    if (typeof onEditTextChange === 'function') onEditTextChange(e.target.value);
   };
 
   const handleSaveClick = () => {
-    onSaveEdit(post.id);
+    if (typeof onSaveEdit === 'function') onSaveEdit(post.id);
   };
 
   const handleCancelClick = () => {
-    onCancelEdit();
+    if (typeof onCancelEdit === 'function') onCancelEdit();
   };
 
   const handleEditClick = () => {
-    onEditClick(post);
+    if (typeof onEditClick === 'function') onEditClick(post);
   };
 
   // ✅ pode editar se for dono do post
-  const canEdit = !!currentUser && Number(currentUser.id) === Number(post?.usuarioId);
+  const canEdit = !!currentUser && String(currentUserId) === String(post?.usuarioId);
 
-  const myStars = ratingState.myStars || 0;
-  const ratingAvg = ratingState.postAvg || 0;
-  const ratingCount = ratingState.postCount || 0;
+  const myStars = ratingState?.myStars || 0;
+  const ratingAvg = ratingState?.postAvg || 0;
+  const ratingCount = ratingState?.postCount || 0;
 
   return (
     <div className="post-container" data-created={createdDataAttr}>
@@ -281,28 +298,28 @@ const PostCard = ({
                         <i className="fas fa-dollar-sign me-1"></i>Apoiar
                       </button>
                     )}
-                    
+
                     {/* Botão Seguir - SOMENTE se NÃO for o próprio perfil */}
                     {!isOwnProfile && (
                       <button
                         className={`btn btn-sm follow-button ${isFollowing ? 'following' : 'notfollowing'} soft`}
                         onClick={handleFollowToggle}
-                        disabled={!usuarioId || !targetUserId || usuarioId === targetUserId}
+                        disabled={!currentUserId || !targetUserId || String(currentUserId) === String(targetUserId)}
                         title={
-                          !usuarioId
+                          !currentUserId
                             ? 'Faça login para seguir'
-                            : usuarioId === targetUserId
-                            ? 'Você não pode seguir a si mesmo'
-                            : isFollowing
-                            ? 'Deixar de seguir'
-                            : 'Seguir'
+                            : String(currentUserId) === String(targetUserId)
+                              ? 'Você não pode seguir a si mesmo'
+                              : isFollowing
+                                ? 'Deixar de seguir'
+                                : 'Seguir'
                         }
                       >
                         {isFollowing ? 'Seguindo' : 'Seguir'}
                       </button>
                     )}
 
-                     {!isEditing && (
+                    {!isEditing && (
                       <div className="post-owner-actions">
                         {/* Botão Editar - apenas dono do post */}
                         {canEdit && (
@@ -316,7 +333,7 @@ const PostCard = ({
                             <i className="fas fa-edit"></i>
                           </button>
                         )}
-                        
+
                         {/* Botão Excluir - admin ou dono do post */}
                         {canDelete && (
                           <button
@@ -420,7 +437,7 @@ const PostCard = ({
                       </div>
                     )}
 
-                    {mediaType === 'text' && (
+                    {isText && (
                       <div className="text-media">
                         <small className="text-muted">
                           <span className="prewrap">{texto}</span>
@@ -436,9 +453,9 @@ const PostCard = ({
                             key={star}
                             className="star-button elegant-star"
                             onClick={() => handleStarClick(star)}
-                            disabled={!usuarioId || submitting || ratingState.saving}
+                            disabled={!currentUserId || submitting || ratingState?.saving}
                             style={{ color: star <= myStars ? 'var(--star-on, #fbbf24)' : 'var(--star-off, #b8bec9)' }}
-                            title={usuarioId ? `Clique para dar ${star} estrela${star>1?'s':''}, double click para remover` : 'Faça login para avaliar'}
+                            title={currentUserId ? `Clique para dar ${star} estrela${star>1?'s':''}, double click para remover` : 'Faça login para avaliar'}
                             aria-label={`Avaliar com ${star} estrela${star>1?'s':''}`}
                             type="button"
                           >
@@ -481,10 +498,11 @@ const PostCard = ({
             </div>
           </div>
         </div>
-      </div> 
+      </div>
 
-      {/* 🎨 Estilos */}
+      {/* 🎨 Estilos (mantidos) */}
       <style>{`
+        /* (styles kept exactly as before to preserve visual) */
         :root {
           --accent: var(--roxo, #5e17eb);
           --accent-2: #7b3ff2;
@@ -805,25 +823,25 @@ const PostCard = ({
             gap: 6px;
             padding: 4px 0;
           }
-          
-          .audio-ui > .au-btn { 
-            grid-area: play; 
+
+          .audio-ui > .au-btn {
+            grid-area: play;
             width: 40px;
             height: 40px;
           }
-          
-          .audio-ui > .au-seek { 
-            grid-area: seek; 
-            height: 10px; 
+
+          .audio-ui > .au-seek {
+            grid-area: seek;
+            height: 10px;
             width: 210px;
             margin: 0;
             margin-bottom: 15px;
             align-self: center;
           }
-          
-          .audio-ui > .au-vol { 
-            grid-area: vol; 
-            justify-self: end; 
+
+          .audio-ui > .au-vol {
+            grid-area: vol;
+            justify-self: end;
             min-width: auto;
             display: flex;
             align-items: center;
@@ -832,7 +850,7 @@ const PostCard = ({
             margin: 0;
             padding: 0;
           }
-          
+
           .audio-ui > .au-vol-btn {
             width: 36px;
             height: 36px;
@@ -841,49 +859,49 @@ const PostCard = ({
             align-items: center;
             justify-content: center;
           }
-          
-          .audio-ui > .au-times:first-of-type { 
-            grid-area: timeL; 
-            justify-content: flex-start; 
-            align-self: start;
-            margin-top: 2px;
-          }
-          
-          .audio-ui > .au-times:last-of-type { 
-            grid-area: timeR; 
-            justify-content: flex-end; 
+
+          .audio-ui > .au-times:first-of-type {
+            grid-area: timeL;
+            justify-content: flex-start;
             align-self: start;
             margin-top: 2px;
           }
 
-          .au-time { 
-            font-size: 11px; 
-            opacity: .9; 
+          .audio-ui > .au-times:last-of-type {
+            grid-area: timeR;
+            justify-content: flex-end;
+            align-self: start;
+            margin-top: 2px;
+          }
+
+          .au-time {
+            font-size: 11px;
+            opacity: .9;
             line-height: 1;
           }
-          
-          .au-vol-range { 
-            width: 70px; 
-            height: 10px; 
+
+          .au-vol-range {
+            width: 70px;
+            height: 10px;
             margin-left: 4px;
           }
-          
-          .au-seek::-webkit-slider-thumb { 
-            width: 16px; 
-            height: 16px; 
-            margin-top: -3px; 
-          }
-          
-          .au-vol-range::-webkit-slider-thumb { 
-            width: 14px; 
-            height: 14px; 
-            margin-top: -3px; 
+
+          .au-seek::-webkit-slider-thumb {
+            width: 16px;
+            height: 16px;
+            margin-top: -3px;
           }
 
-          .media-container.audio-modern.newskin.glass { 
-            padding: 10px; 
+          .au-vol-range::-webkit-slider-thumb {
+            width: 14px;
+            height: 14px;
+            margin-top: -3px;
           }
-          
+
+          .media-container.audio-modern.newskin.glass {
+            padding: 10px;
+          }
+
           /* Garantir que o container de volume fique alinhado */
           .au-vol-container {
             display: flex;

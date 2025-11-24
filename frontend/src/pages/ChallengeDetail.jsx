@@ -23,16 +23,24 @@ export default function ChallengeDetail() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const currentUser = useSelector((s) => s.user?.currentUser);
+  // novo formato: currentUserState = { user, token }
+  const currentUserState = useSelector((s) => s.user?.currentUser);
+  const currentUser = currentUserState?.user ?? null;
+
   const usuarios = useSelector((s) => s.user?.usuarios || []);
   const posts = useSelector((s) => s.posts?.lista || []);
 
   const desafio = useSelector(selectDesafioById(id));
   const selectRanking = makeSelectRankingByStars(id);
-  const ranking = useSelector(selectRanking);
+  const ranking = useSelector(selectRanking) || [];
 
-  const isCreator = !!(currentUser && desafio && String(desafio.criadorId) === String(currentUser.id));
-  const isAdmin = !!currentUser?.admin;
+  // Normaliza id do currentUser (aceita _id ou id)
+  const currentUserId = currentUser ? (currentUser._id ?? currentUser.id ?? null) : null;
+  const currentUserRole = currentUser ? (currentUser.role ?? currentUser.tipo ?? null) : null;
+
+  // verificadores de permissão: comparar com cuidado _id / id e permitir admin via role
+  const isCreator = !!(currentUser && desafio && String(desafio.criadorId) === String(currentUserId));
+  const isAdmin = currentUserRole === "admin" || currentUserRole === "ADMIN";
   const canManage = isCreator || isAdmin;
 
   useEffect(() => {
@@ -76,10 +84,12 @@ export default function ChallengeDetail() {
     }
   };
 
+  // busca usuário/post por id levando em conta _id / id e formatos numéricos/strings
   const findUserById = (uid) =>
-    usuarios.find((u) => String(u.id) === String(uid));
+    usuarios.find((u) => String(u._id ?? u.id ?? u.usuarioId ?? u.idStr ?? "") === String(uid));
+
   const findPostById = (pid) =>
-    posts.find((p) => String(p.id) === String(pid));
+    posts.find((p) => String(p._id ?? p.id ?? p.postId ?? "") === String(pid));
 
   if (!desafio) {
     return (
@@ -194,12 +204,12 @@ export default function ChallengeDetail() {
               <div className="rank-list">
                 {ranking.map((r, idx) => {
                   const post = findPostById(r.postId);
-                  const autor = post ? findUserById(post.usuarioId) : null;
+                  const autor = post ? findUserById(post.usuarioId ?? post.usuarioId) : null;
                   const autorNome =
                     (autor?.nome && autor?.nome.trim()) ? autor.nome : (autor?.username ? `@${autor.username}` : "Autor");
 
                   return (
-                    <div key={r.participacaoId} className="rank-item">
+                    <div key={r.participacaoId ?? r.id ?? `${r.postId}-${idx}`} className="rank-item">
                       <div className="rank-left">
                         <div className="pos">#{idx + 1}</div>
                         <div className="info">
@@ -285,7 +295,7 @@ const styles = `
   text-transform:capitalize; letter-spacing:.2px;
 }
 .badge.tipo.oficial{ background:linear-gradient(135deg, rgba(99,102,241,.30), rgba(59,130,246,.26)); border-color:rgba(147,197,253,.45); }
-.badge.tipo.comunidade{ background:linear-gradient(135deg, rgba(168,85,247。.30), rgba(236,72,153,.24)); border-color:rgba(232,121,249,.42); }
+.badge.tipo.comunidade{ background:linear-gradient(135deg, rgba(168,85,247,.30), rgba(236,72,153,.24)); border-color:rgba(232,121,249,.42); }
 .badge.status.aberto{ background:rgba(34,197,94,.24); border-color:rgba(134,239,172,.45); }
 .badge.status.encerrado{ background:rgba(148,163,184,.24); border-color:rgba(148,163,184,.45); }
 .badge.status.rascunho{ background:rgba(255,214,102,.24); border-color:rgba(255,214,102,.45); }

@@ -18,9 +18,14 @@ const DiscoverArtist = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Redux state
-  const { usuarios = [], currentUser } = useSelector((s) => s.user) || {};
-  const { lista: posts = [], loading: loadingPosts } = useSelector((s) => s.posts) || {};
+  // Redux state: novo formato currentUser = { user, token }
+  const usuarios = useSelector((s) => s.user?.usuarios ?? []);
+  const currentUserState = useSelector((s) => s.user?.currentUser ?? null);
+  const posts = useSelector((s) => s.posts?.lista ?? []);
+  const loadingPosts = useSelector((s) => s.posts?.loading ?? false);
+
+  // extrai objeto user real (ou null)
+  const currentUser = currentUserState?.user ?? null;
 
   // Página local
   const [currentArtist, setCurrentArtist] = useState(null);
@@ -31,7 +36,13 @@ const DiscoverArtist = () => {
   useEffect(() => {
     if (!Array.isArray(usuarios) || usuarios.length === 0) dispatch(fetchUsuarios());
     if (!Array.isArray(posts) || posts.length === 0) dispatch(fetchPosts());
-  }, [dispatch]);
+  }, [dispatch, usuarios.length, posts.length]);
+
+  // função utilitária para obter id canônico (string) do usuário/post
+  const canonicalId = (obj) => {
+    if (!obj) return null;
+    return String(obj.id ?? obj._id ?? '');
+  };
 
   // Agrupa artistas por categoria (tipo de post)
   const artistsByCategory = useMemo(() => {
@@ -42,14 +53,18 @@ const DiscoverArtist = () => {
       const tipo = p?.tipo;
       if (!['musica', 'texto', 'visual'].includes(tipo)) continue;
 
-      const author = usuarios.find((u) => Number(u.id) === Number(p.usuarioId));
+      // encontra author comparando ids com tolerância a id/_id e tipos
+      const author = usuarios.find((u) => {
+        const uid = canonicalId(u);
+        const puid = String(p.usuarioId ?? p.usuario_id ?? p.userId ?? '');
+        return uid && puid && uid === puid;
+      });
       if (!author) continue;
 
-      const key = Number(author.id);
+      const key = canonicalId(author);
       if (!map[tipo].has(key)) {
         map[tipo].set(key, {
           ...author,
-          // extras opcionais para card:
           postCount: 1,
         });
       } else {
@@ -87,8 +102,10 @@ const DiscoverArtist = () => {
   };
 
   // follow logic (usando followsSlice)
-  const viewerId = currentUser?.id;
-  const targetId = currentArtist?.id;
+  const viewerId = canonicalId(currentUser);
+  const targetId = canonicalId(currentArtist);
+
+  // selectIsFollowing deve receber ids canônicos (dependendo de sua implementação)
   const isFollowing = useSelector(selectIsFollowing(viewerId, targetId));
 
   // ao mudar o artista atual, consulta se sigo
@@ -115,33 +132,32 @@ const DiscoverArtist = () => {
   };
 
   // helper de avatar (fallback bonitinho)
-const avatarUrl = () => {
-  const svg = encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#6a5ae0"/>
-          <stop offset="100%" stop-color="#8c7ff2"/>
-        </linearGradient>
-      </defs>
-      <!-- fundo redondo com degradê roxo (como no userprofile) -->
-      <rect width="100%" height="100%" rx="150" ry="150" fill="url(#g)"/>
-      <!-- ícone de usuário branco -->
-      <g fill="#ffffff">
-        <circle cx="150" cy="120" r="60"/>
-        <path d="M60 260c0-50 40-90 90-90s90 40 90 90" />
-      </g>
-    </svg>
-  `);
-  return `data:image/svg+xml;utf8,${svg}`;
-};
-
+  const avatarUrl = () => {
+    const svg = encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#6a5ae0"/>
+            <stop offset="100%" stop-color="#8c7ff2"/>
+          </linearGradient>
+        </defs>
+        <!-- fundo redondo com degradê roxo (como no userprofile) -->
+        <rect width="100%" height="100%" rx="150" ry="150" fill="url(#g)"/>
+        <!-- ícone de usuário branco -->
+        <g fill="#ffffff">
+          <circle cx="150" cy="120" r="60"/>
+          <path d="M60 260c0-50 40-90 90-90s90 40 90 90" />
+        </g>
+      </svg>
+    `);
+    return `data:image/svg+xml;utf8,${svg}`;
+  };
 
   // bio simples derivada (se quiser, pode trocar p/ campo real no futuro)
   const derivedBio = (u) => {
     if (!u) return '';
     const count = currentCategory
-      ? (artistsByCategory[currentCategory]?.find(a => Number(a.id) === Number(u.id))?.postCount || 0)
+      ? (artistsByCategory[currentCategory]?.find(a => canonicalId(a) === canonicalId(u))?.postCount || 0)
       : 0;
 
     const bios = {

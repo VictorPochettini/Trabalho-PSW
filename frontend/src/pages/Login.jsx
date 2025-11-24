@@ -1,7 +1,7 @@
-//LOGIN
+// src/components/Login.jsx
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { login, clearError } from "../redux/usuariosSlice";
+import { login, clearError } from "../redux/usuariosSlice.js"; // ajustado para userSlice
 import { useNavigate, Link } from "react-router-dom";
 import styles from "../css/Login.module.css";
 import botaoVolta from "../images/botaoVolta.png";
@@ -12,16 +12,15 @@ import olhoAberto from "../images/olhoAbertoRoxo.png";
 export default function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const currentUser = useSelector(state => state.user.currentUser);
-  const error = useSelector(state => state.user.error);
-  const loading = useSelector(state => state.user.loading);
-
+  const currentUser = useSelector((state) => state.user.currentUser);
+  const error = useSelector((state) => state.user.error);
+  const loading = useSelector((state) => state.user.loading);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
-  // ✅ Redireciona para /feed assim que o usuário loga
+  // Redireciona para /feed assim que o usuário loga
   useEffect(() => {
     if (currentUser) {
       navigate("/feed");
@@ -33,21 +32,22 @@ export default function Login() {
     return () => document.body.classList.remove(styles.loginBody);
   }, []);
 
-  const alternarSenha = () => setMostrarSenha(!mostrarSenha);
+  const alternarSenha = () => setMostrarSenha((s) => !s);
   const voltarPagina = () => window.history.back();
 
   const handleLogin = (e) => {
     e.preventDefault();
-    dispatch(login({ username, password }));
+    // trim simples
+    const payload = { username: username.trim(), password };
+    dispatch(login(payload));
   };
 
   return (
     <div className={styles.pagefe}>
       <div className={styles.loginPage}>
-        <Link to="/" className={styles.backButton}>
-  <img src={botaoVolta} alt="voltar" />
-</Link>
-
+        <Link to="/" className={styles.backButton} aria-label="Voltar">
+          <img src={botaoVolta} alt="voltar" />
+        </Link>
 
         <div className={styles.container}>
           <div style={{ textAlign: "center" }}>
@@ -70,6 +70,7 @@ export default function Login() {
                 }}
                 placeholder="Digite seu usuário"
                 required
+                autoComplete="username"
               />
             </div>
 
@@ -86,45 +87,53 @@ export default function Login() {
                   }}
                   placeholder="Digite sua senha"
                   required
+                  autoComplete="current-password"
                 />
                 <img
                   src={mostrarSenha ? olhoAberto : olhoFechado}
                   alt="mostrar senha"
                   className={styles.eyeIcon}
                   onClick={alternarSenha}
+                  style={{ cursor: "pointer" }}
                 />
               </div>
             </div>
 
-            {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
+            {error && (
+              <p style={{ color: "red", textAlign: "center" }}>{error}</p>
+            )}
 
             <div style={{ textAlign: "center" }}>
-              <button type="submit" disabled={loading} className={styles.entrarbtn}>
+              <button
+                type="submit"
+                disabled={loading}
+                className={styles.entrarbtn}
+              >
                 {loading ? "Entrando..." : "Entrar"}
               </button>
-
             </div>
-              <div style={{ textAlign: "center", marginTop: 1 }}>
-                <Link
-                  to="/cadastro"
-                  className={styles.entrarbtn}
-                  role="button"
-                  style={{
-                    textDecoration: "none",
-                    opacity: 0.5,           // mais translúcido
-                    fontSize: "0.9rem",     // texto menor
-                    padding: "20px 50px",    // balão menor
-                    width: "auto",          // não ocupar 100%
-                    minWidth: "unset",      // remove min-width do CSS base
-                    display: "inline-flex", // só o necessário
-                    alignItems: "center",
-                    justifyContent: "center",
-                    lineHeight: 1.05,
-                  }}
-                >
-                  Criar conta
-                </Link>
-              </div>
+
+            <div style={{ textAlign: "center", marginTop: 8 }}>
+              <Link
+                to="/cadastro"
+                className={styles.entrarbtn}
+                role="button"
+                style={{
+                  textDecoration: "none",
+                  opacity: 0.5,
+                  fontSize: "0.9rem",
+                  padding: "20px 50px",
+                  width: "auto",
+                  minWidth: "unset",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  lineHeight: 1.05,
+                }}
+              >
+                Criar conta
+              </Link>
+            </div>
           </form>
         </div>
       </div>

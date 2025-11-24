@@ -1,10 +1,10 @@
-// src/pages/PublicarLetra.jsx
+// /mnt/data/PublicarLetra.jsx
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { addPost  } from "../redux/postsSlice";
+import { addPost } from "../redux/postsSlice";
 import PublicarLayout from "../components/layout/PublicarLayout";
-import DescricaoInput from "../components/publicar/DescricaoInput";
+import DescricaoInput from "../components/publicar/DescricaoInput"; // usado como campo curto (título)
 import GeneroSelect from "../components/publicar/GeneroSelect";
 import EnviarButton from "../components/publicar/EnviarButton";
 import botaoVolta from "../images/botaoVolta.png";
@@ -18,46 +18,84 @@ const BackButton = () => {
       type="button"
       className={styles.backButton}
       onClick={() => navigate(-1)}
+      aria-label="Voltar"
     >
       <img src={botaoVolta} alt="Voltar" />
     </button>
   );
 };
 
+/**
+ * PublicarLetra — versão sem upload de arquivos.
+ * Campos:
+ *  - Título curto (input, usa DescricaoInput para manter estilo)
+ *  - Letra completa (textarea)
+ *  - Gênero (GeneroSelect)
+ *
+ * Mantém: lógica de nextId (mesma abordagem das outras páginas), currentUser robusto,
+ * dispatch(addPost(...)) sem .unwrap() — checamos res.error para tratar falha.
+ */
 const PublicarLetra = () => {
   const dispatch = useDispatch();
-  const posts = useSelector((state) => state.posts.lista);
-  const currentUser = useSelector((state) => state.user.currentUser);
+  const navigate = useNavigate();
+  const posts = useSelector((state) => state.posts.lista || []);
 
-  // ⬇️ agora separados
-  const [titulo, setTitulo] = useState("");
-  const [conteudo, setConteudo] = useState("");
+  // suporta novo/velho formato de currentUser
+  const currentUserState = useSelector((s) => s.user?.currentUser);
+  const currentUser = currentUserState?.user ?? currentUserState ?? null;
+  const userId = currentUser?._id ?? currentUser?.id ?? null;
+  const username = currentUser?.username ?? currentUser?.nome ?? "";
+
+  const [tituloCurto, setTituloCurto] = useState("");
+  const [letraCompleta, setLetraCompleta] = useState("");
   const [genero, setGenero] = useState("");
 
   const handleEnviar = async () => {
-    if (!titulo.trim() || !conteudo.trim() || !genero) {
-      alert("Preencha título, conteúdo e gênero!");
+    // validações simples (título + letra + gênero)
+    if (!tituloCurto.trim() || !letraCompleta.trim() || !genero) {
+      alert("Preencha título, letra e escolha um gênero.");
+      return;
+    }
+    if (!userId) {
+      alert("Faça login para publicar.");
       return;
     }
 
+    // calcula next id (mesma heurística usada nas outras páginas)
+    const numericIds = posts.map((p) => Number(p.id)).filter((n) => !Number.isNaN(n));
+    const nextId = numericIds.length ? Math.max(...numericIds) + 1 : 1;
+
     const novoPost = {
-      id: (posts.length > 0 ? Math.max(...posts.map((p) => Number(p.id))) + 1 : 1).toString(),
-      usuarioId: currentUser.id,
-      titulo: titulo.trim(),
-      conteudo: conteudo.trim(),
-      tipo: "texto",            // conforme seu DB
+      id: String(nextId),
+      usuarioId: userId,
+      titulo: tituloCurto.trim().slice(0, 120),
+      conteudo: letraCompleta.trim(),
+      tipo: "texto",
       genero,
       data: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     try {
-      await dispatch(addPost(novoPost)).unwrap();
-      alert("Post enviado com sucesso!");
-      setTitulo("");
-      setConteudo("");
+      const res = await dispatch(addPost(novoPost));
+      // alguns setups retornam {payload: ...}, outros retornam o objeto passado; checamos erro
+      if (res && res.error) {
+        console.error("addPost returned error:", res.error);
+        alert("Erro ao enviar o post. Tente novamente.");
+        return;
+      }
+
+      // sucesso
+      alert("Letra publicada com sucesso!");
+      setTituloCurto("");
+      setLetraCompleta("");
       setGenero("");
+      if (username) navigate(`/user/${username}`);
+      else navigate("/");
     } catch (err) {
-      alert("Erro ao enviar o post: " + err.message);
+      console.error("Erro ao enviar post:", err);
+      alert("Erro ao enviar o post. Tente novamente.");
     }
   };
 
@@ -66,53 +104,42 @@ const PublicarLetra = () => {
       <BackButton />
       <PublicarLayout>
         <div className="container-publicar">
-          {/* Campo de Título (linha única) */}
-          <input
-            type="text"
-            className="publicar-input titulo-input"
-            placeholder="Descrição do texto..."
-            value={titulo}
-            onChange={(e) => setTitulo(e.target.value)}
+          {/* Campo curto — título/trecho */}
+          <label style={{ fontWeight: 800, marginBottom: 8 }}>Título / Trecho curto</label>
+          <DescricaoInput
+            value={tituloCurto}
+            onChange={(e) => setTituloCurto(e.target.value)}
+            placeholder="Ex.: Refrão - Noite sem fim"
             maxLength={120}
           />
 
-          {/* Campo de Conteúdo (usa seu componente de descrição) */}
-          <DescricaoInput
-            value={conteudo}
-            onChange={(e) => setConteudo(e.target.value)}
-            placeholder="Escreva o conteúdo da sua letra..."
+          {/* Campo grande — letra completa */}
+          <label style={{ fontWeight: 800, marginTop: 12, marginBottom: 8 }}>Letra completa</label>
+          <textarea
+            value={letraCompleta}
+            onChange={(e) => setLetraCompleta(e.target.value)}
+            placeholder="Escreva a letra completa aqui..."
+            rows={12}
+            style={{
+              width: "100%",
+              padding: 12,
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.18)",
+              background: "rgba(255,255,255,0.04)",
+              color: "#fff",
+              resize: "vertical",
+              fontFamily: "inherit",
+              boxShadow: "0 8px 18px rgba(0,0,0,0.14)",
+            }}
           />
 
-          {/* Gênero — se seu GeneroSelect usa 'tipo', passe 'texto'/'letra' */}
+          {/* Gênero */}
           <GeneroSelect tipo="texto" value={genero} onChange={setGenero} />
 
+          {/* Botão enviar */}
           <EnviarButton onClick={handleEnviar} />
         </div>
       </PublicarLayout>
-
-      {/* estilos mínimos para o input de título, se precisar */}
-      <style>{`
-        .container-publicar {
-          display: grid;
-          gap: 12px;
-        }
-        .publicar-input.titulo-input {
-          width: 100%;
-          padding: 12px 14px;
-          border-radius: 12px;
-          border: 1px solid rgba(255,255,255,0.18);
-          background: rgba(255,255,255,0.06);
-          color: #fff;
-          outline: none;
-        }
-        .publicar-input.titulo-input::placeholder {
-          color: rgba(255,255,255,0.7);
-        }
-        .publicar-input.titulo-input:focus {
-          border-color: rgba(255,255,255,0.28);
-          box-shadow: 0 0 0 3px rgba(94,23,235,0.25);
-        }
-      `}</style>
     </>
   );
 };

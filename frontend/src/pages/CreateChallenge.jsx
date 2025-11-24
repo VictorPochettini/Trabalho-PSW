@@ -8,12 +8,17 @@ import { createDesafio } from "../redux/desafiosSlice";
 export default function CreateChallenge() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const currentUser = useSelector((s) => s.user?.currentUser);
+
+  // novo formato do redux: currentUserState = { user, token }
+  const currentUserState = useSelector((s) => s.user?.currentUser);
+  const currentUser = currentUserState?.user ?? null;
 
   // --- form state ---
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [dataInicio, setDataInicio] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dataInicio, setDataInicio] = useState(() =>
+    new Date().toISOString().slice(0, 10)
+  );
   const [dataFim, setDataFim] = useState("");
   const [status, setStatus] = useState("rascunho"); // rascunho | publicado
 
@@ -34,7 +39,8 @@ export default function CreateChallenge() {
     e.preventDefault();
     setErro("");
 
-    if (!currentUser?.id) {
+    // currentUser agora é o objeto público do usuário (user)
+    if (!currentUser) {
       setErro("Faça login para criar um desafio.");
       return;
     }
@@ -43,12 +49,16 @@ export default function CreateChallenge() {
       return;
     }
 
+    // pega id com segurança (_id ou id)
+    const criadorIdRaw = currentUser._id ?? currentUser.id ?? currentUser.usuarioId ?? null;
+    const criadorIdNum = isNaN(Number(criadorIdRaw)) ? criadorIdRaw : Number(criadorIdRaw);
+
     const payload = {
       // identidade
-      id: undefined,               // json-server cria
+      id: undefined, // json-server / backend cria
       tipo: "comunidade",
-      status,                      // rascunho/publicado
-      criadorId: Number(currentUser.id),
+      status, // rascunho/publicado
+      criadorId: criadorIdNum,
 
       // conteúdo
       titulo: titulo.trim(),
@@ -66,7 +76,9 @@ export default function CreateChallenge() {
     try {
       setSalvando(true);
       const created = await dispatch(createDesafio(payload)).unwrap();
-      navigate(`/desafios/${created.id}`);
+      // Assuming backend returns created.id or created._id — prefer created.id if exists
+      const targetId = created.id ?? created._id ?? created._idStr ?? "";
+      navigate(`/desafios/${targetId}`);
     } catch (err) {
       console.error(err);
       setErro("Não foi possível criar o desafio. Tente novamente.");
@@ -84,7 +96,9 @@ export default function CreateChallenge() {
             <div className="empty-login">
               <h2>Entre para criar um desafio</h2>
               <p>Você precisa estar logado para publicar desafios da comunidade.</p>
-              <Link className="btn-primary-like" to="/login">Ir para login</Link>
+              <Link className="btn-primary-like" to="/login">
+                Ir para login
+              </Link>
             </div>
           </div>
         </div>
@@ -99,13 +113,17 @@ export default function CreateChallenge() {
 
       <div className="fy-container">
         <h1 className="fy-title">Criar Desafio da Comunidade</h1>
-        <p className="fy-subtitle">Defina o tema, o período e publique agora ou salve como rascunho.</p>
+        <p className="fy-subtitle">
+          Defina o tema, o período e publique agora ou salve como rascunho.
+        </p>
 
         <div className="content-shell">
           <form onSubmit={handleSubmit} className="ch-form">
             {/* título */}
             <div className="form-row">
-              <label htmlFor="titulo">Título <span className="req">*</span></label>
+              <label htmlFor="titulo">
+                Título <span className="req">*</span>
+              </label>
               <input
                 id="titulo"
                 type="text"
@@ -120,7 +138,9 @@ export default function CreateChallenge() {
 
             {/* descrição */}
             <div className="form-row">
-              <label htmlFor="descricao">Descrição <span className="req">*</span></label>
+              <label htmlFor="descricao">
+                Descrição <span className="req">*</span>
+              </label>
               <textarea
                 id="descricao"
                 rows={4}
@@ -134,7 +154,9 @@ export default function CreateChallenge() {
             {/* período */}
             <div className="form-row grid-2">
               <div>
-                <label htmlFor="dataInicio">Início <span className="req">*</span></label>
+                <label htmlFor="dataInicio">
+                  Início <span className="req">*</span>
+                </label>
                 <input
                   id="dataInicio"
                   type="date"
@@ -144,7 +166,9 @@ export default function CreateChallenge() {
                 />
               </div>
               <div>
-                <label htmlFor="dataFim">Fim <span className="req">*</span></label>
+                <label htmlFor="dataFim">
+                  Fim <span className="req">*</span>
+                </label>
                 <input
                   id="dataFim"
                   type="date"
@@ -182,12 +206,18 @@ export default function CreateChallenge() {
 
             {/* ações */}
             <div className="actions">
-              <Link to="/desafios" className="btn-ghost">Cancelar</Link>
+              <Link to="/desafios" className="btn-ghost">
+                Cancelar
+              </Link>
               <button
                 type="submit"
                 className="btn-primary-like"
                 disabled={!valido || salvando}
-                title={!valido ? "Preencha os campos obrigatórios e verifique as datas" : "Criar desafio"}
+                title={
+                  !valido
+                    ? "Preencha os campos obrigatórios e verifique as datas"
+                    : "Criar desafio"
+                }
               >
                 {salvando ? "Criando..." : "Criar desafio"}
               </button>

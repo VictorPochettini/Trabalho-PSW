@@ -1,3 +1,4 @@
+// CreateAccount.jsx
 import React, { useState, useEffect } from "react";
 import styles from "../css/Login.module.css";
 import botaoVolta from "../images/botaoVolta.png";
@@ -15,7 +16,6 @@ const BackButton = () => (
 );
 
 export default function CriacaoConta() {
-  const [usuarios, setUsuarios] = useState([]);
   const [nome, setNome] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -33,13 +33,8 @@ export default function CriacaoConta() {
 
   const toggleSenha = () => setSenhaVisivel((prev) => !prev);
 
-  useEffect(() => {
-    axios.get("http://localhost:5000/usuarios")
-      .then(res => setUsuarios(res.data))
-      .catch(err => console.error(err));
-  }, []);
-
-  const id = (usuarios.length > 0 ? Math.max(...usuarios.map(u => u.id)) + 1 : 1).toString();
+  // Removido fetch de /usuarios — duplicidade deve ser checada no backend (opção B)
+  // useEffect(() => { ... }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,33 +45,37 @@ export default function CriacaoConta() {
       return;
     }
 
+    if (!aceitouTermos) {
+      setErro("Você precisa aceitar os termos para criar a conta.");
+      return;
+    }
+
     setLoading(true);
     try {
-      // Verifica duplicidade
-      const res = await axios.get("http://localhost:5000/usuarios");
-      const usuarios = res.data;
-
-      if (usuarios.some((u) => u.username === username)) {
-        throw new Error("Username já existe!");
-      }
-      if (usuarios.some((u) => u.email === email)) {
-        throw new Error("Email já cadastrado!");
-      }
-
-      // Cria novo usuário
-      await axios.post("http://localhost:5000/usuarios", {
-        id,
-        nome,
+      // Payload compatível com /api/auth/register (password em vez de 'senha')
+      const payload = {
+        name: nome,
         username,
         email,
-        senha,
-        admin,
-      });
+        password: senha,
+        // não enviar admin do front por segurança a menos que seu backend permita explicitamente
+      };
 
-      // Redireciona para login ou limpa form
+      // rota recomendada para registro: /api/auth/register
+      await axios.post("http://localhost:5000/api/auth/register", payload);
+
+      // Redireciona para login após criação bem-sucedida
       navigate("/login");
     } catch (err) {
-      setErro(err.message || "Erro ao cadastrar usuário!");
+      const serverMsg = err.response?.data;
+      if (err.response?.status === 409) {
+        setErro(serverMsg?.error || "Username ou email já cadastrado.");
+      } else if (err.response?.status === 400) {
+        const msgs = serverMsg?.messages || serverMsg?.error || serverMsg;
+        setErro(Array.isArray(msgs) ? msgs.join(", ") : String(msgs));
+      } else {
+        setErro("Erro ao cadastrar usuário. Tente novamente.");
+      }
     } finally {
       setLoading(false);
     }
@@ -174,26 +173,26 @@ export default function CriacaoConta() {
             {erro && <span className={styles.inputErrorMsg}>{erro}</span>}
           </div>
 
-         <div className={`${styles.formGroup} ${styles.termosContainer}`}>
-        <input
-          type="checkbox"
-          id="termos"
-          checked={aceitouTermos}
-          onChange={(e) => setAceitouTermos(e.target.checked)}
-          className={styles.termosCheckbox}
-          required
-        />
-        <label className={styles.termos} htmlFor="termos">
-          Eu aceito os{" "}
-          <Link to="/termos" className={styles.linkTermos}>
-            termos de uso
-          </Link>{" "}
-          e as{" "}
-          <Link to="/politicas" className={styles.linkTermos}>
-            políticas de privacidade
-          </Link>
-        </label>
-      </div>
+          <div className={`${styles.formGroup} ${styles.termosContainer}`}>
+            <input
+              type="checkbox"
+              id="termos"
+              checked={aceitouTermos}
+              onChange={(e) => setAceitouTermos(e.target.checked)}
+              className={styles.termosCheckbox}
+              required
+            />
+            <label className={styles.termos} htmlFor="termos">
+              Eu aceito os{" "}
+              <Link to="/termos" className={styles.linkTermos}>
+                termos de uso
+              </Link>{" "}
+              e as{" "}
+              <Link to="/politicas" className={styles.linkTermos}>
+                políticas de privacidade
+              </Link>
+            </label>
+          </div>
 
           <button
             type="submit"

@@ -1,10 +1,16 @@
 // src/components/publicar/EnviarButton.jsx
-import React from 'react';
+import React from "react";
 
-const EnviarButton = ({ onClick }) => {
+const EnviarButton = ({ onClick, disabled = false, loading = false }) => {
   return (
-    <button className="enviar-btn" onClick={onClick}>
-      Enviar
+    <button
+      type="button"
+      className="enviar-btn"
+      onClick={onClick}
+      disabled={disabled || loading}
+      aria-busy={loading}
+    >
+      {loading ? "Enviando..." : "Enviar"}
     </button>
   );
 };

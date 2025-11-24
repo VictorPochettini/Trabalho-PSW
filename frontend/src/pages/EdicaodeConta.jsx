@@ -1,22 +1,47 @@
-﻿import { useDispatch, useSelector } from "react-redux";
+﻿// src/pages/EdicaoDeConta.jsx
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { updateUser } from "../redux/usuariosSlice";
 import { useNavigate } from "react-router-dom";
-import React, { useEffect, useState } from 'react';
-import avatarPadrao from '../images/avatarPadrao.png';
+import avatarPadrao from "../images/avatarPadrao.png";
 
 const EdicaoDeConta = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { currentUser } = useSelector((state) => state.user);
 
-  const [nomeUsuario, setNomeUsuario] = useState(currentUser.username);
-  const [bio, setBio] = useState(currentUser.bio);
-  const [generosMusicais, setGenerosMusicais] = useState(currentUser.generosMusicais || []);
-  const [estilosArte, setEstilosArte] = useState(currentUser.estilosArte || []);
-  const [previewUrl, setPreviewUrl] = useState(currentUser.fotoPerfil ?? avatarPadrao);
+  // novo formato: currentUser = { user, token }
+  const currentUserState = useSelector((state) => state.user?.currentUser ?? null);
+  const user = currentUserState?.user ?? null;
+
+  // estados locais — inicializam vazios e serão preenchidos no useEffect quando 'user' chegar
+  const [nomeUsuario, setNomeUsuario] = useState("");
+  const [bio, setBio] = useState("");
+  // armazenamos como string (csv) para simplificar selects simples
+  const [generosMusicais, setGenerosMusicais] = useState("");
+  const [estilosArte, setEstilosArte] = useState("");
+  const [previewUrl, setPreviewUrl] = useState(avatarPadrao);
+
+  // popula campos quando o usuário estiver disponível (evita erro quando ainda não carregou)
+  useEffect(() => {
+    if (!user) return;
+    setNomeUsuario(user.username ?? user.nome ?? "");
+    setBio(user.bio ?? "");
+    // aceita string ou array — normaliza para csv string
+    if (Array.isArray(user.generosMusicais)) {
+      setGenerosMusicais(user.generosMusicais.join(", "));
+    } else {
+      setGenerosMusicais(user.generosMusicais ?? "");
+    }
+    if (Array.isArray(user.estilosArte)) {
+      setEstilosArte(user.estilosArte.join(", "));
+    } else {
+      setEstilosArte(user.estilosArte ?? "");
+    }
+    setPreviewUrl(user.fotoPerfil ?? avatarPadrao);
+  }, [user]);
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
       setPreviewUrl(URL.createObjectURL(file));
     }
@@ -24,24 +49,35 @@ const EdicaoDeConta = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) return alert("Usuário não carregado.");
 
+    // Prepara payload: apenas campos editáveis
     const dadosAtualizados = {
-      username: nomeUsuario,
-      bio,
-      generosMusicais,
-      estilosArte,
-      fotoPerfil: previewUrl,
+      username: nomeUsuario?.trim(),
+      bio: bio ?? "",
+      // salva como string (backend pode aceitar string; se precisar array, alterar aqui)
+      generosMusicais: generosMusicais ?? "",
+      estilosArte: estilosArte ?? "",
+      fotoPerfil: previewUrl ?? avatarPadrao,
     };
 
-    await dispatch(updateUser(dadosAtualizados));
-    navigate(`/user/${nomeUsuario}`);
+    try {
+      // o thunk updateUser implementado no redux usa getState para identificar o usuário logado,
+      // portanto aqui só passamos os campos a atualizar.
+      await dispatch(updateUser(dadosAtualizados)).unwrap();
+      // navegar para o perfil do novo username (se alterou)
+      navigate(`/user/${dadosAtualizados.username}`);
+    } catch (err) {
+      console.error("Erro ao atualizar usuário:", err);
+      alert(err?.message || "Não foi possível salvar. Tente novamente.");
+    }
   };
 
   return (
     <div style={styles.body}>
       <div style={styles.container}>
-        <button 
-          onClick={() => navigate(-1)} 
+        <button
+          onClick={() => navigate(-1)}
           style={styles.backButton}
           aria-label="Voltar"
         >
@@ -50,59 +86,60 @@ const EdicaoDeConta = () => {
 
         <div style={styles.avatarWrapper}>
           <div style={styles.avatarContainer}>
-            <img 
-              id="fotoPerfil" 
+            <img
+              id="fotoPerfil"
               src={previewUrl}
-              alt="Foto de perfil" 
+              alt="Foto de perfil"
               style={styles.fotoPerfil}
               onError={(e) => {
                 console.log("Erro ao carregar imagem:", previewUrl);
-                e.target.src = "../images/avatarPadrao.png";
+                e.target.src = avatarPadrao;
               }}
             />
-            <label htmlFor="fileInput" style={styles.uploadBtn}>
+            <label htmlFor="fileInput" style={styles.uploadBtn} title="Alterar foto">
               +
             </label>
-            <input 
-              type="file" 
-              id="fileInput" 
-              accept="image/*" 
+            <input
+              type="file"
+              id="fileInput"
+              accept="image/*"
               onChange={handleFileChange}
-              style={{ display: 'none' }}
+              style={{ display: "none" }}
             />
           </div>
         </div>
 
         <form onSubmit={handleSubmit}>
           <label style={styles.label}>Nome de usuário:</label>
-          <input 
-            id="nameUser" 
-            name="nomeUsuario" 
-            style={styles.input} 
+          <input
+            id="nameUser"
+            name="nomeUsuario"
+            style={styles.input}
             type="text"
             value={nomeUsuario}
             onChange={(e) => setNomeUsuario(e.target.value)}
+            required
           />
 
           <label style={styles.label}>Biografia:</label>
-          <textarea 
-            id="bio" 
-            name="bio" 
-            style={styles.bio} 
-            rows="10" 
-            cols="50"
+          <textarea
+            id="bio"
+            name="bio"
+            style={styles.bio}
+            rows="6"
             value={bio}
             onChange={(e) => setBio(e.target.value)}
           />
 
           <label style={styles.label}>Gêneros Musicais de Interesse:</label>
           <div style={styles.generoContainer}>
-            <select 
+            {/* select simples que altera o valor (poderia virar multi-select/checkbox no futuro) */}
+            <select
               style={styles.generoSelect}
               value={generosMusicais}
               onChange={(e) => setGenerosMusicais(e.target.value)}
             >
-              <option value="" disabled>Gêneros Musicais</option>
+              <option value="">— Selecione / Ou use o campo acima —</option>
               <option value="blues">Blues</option>
               <option value="classica">Clássica</option>
               <option value="country">Country</option>
@@ -127,12 +164,12 @@ const EdicaoDeConta = () => {
 
           <label style={styles.label}>Estilos de Artes de Interesse:</label>
           <div style={styles.generoContainer}>
-            <select 
+            <select
               style={styles.generoSelect}
               value={estilosArte}
               onChange={(e) => setEstilosArte(e.target.value)}
             >
-              <option value="" disabled>Estilo de Arte</option>
+              <option value="">— Selecione / Ou use o campo acima —</option>
               <option value="ilustracao-digital">Ilustração Digital</option>
               <option value="ilustracao-manual">Ilustração Manual</option>
               <option value="minimalismo">Minimalismo</option>
@@ -153,135 +190,135 @@ const EdicaoDeConta = () => {
 
 const styles = {
   body: {
-    background: 'linear-gradient(135deg, #050225 0%, #1a0f3c 40%, #5e17eb 100%)',
-    minHeight: '100vh',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: '40px 20px',
-    position: 'relative',
-    overflow: 'auto',
+    background: "linear-gradient(135deg, #050225 0%, #1a0f3c 40%, #5e17eb 100%)",
+    minHeight: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "40px 20px",
+    position: "relative",
+    overflow: "auto",
   },
   container: {
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))',
-    backdropFilter: 'blur(15px)',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-    borderRadius: '20px',
-    padding: '30px',
-    maxWidth: '600px',
-    width: '100%',
-    maxHeight: '90vh',
-    overflowY: 'auto',
-    position: 'relative',
+    background: "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))",
+    backdropFilter: "blur(15px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
+    borderRadius: "20px",
+    padding: "30px",
+    maxWidth: "600px",
+    width: "100%",
+    maxHeight: "90vh",
+    overflowY: "auto",
+    position: "relative",
     zIndex: 1,
   },
   backButton: {
-    background: 'transparent',
-    border: 'none',
-    color: '#fff',
-    fontSize: '16px',
-    cursor: 'pointer',
-    marginBottom: '20px',
-    padding: '8px 12px',
-    borderRadius: '8px',
-    transition: 'background 0.3s',
+    background: "transparent",
+    border: "none",
+    color: "#fff",
+    fontSize: "16px",
+    cursor: "pointer",
+    marginBottom: "20px",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    transition: "background 0.3s",
   },
   avatarWrapper: {
-    display: 'flex',
-    justifyContent: 'center',
-    marginBottom: '30px',
-    width: '100%',
+    display: "flex",
+    justifyContent: "center",
+    marginBottom: "30px",
+    width: "100%",
   },
   avatarContainer: {
-    position: 'relative',
-    width: '150px',
-    height: '150px',
+    position: "relative",
+    width: "150px",
+    height: "150px",
     flexShrink: 0,
   },
   fotoPerfil: {
-    width: '100%',
-    height: '100%',
-    borderRadius: '50%',
-    objectFit: 'cover',
-    border: '3px solid #4713af',
-    display: 'block',
+    width: "100%",
+    height: "100%",
+    borderRadius: "50%",
+    objectFit: "cover",
+    border: "3px solid #4713af",
+    display: "block",
   },
   uploadBtn: {
-    position: 'absolute',
-    bottom: '0',
-    right: '0',
-    background: '#4713af',
-    borderRadius: '50%',
-    width: '50px',
-    height: '50px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'white',
-    fontSize: '30px',
-    cursor: 'pointer',
-    border: 'none',
-    transition: '0.3s',
+    position: "absolute",
+    bottom: "0",
+    right: "0",
+    background: "#4713af",
+    borderRadius: "50%",
+    width: "50px",
+    height: "50px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "white",
+    fontSize: "30px",
+    cursor: "pointer",
+    border: "none",
+    transition: "0.3s",
   },
   label: {
-    display: 'block',
-    color: '#ffffff',
-    fontWeight: '500',
-    textAlign: 'left',
+    display: "block",
+    color: "#ffffff",
+    fontWeight: "500",
+    textAlign: "left",
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    paddingBottom: '15px',
-    paddingTop: '10px',
+    paddingBottom: "15px",
+    paddingTop: "10px",
   },
   input: {
-    width: '100%',
-    backgroundColor: 'rgb(213, 213, 213)',
-    borderRadius: '12px',
-    border: 'none',
-    height: '40px',
-    paddingLeft: '10px',
-    outline: 'none',
-    fontFamily: 'Verdana, Geneva, Tahoma, sans-serif',
-    marginBottom: '10px',
+    width: "100%",
+    backgroundColor: "rgb(213, 213, 213)",
+    borderRadius: "12px",
+    border: "none",
+    height: "40px",
+    paddingLeft: "10px",
+    outline: "none",
+    fontFamily: "Verdana, Geneva, Tahoma, sans-serif",
+    marginBottom: "10px",
   },
   bio: {
-    width: '100%',
-    backgroundColor: 'rgb(213, 213, 213)',
-    borderRadius: '12px',
-    border: 'none',
-    minHeight: '100px',
-    paddingLeft: '10px',
-    paddingTop: '10px',
-    outline: 'none',
-    fontFamily: 'Verdana, Geneva, Tahoma, sans-serif',
-    resize: 'vertical',
-    marginBottom: '10px',
+    width: "100%",
+    backgroundColor: "rgb(213, 213, 213)",
+    borderRadius: "12px",
+    border: "none",
+    minHeight: "100px",
+    paddingLeft: "10px",
+    paddingTop: "10px",
+    outline: "none",
+    fontFamily: "Verdana, Geneva, Tahoma, sans-serif",
+    resize: "vertical",
+    marginBottom: "10px",
   },
   generoContainer: {
-    width: '100%',
-    marginBottom: '15px',
+    width: "100%",
+    marginBottom: "15px",
   },
   generoSelect: {
-    width: '100%',
-    padding: '10px',
-    borderRadius: '12px',
-    border: 'none',
-    backgroundColor: 'rgb(213, 213, 213)',
-    fontSize: '15px',
-    cursor: 'pointer',
+    width: "100%",
+    padding: "10px",
+    borderRadius: "12px",
+    border: "none",
+    backgroundColor: "rgb(213, 213, 213)",
+    fontSize: "15px",
+    cursor: "pointer",
   },
   salvarBtn: {
-    padding: '15px 20px',
-    borderRadius: '40px',
-    fontSize: '20px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    border: 'none',
-    background: '#5e17eb',
-    color: 'white',
-    transition: 'all 0.4s ease',
-    width: '100%',
-    marginTop: '20px',
+    padding: "15px 20px",
+    borderRadius: "40px",
+    fontSize: "20px",
+    fontWeight: "600",
+    cursor: "pointer",
+    border: "none",
+    background: "#5e17eb",
+    color: "white",
+    transition: "all 0.4s ease",
+    width: "100%",
+    marginTop: "20px",
   },
 };
 

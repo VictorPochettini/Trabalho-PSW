@@ -5,7 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import botaoVolta from "../images/botaoVolta.png";
 import styles from "../css/Login.module.css";
 import axios from 'axios';
-import { fetchUsuarios } from "../redux/usuariosSlice";
+import { fetchUsuarios } from "../redux/usuariosSlice"; // ajustado: antes ../redux/usuariosSlice
 import { fetchPosts } from "../redux/postsSlice";
 import { fetchFollowCounts, selectFollowCounts, fetchFollowersList, fetchFollowingList } from '../redux/followsSlice';
 
@@ -33,11 +33,13 @@ const UserProfile = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  
-
   const usuarios = useSelector((state) => state.user.usuarios || []);
   const posts = useSelector((state) => state.posts.lista || []);
-  const currentUser = useSelector((state) => state.user.currentUser);
+
+  // novo formato: currentUserState = { user, token }
+  const currentUserState = useSelector((state) => state.user.currentUser);
+  const currentUser = currentUserState?.user ?? null;
+
   const isOwnProfile = currentUser?.username === username;
 
   // loading flags para “ready”
@@ -82,18 +84,19 @@ const UserProfile = () => {
   // dispara contagem de seguidores/seguindo quando soubermos o user.id (sem duplicar)
   const lastCountUserIdRef = useRef(null);
   useEffect(() => {
-    if (!ready || !user?.id) return;
-    if (lastCountUserIdRef.current === user.id) return;
-    lastCountUserIdRef.current = user.id;
-    dispatch(fetchFollowCounts({ userId: user.id }));
-  }, [dispatch, ready, user?.id]);
+    const userId = user ? (user._id || user.id) : null;
+    if (!userId) return;
+    if (lastCountUserIdRef.current === String(userId)) return;
+    lastCountUserIdRef.current = String(userId);
+    dispatch(fetchFollowCounts({ userId }));
+  }, [dispatch, user]);
 
   // lê as contagens do Redux (usa seu selector)
   const followCounts = useSelector((state) =>
-    selectFollowCounts(user?.id || 0)(state)
+    selectFollowCounts(user ? (user._id || user.id) : 0)(state)
   );
-  const followersCount = followCounts.followersCount || 0;
-  const followingCount = followCounts.followingCount || 0;
+  const followersCount = followCounts?.followersCount || 0;
+  const followingCount = followCounts?.followingCount || 0;
 
   // foto de perfil (preview local) – mantém seu comportamento original
   useEffect(() => {
@@ -124,8 +127,9 @@ const UserProfile = () => {
   const handleEditProfile = () => navigate("/edit-profile");
 
   // mapear posts do usuário → formato do PostCard (se user for null, vira lista vazia)
+  const userIdKey = user ? String(user._id || user.id) : null;
   const userPostsRaw = user
-    ? posts.filter((p) => Number(p.usuarioId) === Number(user.id))
+    ? posts.filter((p) => String(p.usuarioId) === String(userIdKey))
     : [];
   const userPosts = userPostsRaw
     .map((p) => {
@@ -194,11 +198,12 @@ const UserProfile = () => {
 
   // NOVAS FUNÇÕES para seguidores/seguindo
   const handleShowFollowers = async () => {
-    if (!user?.id) return;
+    if (!userIdKey) return;
     
     try {
-      const result = await dispatch(fetchFollowersList(user.id)).unwrap();
-      setFollowersList(result.followers);
+      const result = await dispatch(fetchFollowersList(userIdKey)).unwrap();
+      // result tem a forma: { userId, followers }
+      setFollowersList(result.followers || []);
       setShowFollowers(true);
       document.body.style.overflow = "hidden";
     } catch (error) {
@@ -209,11 +214,11 @@ const UserProfile = () => {
   };
 
   const handleShowFollowing = async () => {
-    if (!user?.id) return;
+    if (!userIdKey) return;
     
     try {
-      const result = await dispatch(fetchFollowingList(user.id)).unwrap();
-      setFollowingList(result.following);
+      const result = await dispatch(fetchFollowingList(userIdKey)).unwrap();
+      setFollowingList(result.following || []);
       setShowFollowing(true);
       document.body.style.overflow = "hidden";
     } catch (error) {
@@ -235,7 +240,7 @@ const UserProfile = () => {
 
   // Função para iniciar a edição
   const handleEditClick = (post) => {
-    setEditingPost(post.id);
+    setEditingPost(post.id || post._id);
     setEditText(post.texto || post.content || '');
   };
 
@@ -256,7 +261,7 @@ const UserProfile = () => {
 
     try {
       // Busca o post original na lista do Redux (posts)
-      const postToUpdate = posts.find(p => p.id === postId);
+      const postToUpdate = posts.find(p => String(p.id || p._id) === String(postId));
       
       if (!postToUpdate) {
         console.error('Post não encontrado para edição');
@@ -309,7 +314,7 @@ const UserProfile = () => {
           <div className="col-12">
             {/* key força remount ao trocar de username */}
             <div className="profile-container profile-shell glass-header" key={`profile-${username}`}>
-              {/* Se não houver usuário, só mostra aviso quando “ready” estiver true */}
+              {/* Se não houver usuário, só mostra aviso quando “ready” estiver true */} 
               {(ready && usuarios.length > 0 && !user) ? (
                 <div className="container-fluid text-center py-5">
                   <h2>Usuário "{username}" não encontrado 😢</h2>
@@ -349,7 +354,7 @@ const UserProfile = () => {
                       />
                     </div>
 
-                    <h1 className="profile-name">{user?.nome || user?.username}</h1>
+                    <h1 className="profile-name">{user?.name || user?.username}</h1>
                     <div className="profile-username subtle-username">@{user?.username}</div>
 
                     <div className="profile-stats">
@@ -415,7 +420,7 @@ const UserProfile = () => {
                       </div>
                     ) : (
                       userPosts.map((p) => (
-                        <div key={p.id} className="mb-3">
+                        <div key={p.id || p._id} className="mb-3">
                           <PostCard
                             post={p}
                             onMonetizeClick={handleMonetizeClick}
@@ -423,7 +428,7 @@ const UserProfile = () => {
                             onEditClick={handleEditClick}
                             onSaveEdit={handleSaveEdit}
                             onCancelEdit={handleCancelEdit}
-                            isEditing={editingPost === p.id}
+                            isEditing={editingPost === (p.id || p._id)}
                             editText={editText}
                             onEditTextChange={setEditText}
                             isOwnProfile={isOwnProfile} //referente tirar botoes apoiar e seguir no proprio perfil

@@ -39,24 +39,28 @@ const Star = ({ filled, onClick, disabled }) => (
 const CommentsPopup = ({ show, onClose, postId }) => {
   const dispatch = useDispatch();
 
-  const { currentUser, usuarios: usuariosState } =
-    useSelector((s) => s.user) || { currentUser: null, usuarios: [] };
+  // --- novo formato: currentUserState = { user, token } ---
+  const currentUserState = useSelector((s) => s.user?.currentUser);
+  const currentUser = currentUserState?.user ?? null;
+  const usuarioId = currentUser?._id ?? currentUser?.id ?? null;
 
-  const usuarios = Array.isArray(usuariosState) ? usuariosState : [];
+  // usuarios array
+  const usuarios = useSelector((s) => s.user?.usuarios || []);
 
-  const comments = useSelector(selectCommentsState(postId));
-  const ratingState = useSelector(selectRatingState(postId));
+  // comentários e rating (normalizamos a forma)
+  const commentsState = useSelector((state) => selectCommentsState(postId)(state)) || { items: [], loading: false, error: null };
+  const comments = commentsState.items || [];
+  const ratingState = useSelector((state) => selectRatingState(postId)(state)) || {};
 
   const [newCommentText, setNewCommentText] = useState("");
   const [lastStarClickTime, setLastStarClickTime] = useState(0);
 
-  const usuarioId = currentUser?.id;
   const canComment = Boolean(usuarioId);
 
-  // 🔎 garante que temos a lista de usuários quando o popup abrir
+  // garante que temos a lista de usuários quando o popup abrir
   useEffect(() => {
     if (!show) return;
-    if (!usuarios.length) {
+    if (!Array.isArray(usuarios) || usuarios.length === 0) {
       dispatch(fetchUsuarios());
     }
   }, [show, usuarios.length, dispatch]);
@@ -64,9 +68,9 @@ const CommentsPopup = ({ show, onClose, postId }) => {
   // Carregar comentários + avaliações quando o popup abre
   useEffect(() => {
     if (!show || !postId) return;
-    
+
     dispatch(fetchCommentsByPost(postId));
-    
+
     if (usuarioId) {
       // Se usuário logado, busca avaliação pessoal + média do post
       dispatch(fetchMyRatingForPost({ postId, usuarioId }));
@@ -74,7 +78,7 @@ const CommentsPopup = ({ show, onClose, postId }) => {
       // Se não logado, busca apenas a média do post
       dispatch(fetchPostRating(postId));
     }
-    
+
     return () => {
       dispatch(clearCommentsOfPost(postId));
     };
@@ -84,26 +88,41 @@ const CommentsPopup = ({ show, onClose, postId }) => {
     e.preventDefault();
     const texto = newCommentText.trim();
     if (!texto || !canComment) return;
-    await dispatch(createComment({ postId, usuarioId, texto }));
-    setNewCommentText("");
+    try {
+      await dispatch(createComment({ postId, usuarioId, texto })).unwrap();
+      setNewCommentText("");
+      // refetch comments (the thunk may already update store; this is defensive)
+      dispatch(fetchCommentsByPost(postId));
+    } catch (err) {
+      console.error("[CommentsPopup] create comment error:", err);
+      // opcional: mostrar feedback ao usuário
+      alert("Não foi possível enviar o comentário. Tente novamente.");
+    }
   };
 
   const handleSetStars = async (value) => {
     if (!usuarioId) return;
-    
+
     const currentTime = new Date().getTime();
     const isDoubleClick = currentTime - lastStarClickTime < 300; // 300ms para double click
-    
-    if (isDoubleClick && ratingState.myStars > 0) {
-      // Double click: remove avaliação
-      await dispatch(removeRating({ postId, usuarioId }));
-    } else {
-      // Single click: avalia normalmente
-      const v = Math.min(5, Math.max(1, Number(value)));
-      await dispatch(upsertRating({ postId, usuarioId, estrelas: v }));
+
+    try {
+      if (isDoubleClick && ratingState?.myStars > 0) {
+        // Double click: remove avaliação
+        await dispatch(removeRating({ postId, usuarioId })).unwrap();
+      } else {
+        // Single click: avalia normalmente
+        const v = Math.min(5, Math.max(1, Number(value)));
+        await dispatch(upsertRating({ postId, usuarioId, estrelas: v })).unwrap();
+      }
+      // opcional: refetch média
+      dispatch(fetchPostRating(postId));
+    } catch (err) {
+      console.error("[CommentsPopup] rating error:", err);
+      alert("Não foi possível registrar sua avaliação. Tente novamente.");
+    } finally {
+      setLastStarClickTime(currentTime);
     }
-    
-    setLastStarClickTime(currentTime);
   };
 
   const myStars = ratingState.myStars || 0;
@@ -111,8 +130,12 @@ const CommentsPopup = ({ show, onClose, postId }) => {
   const ratingCount = ratingState.postCount || 0;
 
   const resolveUserLabel = (uid) => {
+    // tenta achar por _id ou id
     const user =
-      usuarios.find((u) => Number(u.id) === Number(uid)) || null;
+      usuarios.find((u) => {
+        const candidate = u?._id ?? u?.id;
+        return String(candidate) === String(uid);
+      }) || null;
     if (!user) return `Usuário #${uid}`;
     return user.username || user.nome || `Usuário #${uid}`;
   };
@@ -130,11 +153,12 @@ const CommentsPopup = ({ show, onClose, postId }) => {
     return `há ${d} d`;
   };
 
-  // ✅ regra de permissão: admin OU autor do comentário
+  // regra de permissão: admin OU autor do comentário
   const canDeleteComment = (comment) =>
     !!currentUser &&
     (currentUser.admin === true ||
-      Number(currentUser.id) === Number(comment?.usuarioId));
+      currentUser.role === "admin" ||
+      String(currentUser._id ?? currentUser.id) === String(comment?.usuarioId));
 
   const handleDeleteComment = async (comment) => {
     if (!canDeleteComment(comment)) return;
@@ -142,12 +166,12 @@ const CommentsPopup = ({ show, onClose, postId }) => {
     if (!ok) return;
 
     try {
-      if (typeof deleteComment === "function") {
-        await dispatch(deleteComment(comment.id));      } else {
-        dispatch({ type: "comments/deleteRequested", payload: { id: comment.id, postId } });
-      }
+      await dispatch(deleteComment(comment.id)).unwrap();
+      // re-carregar comentários
+      dispatch(fetchCommentsByPost(postId));
     } catch (e) {
       console.error("[CommentsPopup] delete comment error:", e);
+      alert("Não foi possível excluir o comentário. Tente novamente.");
     }
   };
 
@@ -160,10 +184,10 @@ const CommentsPopup = ({ show, onClose, postId }) => {
         e.target.classList.contains("comments-overlay") && onClose()
       }
     >
-      <div className="comments-popup">
+      <div className="comments-popup" role="dialog" aria-modal="true">
         <div className="comments-header">
           <h3>Comentários</h3>
-          <button className="close-comments" onClick={onClose}>
+          <button className="close-comments" onClick={onClose} aria-label="Fechar comentários">
             <i className="fas fa-times" />
           </button>
         </div>
@@ -173,7 +197,7 @@ const CommentsPopup = ({ show, onClose, postId }) => {
           <div className="rating-row">
             <div className="my-rating">
               <span className="label">Sua avaliação:</span>
-              <div className="stars">
+              <div className="stars" role="group" aria-label="Avaliação por estrelas">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <Star
                     key={n}
@@ -187,12 +211,12 @@ const CommentsPopup = ({ show, onClose, postId }) => {
                 <small className="muted">Faça login para avaliar</small>
               )}
               {usuarioId && (
-                <small className="muted" style={{ display: 'block', marginTop: '4px' }}>
+                <small className="muted" style={{ display: "block", marginTop: "4px" }}>
                   Double click para remover
                 </small>
               )}
             </div>
-            <div className="post-rating">
+            <div className="post-rating" aria-live="polite">
               <span className="label">Média do post:</span>
               <strong>{Number(ratingAvg || 0).toFixed(2)}</strong>
               <small className="muted">({ratingCount || 0})</small>
@@ -207,14 +231,14 @@ const CommentsPopup = ({ show, onClose, postId }) => {
 
         <div className="comments-content">
           {/* Lista de comentários */}
-          <div className="comment-list">
-            {comments.length === 0 ? (
+          <div className="comment-list" aria-live="polite">
+            {(!comments || comments.length === 0) ? (
               <p className="text-center text-muted mt-3">
                 Nenhum comentário ainda. Seja o primeiro!
               </p>
             ) : (
-              comments.items.map((c) => (
-                <div key={c.id} className="comment-item">
+              comments.map((c) => (
+                <div key={c.id} className="comment-item" role="article">
                   <div className="comment-top">
                     <div className="comment-author">
                       <i className="fa-solid fa-circle-user" />
@@ -222,7 +246,7 @@ const CommentsPopup = ({ show, onClose, postId }) => {
                       <span className="comment-time">{timeago(c.createdAt)}</span>
                     </div>
 
-                    {/* 🔥 botão excluir só para admin/autor */}
+                    {/* botão excluir só para admin/autor */}
                     {canDeleteComment(c) && (
                       <button
                         type="button"
@@ -254,8 +278,9 @@ const CommentsPopup = ({ show, onClose, postId }) => {
               value={newCommentText}
               onChange={(e) => setNewCommentText(e.target.value)}
               disabled={!canComment}
+              aria-label="Novo comentário"
             />
-            <button type="submit" className="btn-comment" disabled={!canComment}>
+            <button type="submit" className="btn-comment" disabled={!canComment || !newCommentText.trim()}>
               Comentar
             </button>
           </form>
@@ -264,30 +289,31 @@ const CommentsPopup = ({ show, onClose, postId }) => {
 
       {/* estilos mínimos (apenas o necessário) */}
       <style>{`
-      /* garante contraste e preserva \n */
-.comments-popup { color: #000000ff; } 
-.comment-item .comment-text {
-  margin: 6px 0 4px;
-  color: #000000ff;              
-}
-.prewrap {
-  white-space: pre-wrap;       
-  word-break: break-word;    
-}
+        /* garante contraste e preserva \\n */
+        .comments-popup { color: #fff; background: rgba(20,20,30,0.95); border-radius:12px; max-width:720px; width:90%; padding:12px; }
+        .comment-item .comment-text {
+          margin: 6px 0 4px;
+          color: #fff;
+        }
+        .prewrap {
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
 
         .rating-area{ padding: 8px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
         .rating-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
         .label{ margin-right:8px; opacity:0.9; }
         .stars{ display:inline-flex; gap:4px; vertical-align:middle; }
-        .star-btn{ transition: transform .1s ease; }
+        .star-btn{ transition: transform .1s ease; color: #ffd24a; background: transparent; }
         .star-btn:not(:disabled):hover{ transform: scale(1.08); }
         .star-btn.filled{ filter: drop-shadow(0 0 2px rgba(255,255,0,.25)); }
-        .muted{ opacity:.7; margin-left:6px; }
+        .muted{ opacity:.7; margin-left:6px; color: rgba(255,255,255,0.85); }
 
-        .comment-item{ padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.08); }
+        .comment-list{ max-height:40vh; overflow:auto; padding:8px 6px; }
+        .comment-item{ padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.06); }
         .comment-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
-        .comment-author{ display:flex; align-items:center; gap:8px; opacity:.95; }
-        .comment-time{ font-size:12px; opacity:.7; }
+        .comment-author{ display:flex; align-items:center; gap:8px; opacity:.95; color:#fff; }
+        .comment-time{ font-size:12px; opacity:.7; color: rgba(255,255,255,0.8); margin-left:8px; }
         .comment-text{ margin:6px 0 0; color:#fff; }
         .prewrap{ white-space:pre-wrap; word-break:break-word; }
 
@@ -304,6 +330,11 @@ const CommentsPopup = ({ show, onClose, postId }) => {
           filter: brightness(1.03);
           border-color: rgba(255,255,255,.28);
         }
+
+        .comment-form{ display:flex; flex-direction:column; gap:8px; padding:12px; border-top:1px solid rgba(255,255,255,0.04); }
+        .comment-form textarea{ width:100%; min-height:72px; border-radius:8px; padding:10px; border:none; background: rgba(255,255,255,0.04); color:#fff; resize:vertical; }
+        .btn-comment{ align-self:flex-end; padding:8px 14px; border-radius:10px; background: linear-gradient(135deg,#6a5ae0,#8c7ff2); border:none; color:#fff; cursor:pointer; }
+        .btn-comment:disabled{ opacity:.6; cursor:not-allowed; filter:grayscale(.2); }
       `}</style>
     </div>
   );

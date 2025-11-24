@@ -27,8 +27,14 @@ const BackButton = () => {
 
 const PublicarMusica = () => {
   const dispatch = useDispatch();
-  const posts = useSelector((state) => state.posts.lista);
-  const currentUser = useSelector((state) => state.user.currentUser);
+  const navigate = useNavigate();
+  const posts = useSelector((state) => state.posts.lista || []);
+
+  // suporta novo/velho formato de currentUser
+  const currentUserState = useSelector((s) => s.user?.currentUser);
+  const currentUser = currentUserState?.user ?? currentUserState ?? null;
+  const userId = currentUser?._id ?? currentUser?.id ?? null;
+  const username = currentUser?.username ?? currentUser?.nome ?? "";
 
   const [descricao, setDescricao] = useState("");
   const [genero, setGenero] = useState("");
@@ -39,39 +45,59 @@ const PublicarMusica = () => {
       alert("Preencha todos os campos e selecione um arquivo!");
       return;
     }
+    if (!userId) {
+      alert("Faça login para publicar.");
+      return;
+    }
 
+    const numericIds = posts.map((p) => Number(p.id)).filter((n) => !Number.isNaN(n));
+    const nextId = numericIds.length ? Math.max(...numericIds) + 1 : 1;
+
+    // Observação: aqui assumimos que o upload do arquivo já foi tratado
+    // pelo UploadArea (ou que você só salva o nome e faz upload separado).
     const novoPost = {
-      id: (posts.length > 0 ? Math.max(...posts.map((p) => p.id)) + 1 : 1).toString(),
-      usuarioId: currentUser.id,
-      titulo: descricao,
+      id: String(nextId),
+      usuarioId: userId,
+      titulo: descricao.trim(),
       conteudo: arquivo.name,
       tipo: "musica",
       genero,
       data: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     try {
-      await dispatch(addPost(novoPost)).unwrap();
+      const res = await dispatch(addPost(novoPost));
+      // se usas json-server/local slice, o retorno pode não ter payload
+      if (res && res.error) {
+        console.error("addPost returned error:", res.error);
+        alert("Erro ao enviar o post. Tente novamente.");
+        return;
+      }
       alert("Post enviado com sucesso!");
       setDescricao("");
       setGenero("");
       setArquivo(null);
+      if (username) navigate(`/user/${username}`);
+      else navigate("/");
     } catch (err) {
-      alert("Erro ao enviar o post: " + err.message);
+      console.error("Erro ao enviar post:", err);
+      alert("Erro ao enviar o post. Tente novamente.");
     }
   };
 
   return (
     <>
-    <BackButton/>
-    <PublicarLayout>
-      <div className="container-publicar">
-        <DescricaoInput value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Escreva sobre sua música..." />
-        <GeneroSelect tipo="musica" value={genero} onChange={setGenero} />
-        <UploadArea tipo="audio" accept=".mp3,.wav" textoPrincipal="Faça upload do arquivo de áudio" textoSecundario=".mp3 ou .wav" onFileSelect={setArquivo} />
-        <EnviarButton onClick={handleEnviar} />
-      </div>
-    </PublicarLayout>
+      <BackButton />
+      <PublicarLayout>
+        <div className="container-publicar">
+          <DescricaoInput value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Escreva sobre sua música..." />
+          <GeneroSelect tipo="musica" value={genero} onChange={setGenero} />
+          <UploadArea tipo="audio" accept=".mp3,.wav" textoPrincipal="Faça upload do arquivo de áudio" textoSecundario=".mp3 ou .wav" onFileSelect={setArquivo} />
+          <EnviarButton onClick={handleEnviar} />
+        </div>
+      </PublicarLayout>
     </>
   );
 };

@@ -1,105 +1,105 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import axios from 'axios';
-import { fetchPosts } from '../redux/postsSlice';
+// src/pages/Feed.jsx
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
+import { fetchPosts } from "../redux/postsSlice";
+import { fetchUsuarios } from "../redux/usuariosSlice";
 
-import Header from '../components/Header2';
-import PostCard from '../components/PostCard';
-import MonetizationPopup from '../components/MonetizationPopup';
-import CommentsPopup from '../components/CommentsPopup';
-import FloatingActionButton from '../components/FloatingActionButton';
+import Header from "../components/Header2";
+import PostCard from "../components/PostCard";
+import MonetizationPopup from "../components/MonetizationPopup";
+import CommentsPopup from "../components/CommentsPopup";
+import FloatingActionButton from "../components/FloatingActionButton";
 
 const Feed = () => {
   const dispatch = useDispatch();
 
-  const posts = useSelector((state) => state.posts.lista);
+  const posts = useSelector((state) => state.posts.lista || []);
   const loadingPosts = useSelector((state) => state.posts.loading);
   const errorPosts = useSelector((state) => state.posts.error);
-  const currentUser = useSelector((state) => state.user.currentUser);
 
-  const [usuarios, setUsuarios] = useState([]);
-  const [loadingUsuarios, setLoadingUsuarios] = useState(true);
+  // novo formato: currentUserState = { user, token }
+  const currentUserState = useSelector((state) => state.user?.currentUser);
+  const currentUser = currentUserState?.user ?? null;
+  const viewerId = currentUser?._id ?? currentUser?.id ?? null;
+
+  // usuários agora via Redux
+  const usuarios = useSelector((state) => state.user.usuarios || []);
+  const loadingUsuarios = useSelector((state) => state.user.loading);
 
   const [postsComUsuario, setPostsComUsuario] = useState([]);
   const [postsDosSeguidos, setPostsDosSeguidos] = useState([]);
-  const [seguindoIds, setSeguindoIds] = useState([]); 
+  const [seguindoIds, setSeguindoIds] = useState([]);
   const [loadingSeguindo, setLoadingSeguindo] = useState(true);
 
   const [showMonetization, setShowMonetization] = useState(false);
-  const [monetizationUsername, setMonetizationUsername] = useState('');
+  const [monetizationUsername, setMonetizationUsername] = useState("");
   const [showComments, setShowComments] = useState(false);
   const [currentPostIdForComments, setCurrentPostIdForComments] = useState(null);
 
-
-  // ✅ 1. BUSCA SEGUIDORES DA API (com persistência no localStorage)
+  // busca quem o viewer está seguindo (endpoint existente no seu backend)
   useEffect(() => {
     const fetchSeguindo = async () => {
-      if (currentUser && currentUser.id) {
+      if (viewerId) {
         try {
           setLoadingSeguindo(true);
-          console.log('Buscando seguidores para usuário:', currentUser.id);
-          
-          const response = await axios.get(`http://localhost:5000/seguidores?followerId=${currentUser.id}`);
-          console.log('Resposta da API seguidores:', response.data);
-          
-          const idsSeguindo = response.data.map(item => Number(item.followingId));
-          console.log('IDs que estou seguindo:', idsSeguindo);
-          
-          setSeguindoIds(idsSeguindo);
-          localStorage.setItem(`seguindoIds_${currentUser.id}`, JSON.stringify(idsSeguindo));
-        } catch (error) {
-          console.error('Erro ao buscar seguindo:', error);
-          const saved = localStorage.getItem(`seguindoIds_${currentUser.id}`);
-          if (saved) {
-            const parsedSaved = JSON.parse(saved);
-            console.log('Usando dados salvos do localStorage:', parsedSaved);
-            setSeguindoIds(parsedSaved);
-          } else {
+          // endpoint que você já usava; mantém comportamento
+          const res = await axios.get(`http://localhost:5000/seguidores?followerId=${viewerId}`);
+          const ids = Array.isArray(res.data) ? res.data.map((item) => Number(item.followingId)) : [];
+          setSeguindoIds(ids);
+          try {
+            localStorage.setItem(`seguindoIds_${viewerId}`, JSON.stringify(ids));
+          } catch (e) { /* ignore storage errors */ }
+        } catch (err) {
+          console.error("Erro ao buscar seguindo:", err);
+          // fallback para localStorage se houver
+          try {
+            const saved = localStorage.getItem(`seguindoIds_${viewerId}`);
+            if (saved) setSeguindoIds(JSON.parse(saved));
+            else setSeguindoIds([]);
+          } catch (e) {
             setSeguindoIds([]);
           }
         } finally {
           setLoadingSeguindo(false);
         }
       } else {
-        console.log('Nenhum usuário logado ou ID inválido');
+        // sem usuário logado
         setSeguindoIds([]);
         setLoadingSeguindo(false);
       }
     };
 
     fetchSeguindo();
-  }, [currentUser]);
+  }, [viewerId]);
 
-  // Busca posts e usuários
+  // carregar posts e usuários via redux
   useEffect(() => {
     dispatch(fetchPosts());
-
-    axios.get('http://localhost:5000/usuarios')
-      .then(res => setUsuarios(res.data))
-      .catch(err => console.error(err))
-      .finally(() => setLoadingUsuarios(false));
+    dispatch(fetchUsuarios());
   }, [dispatch]);
 
-  // Combina posts com usuários após tudo carregar
+  // combinar posts com dados do usuário (apenas quando ambos carregarem)
   useEffect(() => {
-    if (!loadingPosts && !loadingUsuarios && usuarios.length > 0) {
-      const combinados = posts.map(post => {
-        const usuario = usuarios.find(u => Number(u.id) === Number(post.usuarioId));
+    if (!loadingPosts && !loadingUsuarios && usuarios.length >= 0) {
+      const combinados = (posts || []).map((post) => {
+        const usuario = usuarios.find((u) => Number(u.id) === Number(post.usuarioId));
         return {
           ...post,
           id: post.id,
-          content: post.titulo,
-          texto: post.conteudo,
-          username: usuario ? usuario.nome : '@desconhecido',
+          content: post.titulo ?? post.content ?? "",
+          texto: post.conteudo ?? post.texto ?? "",
+          username: usuario ? (usuario.nome || usuario.username) : "@desconhecido",
           usuarioId: Number(post.usuarioId),
-          mediaType: post.tipo === 'musica' ? 'audio' : post.tipo === 'visual' ? 'image' : 'text',
-          mediaSrc: post.tipo === 'musica' || post.tipo === 'visual' ? `/media/${post.conteudo}` : null,
-          mediaAlt: post.tipo === 'visual' ? post.titulo : null,
-          time: new Date(post.data).toLocaleString()
+          mediaType:
+            post.tipo === "musica" ? "audio" : post.tipo === "visual" ? "image" : "text",
+          mediaSrc: (post.tipo === "musica" || post.tipo === "visual") ? `/media/${post.conteudo}` : null,
+          mediaAlt: post.tipo === "visual" ? post.titulo : null,
+          time: post.data ? new Date(post.data).toLocaleString() : (post.createdAt ? new Date(post.createdAt).toLocaleString() : "")
         };
       });
 
-      // 👇 ÚNICA ADIÇÃO: ordena do mais recente para o mais antigo
+      // ordenar do mais recente para o mais antigo (mantendo seu comportamento anterior)
       const getDate = (p) => p?.data ?? p?.createdAt ?? p?.time;
       combinados.sort((a, b) => new Date(getDate(b)) - new Date(getDate(a)));
 
@@ -107,52 +107,45 @@ const Feed = () => {
     }
   }, [loadingPosts, loadingUsuarios, posts, usuarios]);
 
-  // ✅ 4. FILTRA POSTS DOS SEGUIDORES + PRÓPRIAS PUBLICAÇÕES
+  // filtrar posts apenas dos seguidos (ou também os próprios posts, se desejar)
   useEffect(() => {
     if (postsComUsuario.length > 0 && seguindoIds.length > 0) {
-      console.log('Filtrando posts...');
-      console.log('Posts disponíveis:', postsComUsuario.length);
-      console.log('IDs que sigo:', seguindoIds);
-      
-      const postsFiltrados = postsComUsuario.filter(post => {
-        const usuarioId = Number(post.usuarioId);
-        const inclui = seguindoIds.includes(usuarioId);
-        console.log(`Post ${post.id} - Usuário ${usuarioId} - Incluído: ${inclui}`);
-        return inclui;
+      const filtrados = postsComUsuario.filter((post) => {
+        const uid = Number(post.usuarioId);
+        // inclui publicações de quem você segue e também as próprias publicações
+        return seguindoIds.includes(uid) || (viewerId && (uid === Number(viewerId)));
       });
-      
-      console.log('Posts filtrados (seguidores):', postsFiltrados.length);
-      setPostsDosSeguidos(postsFiltrados);
+      setPostsDosSeguidos(filtrados);
     } else {
-      console.log('Sem posts para filtrar ou sem seguidores');
+      // se não segue ninguém, deixar vazio (mensagem de vazio será exibida)
       setPostsDosSeguidos([]);
     }
-  }, [postsComUsuario, seguindoIds]);
+  }, [postsComUsuario, seguindoIds, viewerId]);
 
   const handleMonetizeClick = (username) => {
     setMonetizationUsername(username);
     setShowMonetization(true);
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
   };
 
   const handleCloseMonetization = () => {
     setShowMonetization(false);
-    document.body.style.overflow = '';
+    document.body.style.overflow = "";
   };
 
   const handleCommentClick = (postId) => {
     setCurrentPostIdForComments(postId);
     setShowComments(true);
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
   };
 
   const handleCloseComments = () => {
     setShowComments(false);
     setCurrentPostIdForComments(null);
-    document.body.style.overflow = '';
+    document.body.style.overflow = "";
   };
 
-  if (loadingPosts || loadingUsuarios) return <p>Carregando...</p>;
+  if (loadingPosts || loadingUsuarios || loadingSeguindo) return <p>Carregando...</p>;
   if (errorPosts) return <p>{errorPosts}</p>;
 
   return (
@@ -160,38 +153,34 @@ const Feed = () => {
       <Header />
 
       <div className="feed-content-wrapper">
-        {/* ✅ AGORA MOSTRA APENAS POSTS DOS SEGUIDORES */}
         {postsDosSeguidos.length === 0 ? (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '40px', 
-            color: 'rgba(255,255,255,0.7)' 
+          <div style={{
+            textAlign: "center",
+            padding: "40px",
+            color: "rgba(255,255,255,0.7)"
           }}>
             <h3>Nenhuma publicação de pessoas que você segue</h3>
             <p>Comece a seguir alguns artistas para ver suas publicações aqui!</p>
-            <p style={{ fontSize: '0.9rem', marginTop: '10px', color: 'rgba(255,255,255,0.5)' }}>
-              {currentUser ? `Você está seguindo ${seguindoIds.length} pessoas` : 'Faça login para seguir pessoas'}
+            <p style={{ fontSize: "0.9rem", marginTop: "10px", color: "rgba(255,255,255,0.5)" }}>
+              {currentUser ? `Você está seguindo ${seguindoIds.length} pessoas` : "Faça login para seguir pessoas"}
             </p>
             {currentUser && (
-              <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
-                <p style={{ margin: '0', fontSize: '0.9rem' }}>
-                  <strong>IDs que você segue:</strong> {seguindoIds.join(', ') || 'Nenhum'}
+              <div style={{ marginTop: "20px", padding: "15px", background: "rgba(255,255,255,0.05)", borderRadius: "10px" }}>
+                <p style={{ margin: 0, fontSize: "0.9rem" }}>
+                  <strong>IDs que você segue:</strong> {seguindoIds.join(", ") || "Nenhum"}
                 </p>
               </div>
             )}
           </div>
         ) : (
-          postsDosSeguidos.map(post => {
-            
-            return (
-              <PostCard
-                key={post.id}
-                post={post}
-                onMonetizeClick={handleMonetizeClick}
-                onCommentClick={handleCommentClick}
-              />
-            );
-          })
+          postsDosSeguidos.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              onMonetizeClick={handleMonetizeClick}
+              onCommentClick={handleCommentClick}
+            />
+          ))
         )}
       </div>
 
@@ -208,6 +197,7 @@ const Feed = () => {
       />
 
       <FloatingActionButton />
+
       <style jsx>{`
         .no-login-message,
         .no-posts-message {

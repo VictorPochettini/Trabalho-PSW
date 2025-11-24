@@ -11,7 +11,6 @@ import PublicarImagem from './pages/PublicarImagem.jsx';
 import PublicarLetra from './pages/PublicarLetra.jsx';
 import InitialPage from './pages/InitialPage.jsx';
 import ArtistsPage from './pages/ArtistsPage.jsx';
-import ChallengePage from './pages/ChallengePage.jsx';
 import UserProfile from './pages/UserProfile.jsx';
 import Login from './pages/Login.jsx';
 import CreateAccount from './pages/CreateAccount.jsx';
@@ -35,7 +34,6 @@ const router = createBrowserRouter([
   { path: "/", element: <InitialPage/> },
   { path: "/feed", element: <ProtectedRoute><Feed/></ProtectedRoute> },
   { path: "/discover", element: <ProtectedRoute><DiscoverArtist/></ProtectedRoute> },
-  { path: "/previa_desafios", element: <ChallengePage/> },
   { path: "/publicar/imagem", element: <ProtectedRoute><PublicarImagem/></ProtectedRoute> },
   { path: "/publicar/texto", element: <ProtectedRoute><PublicarLetra/></ProtectedRoute> },
   { path: "/publicar/musica", element: <ProtectedRoute><PublicarMusica/></ProtectedRoute> },

@@ -27,8 +27,13 @@ const BackButton = () => {
 
 const PublicarImagem = () => {
   const dispatch = useDispatch();
-  const posts = useSelector((state) => state.posts.lista);
-  const currentUser = useSelector((state) => state.user.currentUser);
+  const navigate = useNavigate();
+  const posts = useSelector((state) => state.posts.lista || []);
+
+  const currentUserState = useSelector((s) => s.user?.currentUser);
+  const currentUser = currentUserState?.user ?? currentUserState ?? null;
+  const userId = currentUser?._id ?? currentUser?.id ?? null;
+  const username = currentUser?.username ?? currentUser?.nome ?? "";
 
   const [descricao, setDescricao] = useState("");
   const [genero, setGenero] = useState("");
@@ -39,39 +44,56 @@ const PublicarImagem = () => {
       alert("Preencha todos os campos e selecione um arquivo!");
       return;
     }
+    if (!userId) {
+      alert("Faça login para publicar.");
+      return;
+    }
+
+    const numericIds = posts.map((p) => Number(p.id)).filter((n) => !Number.isNaN(n));
+    const nextId = numericIds.length ? Math.max(...numericIds) + 1 : 1;
 
     const novoPost = {
-      id: (posts.length > 0 ? Math.max(...posts.map((p) => p.id)) + 1 : 1).toString(),
-      usuarioId: currentUser.id,
-      titulo: descricao,
+      id: String(nextId),
+      usuarioId: userId,
+      titulo: descricao.trim(),
       conteudo: arquivo.name,
       tipo: "visual",
       genero,
       data: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     try {
-      await dispatch(addPost(novoPost)).unwrap();
-      alert("Post enviado com sucesso!");
+      const res = await dispatch(addPost(novoPost));
+      if (res && res.error) {
+        console.error("addPost returned error:", res.error);
+        alert("Não foi possível enviar a imagem. Tente novamente.");
+        return;
+      }
+      alert("Imagem publicada com sucesso!");
       setDescricao("");
       setGenero("");
       setArquivo(null);
+      if (username) navigate(`/user/${username}`);
+      else navigate("/");
     } catch (err) {
-      alert("Erro ao enviar o post: " + err.message);
+      console.error("Erro ao enviar imagem:", err);
+      alert("Não foi possível enviar a imagem. Tente novamente.");
     }
   };
 
   return (
     <>
-    <BackButton></BackButton>
-    <PublicarLayout>
-      <div className="container-publicar">
-        <DescricaoInput value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Escreva sobre sua arte..." />
-        <GeneroSelect tipo="arte" value={genero} onChange={setGenero} />
-        <UploadArea tipo="imagem" accept=".jpg,.png" textoPrincipal="Faça upload da imagem" textoSecundario=".jpg ou .png" onFileSelect={setArquivo} />
-        <EnviarButton onClick={handleEnviar} />
-      </div>
-    </PublicarLayout>
+      <BackButton />
+      <PublicarLayout>
+        <div className="container-publicar">
+          <DescricaoInput value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descreva sua imagem..." />
+          <GeneroSelect tipo="visual" value={genero} onChange={setGenero} />
+          <UploadArea tipo="image" accept=".png,.jpg,.jpeg,.webp" textoPrincipal="Faça upload da imagem" textoSecundario="PNG / JPG / WEBP" onFileSelect={setArquivo} />
+          <EnviarButton onClick={handleEnviar} />
+        </div>
+      </PublicarLayout>
     </>
   );
 };
