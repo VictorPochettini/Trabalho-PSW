@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { addPost } from "../redux/postsSlice";
+import { createPost } from "../redux/postsSlice";
 import PublicarLayout from "../components/layout/PublicarLayout";
 import DescricaoInput from "../components/publicar/DescricaoInput"; // usado como campo curto (título)
 import GeneroSelect from "../components/publicar/GeneroSelect";
@@ -32,13 +32,11 @@ const BackButton = () => {
  *  - Letra completa (textarea)
  *  - Gênero (GeneroSelect)
  *
- * Mantém: lógica de nextId (mesma abordagem das outras páginas), currentUser robusto,
- * dispatch(addPost(...)) sem .unwrap() — checamos res.error para tratar falha.
+ * Usa createPost (thunk) para fazer requisição ao backend.
  */
 const PublicarLetra = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const posts = useSelector((state) => state.posts.lista || []);
 
   // suporta novo/velho formato de currentUser
   const currentUserState = useSelector((s) => s.user?.currentUser);
@@ -61,27 +59,18 @@ const PublicarLetra = () => {
       return;
     }
 
-    // calcula next id (mesma heurística usada nas outras páginas)
-    const numericIds = posts.map((p) => Number(p.id)).filter((n) => !Number.isNaN(n));
-    const nextId = numericIds.length ? Math.max(...numericIds) + 1 : 1;
-
     const novoPost = {
-      id: String(nextId),
-      usuarioId: userId,
       titulo: tituloCurto.trim().slice(0, 120),
       conteudo: letraCompleta.trim(),
       tipo: "texto",
       genero,
-      data: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     };
 
     try {
-      const res = await dispatch(addPost(novoPost));
-      // alguns setups retornam {payload: ...}, outros retornam o objeto passado; checamos erro
-      if (res && res.error) {
-        console.error("addPost returned error:", res.error);
+      const res = await dispatch(createPost(novoPost));
+      
+      if (res.error || res.payload?.error) {
+        console.error("createPost returned error:", res.error || res.payload?.error);
         alert("Erro ao enviar o post. Tente novamente.");
         return;
       }

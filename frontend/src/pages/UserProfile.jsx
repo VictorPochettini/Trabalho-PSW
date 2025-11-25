@@ -151,6 +151,8 @@ const UserProfile = () => {
           ...base,
           content: p.titulo || "",
           texto: p.texto ?? p.conteudo ?? "",
+          authorName: user?.nome || user?.username || "Usuário",
+          authorUsername: user?.username || "",
         };
       }
 

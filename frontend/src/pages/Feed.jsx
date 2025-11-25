@@ -83,7 +83,10 @@ const Feed = () => {
   useEffect(() => {
     if (!loadingPosts && !loadingUsuarios && usuarios.length >= 0) {
       const combinados = (posts || []).map((post) => {
-        const usuario = usuarios.find((u) => Number(u.id) === Number(post.usuarioId));
+        const usuario = usuarios.find((u) => {
+      const uid = u?._id ?? u?.id;
+      return String(uid) === String(post.usuarioId);
+       });
         return {
           ...post,
           id: post.id,

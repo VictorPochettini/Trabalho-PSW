@@ -33,6 +33,23 @@ await conectaDB();
 
 const app = express();
 
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  console.log('Body:', req.body);
+  next();
+});
+
+app.use((req, res, next) => {
+  const originalSend = res.send;
+  
+  res.send = function(data) {
+    console.log('Response:', data);
+    return originalSend.call(this, data);
+  };
+  
+  next();
+});
+
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
@@ -146,7 +163,7 @@ app.get('/posts/:id', async (req, res) => {
 // criar post -> exige autenticação (associa autor ao req.user._id)
 app.post('/posts', requireAuth, async (req, res) => {
   try {
-    const novo = new Post({ ...req.body, author: req.user._id });
+    const novo = new Post({ ...req.body, usuarioId: req.user._id });
     await novo.save();
     res.status(201).json(novo);
   } catch (error) {

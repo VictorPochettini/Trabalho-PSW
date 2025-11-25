@@ -20,8 +20,6 @@ import {
 
 import { deletePost } from '../redux/postsSlice';
 
-import { fetchUsuarios } from '../redux/usuariosSlice';
-
 const PostCard = ({
   post,
   onMonetizeClick,
@@ -49,25 +47,14 @@ const PostCard = ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // --- ADAPTED to current model: currentUser stored as { user, token } in state.user.currentUser
+  // --- Dados do usuário logado
   const currentUserState = useSelector((s) => s.user?.currentUser);
   const currentUser = currentUserState?.user ?? null;
   const currentUserId = currentUser?._id || currentUser?.id || null;
 
-  // usuarios list (array) in state.user.usuarios
-  const usuarios = useSelector((s) => s.user?.usuarios || []);
-  useEffect(() => {
-    if (!Array.isArray(usuarios) || usuarios.length === 0) dispatch(fetchUsuarios());
-  }, [dispatch, usuarios.length]);
-
-  // author: try _id or id match (backend shape may vary)
-  const author = usuarios.find((u) => {
-    const uid = u?._id ?? u?.id;
-    return String(uid) === String(post?.usuarioId);
-  }) || null;
-
-  const authorName = author?.nome || author?.name || author?.username || 'Usuário';
-  const authorUsername = author?.username || '';
+  // --- Dados do autor vêm do post prop
+  const authorName = post?.authorName || post?.username || 'Usuário';
+  const authorUsername = post?.authorUsername || post?.username?.replace('@', '') || '';
 
   // rating
   const ratingState = useSelector(selectRatingState(post?.id));
@@ -77,10 +64,8 @@ const PostCard = ({
     if (!post?.id) return;
 
     if (currentUserId) {
-      // Se usuário logado, busca avaliação pessoal + média do post
       dispatch(fetchMyRatingForPost({ postId: post.id, usuarioId: currentUserId }));
     } else {
-      // Se não logado, busca apenas a média do post
       dispatch(fetchPostRating(post.id));
     }
   }, [dispatch, post?.id, currentUserId]);
@@ -110,10 +95,9 @@ const PostCard = ({
     if (!currentUserId || submitting) return;
 
     const currentTime = new Date().getTime();
-    const isDoubleClick = currentTime - lastStarClickTime < 300; // 300ms para double click
+    const isDoubleClick = currentTime - lastStarClickTime < 300;
 
     if (isDoubleClick && ratingState?.myStars > 0) {
-      // Double click: remove avaliação
       try {
         setSubmitting(true);
         await dispatch(removeRating({ postId: post.id, usuarioId: currentUserId })).unwrap();
@@ -123,7 +107,6 @@ const PostCard = ({
         setSubmitting(false);
       }
     } else {
-      // Single click: avalia normalmente
       const estrelas = Math.min(5, Math.max(1, Number(value)));
       try {
         setSubmitting(true);
@@ -141,12 +124,7 @@ const PostCard = ({
   // perfil → /user/username
   const goToProfile = () => {
     if (authorUsername) navigate(`/user/${authorUsername}`);
-    else if (author?.username) navigate(`/user/${author.username}`);
-    else if (authorName) {
-      // fallback: if no username, try navigate to id-based route
-      const uid = author?._id ?? author?.id;
-      if (uid) navigate(`/user/${uid}`);
-    }
+    else if (authorName) navigate(`/user/${authorName}`);
   };
 
   // player helpers
@@ -200,7 +178,6 @@ const PostCard = ({
     (time && String(time)) ||
     '';
 
-  // ✅ pode excluir se for admin OU dono do post
   const canDelete = !!currentUser && (
     currentUser.role === 'admin' ||
     currentUser.admin === true ||
@@ -223,7 +200,6 @@ const PostCard = ({
     }
   };
 
-  // Efeito para sincronizar o texto de edição
   useEffect(() => {
     if (isEditing) {
       setLocalEditText(editText);
@@ -247,7 +223,6 @@ const PostCard = ({
     if (typeof onEditClick === 'function') onEditClick(post);
   };
 
-  // ✅ pode editar se for dono do post
   const canEdit = !!currentUser && String(currentUserId) === String(post?.usuarioId);
 
   const myStars = ratingState?.myStars || 0;
@@ -902,7 +877,6 @@ const PostCard = ({
             padding: 10px;
           }
 
-          /* Garantir que o container de volume fique alinhado */
           .au-vol-container {
             display: flex;
             align-items: center;
@@ -917,11 +891,10 @@ const PostCard = ({
           .post-card.elegant, .avatar-elevated, .btn.soft, .comment-button.glossy,
           .elegant-star, .image-art.refined::after { transition: none !important; animation: none !important; }
         }
-          .prewrap {
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
+        .prewrap {
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
       `}</style>
     </div>
   );
