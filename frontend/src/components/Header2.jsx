@@ -1,31 +1,37 @@
 // src/components/HeaderForYou.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import logo from "../images/ArtBeat_Branco.png";
-import styles from "../css/Header.module.css";
 import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../redux/usuariosSlice"; // adapta ao nome/arquivo do seu slice
+import { logout } from "../redux/usuariosSlice";
 
 const HeaderForYou = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  // novo formato: currentUser -> { user: {...}, token: '...' }
-  const currentUserState = useSelector((state) => state.user.currentUser);
-  const currentUser = currentUserState?.user ?? null;
+  // currentUserState = { user, token }
+  const currentUserState = useSelector((s) => s.user?.currentUser);
+  const user = currentUserState?.user ?? null;
 
-  const isActiveLink = (path) => {
-    const currentPath = location.pathname.replace("/", "");
-    const comparePath = path.replace("/", "");
-    return (currentPath === "" && path === "feed") || currentPath === comparePath;
+  useEffect(() => {
+    // bloqueia scroll quando drawer aberto
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => (document.body.style.overflow = "");
+  }, [open]);
+
+  const toggle = () => setOpen((v) => !v);
+  const close = () => setOpen(false);
+
+  const isActive = (path) => {
+    const cur = location.pathname.replace(/^\//, "");
+    const p = path.replace(/^\//, "");
+    return (cur === "" && path === "feed") || cur === p;
   };
 
   const handleLogout = () => {
-    // despacho da action de logout (ela também remove localStorage conforme slice)
     dispatch(logout());
-    // garante remoção local de token caso algo fique (defensivo)
     try {
       localStorage.removeItem("token");
       localStorage.removeItem("userData");
@@ -33,110 +39,131 @@ const HeaderForYou = () => {
     navigate("/login", { replace: true });
   };
 
-  const toggleMenu = () => setIsMenuOpen((v) => !v);
-  const closeMenu = () => setIsMenuOpen(false);
-
   return (
-    <div className={`${styles.topo} container-fluid`}>
-      <header className={styles.headerWrap}>
-        <nav className={styles.navbar}>
-          <div className={styles.navLeft}>
-            <Link to="/feed" className={styles.brand} onClick={closeMenu}>
-              <img src={logo} className={styles.logo} alt="logo art beat" />
-              <span className={styles.brandText}>ArtBeat</span>
+    <div className="hf-top">
+      <header className="hf-header">
+        <nav className="hf-nav" aria-label="Navegação principal">
+          <div className="hf-left">
+            <Link to="/feed" className="hf-brand" onClick={close}>
+              <img src={logo} alt="ArtBeat" className="hf-logo" />
+              <span className="hf-brandText">ArtBeat</span>
             </Link>
           </div>
 
-          {/* Menu Hamburger para mobile */}
+          {/* hamburger - aparece só em telas pequenas */}
           <button
-            className={styles.menuToggle}
-            onClick={toggleMenu}
-            aria-label="Abrir menu"
-            aria-expanded={isMenuOpen}
+            className={`hf-hamb ${open ? "hf-open" : ""}`}
+            aria-label={open ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={open}
+            onClick={toggle}
           >
-            <span></span>
-            <span></span>
-            <span></span>
+            <span />
+            <span />
+            <span />
           </button>
 
-          {/* Overlay para mobile */}
-          {isMenuOpen && <div className={styles.menuOverlay} onClick={closeMenu} />}
+          {/* overlay (fecha ao clicar) */}
+          <div
+            className={`hf-overlay ${open ? "hf-show" : ""}`}
+            onClick={close}
+            aria-hidden={!open}
+          />
 
-          {/* Menu principal */}
-          <ul className={`${styles.menu} ${isMenuOpen ? styles.menuOpen : ""}`}>
-            <li>
-              <Link
-                to="/feed"
-                className={`${styles.navLink} ${isActiveLink("feed") ? styles.enfase : ""}`}
-                onClick={closeMenu}
-                aria-current={isActiveLink("feed") ? "page" : undefined}
-              >
-                <i className="fa-solid fa-house" aria-hidden="true"></i>
-                <span>Feed</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/populares"
-                className={`${styles.navLink} ${isActiveLink("populares") ? styles.enfase : ""}`}
-                onClick={closeMenu}
-                aria-current={isActiveLink("populares") ? "page" : undefined}
-              >
-                <i className="fa-solid fa-fire" aria-hidden="true"></i>
-                <span>Populares</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/discover"
-                className={`${styles.navLink} ${isActiveLink("discover") ? styles.enfase : ""}`}
-                onClick={closeMenu}
-                aria-current={isActiveLink("discover") ? "page" : undefined}
-              >
-                <i className="fa-solid fa-shuffle" aria-hidden="true"></i>
-                <span>Aleatórios</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/desafios"
-                className={`${styles.navLink} ${isActiveLink("desafios") ? styles.enfase : ""}`}
-                onClick={closeMenu}
-                aria-current={isActiveLink("desafios") ? "page" : undefined}
-              >
-                <i className="fa-solid fa-trophy" aria-hidden="true"></i>
-                <span>Desafios</span>
-              </Link>
-            </li>
+          {/* menu */}
+          <ul className={`hf-menu ${open ? "hf-openMenu" : ""}`} role="menubar">
+            <li><Link to="/feed" className={`hf-link ${isActive("feed") ? "hf-active" : ""}`} onClick={close}> <i className="fa-solid fa-house" /> <span>Feed</span></Link></li>
+            <li><Link to="/populares" className={`hf-link ${isActive("populares") ? "hf-active" : ""}`} onClick={close}> <i className="fa-solid fa-fire" /> <span>Populares</span></Link></li>
+            <li><Link to="/discover" className={`hf-link ${isActive("discover") ? "hf-active" : ""}`} onClick={close}> <i className="fa-solid fa-shuffle" /> <span>Aleatórios</span></Link></li>
+            <li><Link to="/desafios" className={`hf-link ${isActive("desafios") ? "hf-active" : ""}`} onClick={close}> <i className="fa-solid fa-trophy" /> <span>Desafios</span></Link></li>
           </ul>
 
-          <div className={styles.rightBox}>
+          <div className="hf-right">
             <Link
-              to={currentUser ? `/user/${currentUser.username}` : "/login"}
-              className={styles.profileBtn}
+              to={user ? `/user/${user.username}` : "/login"}
+              className="hf-profile"
+              onClick={close}
               title="Meu perfil"
-              onClick={closeMenu}
             >
-              {/* preferir fotoPerfil se existir */}
-              {currentUser?.fotoPerfil ? (
-                <img
-                  src={currentUser.fotoPerfil}
-                  alt={`${currentUser.username || "Perfil"} foto`}
-                  className={styles.profileImage}
-                />
+              {user?.fotoPerfil ? (
+                <img src={user.fotoPerfil} alt={`${user.username} foto`} className="hf-avatar" />
               ) : (
-                <i className={`fa-solid fa-circle-user ${styles.perfilIcon}`} aria-hidden="true"></i>
+                <i className="fa-solid fa-circle-user hf-avatarIcon" aria-hidden="true" />
               )}
-              <span className={styles.profileName}>{currentUser?.username ?? "Perfil"}</span>
+              <span className="hf-username">{user?.username ?? "Perfil"}</span>
             </Link>
 
-            <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
-              <i className="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
-              <span className={styles.logoutText}>Sair</span>
+            <button className="hf-logout" onClick={handleLogout} aria-label="Sair">
+              <i className="fa-solid fa-right-from-bracket" />
+              <span className="hf-logoutText">Sair</span>
             </button>
           </div>
         </nav>
       </header>
+
+      {/* CSS inline simples e isolado (prefixo hf- para evitar conflitos) */}
+      <style>{`
+        :root{
+          --accent1:#6a5ae0;
+          --accent2:#8c7ff2;
+          --text:#ffffff;
+          --muted: rgba(255,255,255,0.78);
+        }
+
+        .hf-top{ width:100%; background:transparent; }
+        .hf-header{ display:flex; justify-content:center; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .hf-nav{ width:100%; max-width:1200px; display:flex; align-items:center; gap:16px; padding:10px 16px; box-sizing:border-box; }
+
+        .hf-left{ display:flex; align-items:center; }
+        .hf-brand{ display:flex; align-items:center; gap:10px; text-decoration:none; }
+        .hf-logo{ height:36px; width:auto; display:block; }
+        .hf-brandText{ color:var(--text); font-weight:800; letter-spacing:0.4px; font-size:1.05rem; }
+
+        /* menu default (desktop) */
+        .hf-menu{ display:flex; gap:12px; list-style:none; margin:0; padding:0; align-items:center; flex:1; }
+        .hf-menu li{ display:flex; }
+        .hf-link{ display:inline-flex; align-items:center; gap:8px; padding:8px 10px; color:var(--muted); text-decoration:none; border-radius:8px; font-weight:600; transition: background .12s ease, color .12s; }
+        .hf-link:hover, .hf-link:focus{ background: rgba(255,255,255,0.03); color:var(--text); outline:none; }
+        .hf-active{ color:var(--text); background: linear-gradient(90deg, rgba(106,90,224,0.12), rgba(140,127,242,0.08)); box-shadow: 0 6px 18px rgba(106,90,224,0.06); }
+
+        .hf-right{ display:flex; align-items:center; gap:10px; }
+        .hf-profile{ display:inline-flex; align-items:center; gap:8px; text-decoration:none; color:var(--text); padding:6px 8px; border-radius:8px; }
+        .hf-avatar{ width:36px; height:36px; border-radius:50%; object-fit:cover; }
+        .hf-avatarIcon{ font-size:36px; color:var(--text); }
+        .hf-username{ font-weight:700; font-size:0.95rem; }
+
+        .hf-logout{ display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fff; border:none; padding:8px 10px; border-radius:10px; cursor:pointer; font-weight:700; }
+        .hf-logoutText{ display:inline-block; }
+
+        /* hamburger - hidden desktop */
+        .hf-hamb{ display:none; background:transparent; border:none; width:44px; height:40px; padding:6px; cursor:pointer; align-items:center; justify-content:center; }
+        .hf-hamb span{ display:block; height:2px; background:var(--text); margin:5px 0; border-radius:2px; transition: transform .2s ease, opacity .18s ease; }
+        .hf-hamb.hf-open span:nth-child(1){ transform: translateY(7px) rotate(45deg); }
+        .hf-hamb.hf-open span:nth-child(2){ opacity:0; transform: scaleX(0); }
+        .hf-hamb.hf-open span:nth-child(3){ transform: translateY(-7px) rotate(-45deg); }
+
+        /* overlay */
+        .hf-overlay{ display:none; }
+        .hf-overlay.hf-show{ display:block; position:fixed; inset:0; background: rgba(0,0,0,0.45); z-index:999; }
+
+        /* mobile drawer */
+        @media (max-width: 820px){
+          .hf-hamb{ display:flex; }
+          .hf-menu{ position: fixed; top:0; right:0; height:100vh; width: min(92%, 320px); background: linear-gradient(180deg, rgba(8,8,12,0.96), rgba(14,14,20,0.98)); flex-direction:column; padding:72px 16px 20px; gap:12px; transform: translateX(110%); transition: transform .28s ease; z-index:1000; align-items:stretch; }
+          .hf-menu.hf-openMenu{ transform: translateX(0); }
+          .hf-menu li{ width:100%; }
+          .hf-link{ width:100%; padding:12px 14px; font-size:1rem; border-radius:10px; }
+          .hf-right .hf-username{ display:none; }
+          .hf-logoutText{ display:none; }
+        }
+
+        /* small tweaks */
+        .hf-link i{ width:18px; text-align:center; }
+        .hf-link span{ line-height:1; }
+
+        /* focus styles */
+        .hf-link:focus-visible, .hf-hamb:focus-visible, .hf-logout:focus-visible, .hf-profile:focus-visible{ outline: 3px solid rgba(138,120,242,0.14); outline-offset:2px; }
+
+      `}</style>
     </div>
   );
 };
