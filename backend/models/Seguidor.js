@@ -1,9 +1,30 @@
-import mongoose from "mongoose";
+// backend/models/Seguidor.js
+import mongoose from 'mongoose';
 
-const SeguidorSchema = new mongoose.Schema({
-  followerId: String,   // quem segue
-  followingId: String,  // quem é seguido
-  createdAt: { type: Date, default: Date.now }
+const seguidorSchema = new mongoose.Schema({
+  followerId: {
+    type: String,
+    required: true,
+    index: true
+  },
+  followingId: {
+    type: String,
+    required: true,
+    index: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-export default mongoose.model("Seguidor", SeguidorSchema);
+// Índice composto para evitar duplicatas
+seguidorSchema.index({ followerId: 1, followingId: 1 }, { unique: true });
+
+// Índices para queries de contagem
+seguidorSchema.index({ followingId: 1 });
+seguidorSchema.index({ followerId: 1 });
+
+const Seguidor = mongoose.model('Seguidor', seguidorSchema);
+
+export default Seguidor;

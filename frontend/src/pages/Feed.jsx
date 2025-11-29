@@ -29,7 +29,7 @@ const Feed = () => {
 
   const [postsComUsuario, setPostsComUsuario] = useState([]);
   const [postsDosSeguidos, setPostsDosSeguidos] = useState([]);
-  const [seguindoIds, setSeguindoIds] = useState([]);
+  const [seguindoIds, setSeguindoIds] = useState([]); // ✅ AGORA É ARRAY DE STRINGS
   const [loadingSeguindo, setLoadingSeguindo] = useState(true);
 
   const [showMonetization, setShowMonetization] = useState(false);
@@ -37,26 +37,43 @@ const Feed = () => {
   const [showComments, setShowComments] = useState(false);
   const [currentPostIdForComments, setCurrentPostIdForComments] = useState(null);
 
-  // busca quem o viewer está seguindo (endpoint existente no seu backend)
+  // ✅ busca quem o viewer está seguindo
   useEffect(() => {
     const fetchSeguindo = async () => {
       if (viewerId) {
         try {
           setLoadingSeguindo(true);
-          // endpoint que você já usava; mantém comportamento
+          
+          // ✅ Usa o endpoint /seguidores do seu backend
           const res = await axios.get(`http://localhost:5000/seguidores?followerId=${viewerId}`);
-          const ids = Array.isArray(res.data) ? res.data.map((item) => Number(item.followingId)) : [];
+          
+          // ✅ CONVERTE PARA STRING, NÃO PARA NUMBER
+          const ids = Array.isArray(res.data) 
+            ? res.data.map((item) => String(item.followingId))
+            : [];
+          
+          console.log('✅ IDs de quem você segue:', ids);
+          console.log('✅ Seu ID:', viewerId);
+          
           setSeguindoIds(ids);
+          
           try {
             localStorage.setItem(`seguindoIds_${viewerId}`, JSON.stringify(ids));
-          } catch (e) { /* ignore storage errors */ }
+          } catch (e) { 
+            console.warn('Erro ao salvar no localStorage:', e);
+          }
         } catch (err) {
-          console.error("Erro ao buscar seguindo:", err);
+          console.error("❌ Erro ao buscar seguindo:", err);
           // fallback para localStorage se houver
           try {
             const saved = localStorage.getItem(`seguindoIds_${viewerId}`);
-            if (saved) setSeguindoIds(JSON.parse(saved));
-            else setSeguindoIds([]);
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              setSeguindoIds(parsed);
+              console.log('📦 Carregado do localStorage:', parsed);
+            } else {
+              setSeguindoIds([]);
+            }
           } catch (e) {
             setSeguindoIds([]);
           }
@@ -65,6 +82,7 @@ const Feed = () => {
         }
       } else {
         // sem usuário logado
+        console.log('⚠️ Sem usuário logado');
         setSeguindoIds([]);
         setLoadingSeguindo(false);
       }
@@ -84,16 +102,18 @@ const Feed = () => {
     if (!loadingPosts && !loadingUsuarios && usuarios.length >= 0) {
       const combinados = (posts || []).map((post) => {
         const usuario = usuarios.find((u) => {
-      const uid = u?._id ?? u?.id;
-      return String(uid) === String(post.usuarioId);
-       });
+          const uid = u?._id ?? u?.id;
+          const postUserId = post.usuarioId ?? post.userId;
+          return String(uid) === String(postUserId);
+        });
+        
         return {
           ...post,
-          id: post.id,
+          id: post._id ?? post.id,
           content: post.titulo ?? post.content ?? "",
           texto: post.conteudo ?? post.texto ?? "",
           username: usuario ? (usuario.nome || usuario.username) : "@desconhecido",
-          usuarioId: Number(post.usuarioId),
+          usuarioId: String(post.usuarioId ?? post.userId), // ✅ SEMPRE STRING
           mediaType:
             post.tipo === "musica" ? "audio" : post.tipo === "visual" ? "image" : "text",
           mediaSrc: (post.tipo === "musica" || post.tipo === "visual") ? `/media/${post.conteudo}` : null,
@@ -102,25 +122,41 @@ const Feed = () => {
         };
       });
 
-      // ordenar do mais recente para o mais antigo (mantendo seu comportamento anterior)
+      // ordenar do mais recente para o mais antigo
       const getDate = (p) => p?.data ?? p?.createdAt ?? p?.time;
       combinados.sort((a, b) => new Date(getDate(b)) - new Date(getDate(a)));
 
+      console.log('📝 Total de posts combinados:', combinados.length);
       setPostsComUsuario(combinados);
     }
   }, [loadingPosts, loadingUsuarios, posts, usuarios]);
 
-  // filtrar posts apenas dos seguidos (ou também os próprios posts, se desejar)
+  // ✅ filtrar posts apenas dos seguidos + próprios posts
   useEffect(() => {
-    if (postsComUsuario.length > 0 && seguindoIds.length > 0) {
+    if (postsComUsuario.length > 0) {
+      const viewerIdString = String(viewerId);
+      
       const filtrados = postsComUsuario.filter((post) => {
-        const uid = Number(post.usuarioId);
-        // inclui publicações de quem você segue e também as próprias publicações
-        return seguindoIds.includes(uid) || (viewerId && (uid === Number(viewerId)));
+        const postUserId = String(post.usuarioId);
+        
+        // ✅ COMPARAÇÃO DE STRINGS
+        const isSeguindo = seguindoIds.includes(postUserId);
+        const isProprioPost = viewerId && (postUserId === viewerIdString);
+        
+        return isSeguindo || isProprioPost;
       });
+      
+      console.log('🎯 Posts filtrados para feed:', filtrados.length);
+      console.log('👥 IDs seguidos:', seguindoIds);
+      console.log('👤 Seu ID:', viewerIdString);
+      
+      // Log detalhado dos posts
+      filtrados.forEach(p => {
+        console.log(`  - Post de ${p.username} (ID: ${p.usuarioId})`);
+      });
+      
       setPostsDosSeguidos(filtrados);
     } else {
-      // se não segue ninguém, deixar vazio (mensagem de vazio será exibida)
       setPostsDosSeguidos([]);
     }
   }, [postsComUsuario, seguindoIds, viewerId]);
@@ -148,7 +184,20 @@ const Feed = () => {
     document.body.style.overflow = "";
   };
 
-  if (loadingPosts || loadingUsuarios || loadingSeguindo) return <p>Carregando...</p>;
+  if (loadingPosts || loadingUsuarios || loadingSeguindo) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        color: 'white'
+      }}>
+        <p>Carregando feed...</p>
+      </div>
+    );
+  }
+  
   if (errorPosts) return <p>{errorPosts}</p>;
 
   return (
@@ -170,7 +219,14 @@ const Feed = () => {
             {currentUser && (
               <div style={{ marginTop: "20px", padding: "15px", background: "rgba(255,255,255,0.05)", borderRadius: "10px" }}>
                 <p style={{ margin: 0, fontSize: "0.9rem" }}>
-                  <strong>IDs que você segue:</strong> {seguindoIds.join(", ") || "Nenhum"}
+                  <strong>Debug - IDs que você segue:</strong><br />
+                  {seguindoIds.length > 0 ? seguindoIds.join(", ") : "Nenhum"}
+                </p>
+                <p style={{ margin: "10px 0 0 0", fontSize: "0.9rem" }}>
+                  <strong>Seu ID:</strong> {viewerId}
+                </p>
+                <p style={{ margin: "10px 0 0 0", fontSize: "0.9rem" }}>
+                  <strong>Total de posts no sistema:</strong> {postsComUsuario.length}
                 </p>
               </div>
             )}
@@ -178,7 +234,7 @@ const Feed = () => {
         ) : (
           postsDosSeguidos.map((post) => (
             <PostCard
-              key={post.id}
+              key={post._id ?? post.id}
               post={post}
               onMonetizeClick={handleMonetizeClick}
               onCommentClick={handleCommentClick}
@@ -202,6 +258,12 @@ const Feed = () => {
       <FloatingActionButton />
 
       <style jsx>{`
+        .feed-content-wrapper {
+          max-width: 1800px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+
         .no-login-message,
         .no-posts-message {
           text-align: center;

@@ -5,7 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import botaoVolta from "../images/botaoVolta.png";
 import styles from "../css/Login.module.css";
 import axios from 'axios';
-import { fetchUsuarios } from "../redux/usuariosSlice"; // ajustado: antes ../redux/usuariosSlice
+import { fetchUsuarios } from "../redux/usuariosSlice"; // ✅ Corrigido para userSlice
 import { fetchPosts } from "../redux/postsSlice";
 import { fetchFollowCounts, selectFollowCounts, fetchFollowersList, fetchFollowingList } from '../redux/followsSlice';
 
@@ -33,6 +33,7 @@ const UserProfile = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // ✅ Adaptado para o novo userSlice
   const usuarios = useSelector((state) => state.user.usuarios || []);
   const posts = useSelector((state) => state.posts.lista || []);
 
@@ -42,7 +43,7 @@ const UserProfile = () => {
 
   const isOwnProfile = currentUser?.username === username;
 
-  // loading flags para “ready”
+  // loading flags para "ready"
   const usersLoading = useSelector((s) => s.user.loading);
   const postsLoading = useSelector((s) => s.posts.loading);
   const ready = !usersLoading && !postsLoading;
@@ -75,7 +76,7 @@ const UserProfile = () => {
     if (!posts.length) dispatch(fetchPosts());
   }, [dispatch, usuarios.length, posts.length]);
 
-  // ---------- derivação com memo, só quando “ready” ----------
+  // ---------- derivação com memo, só quando "ready" ----------
   const user = useMemo(() => {
     if (!ready) return null;
     return usuarios.find((u) => u.username === username) || null;
@@ -126,10 +127,10 @@ const UserProfile = () => {
 
   const handleEditProfile = () => navigate("/edit-profile");
 
-  // mapear posts do usuário → formato do PostCard (se user for null, vira lista vazia)
+  // ✅ mapear posts do usuário → formato do PostCard (usando _id consistentemente)
   const userIdKey = user ? String(user._id || user.id) : null;
   const userPostsRaw = user
-    ? posts.filter((p) => String(p.usuarioId) === String(userIdKey))
+    ? posts.filter((p) => String(p.usuarioId || p.userId) === String(userIdKey))
     : [];
   const userPosts = userPostsRaw
     .map((p) => {
@@ -143,20 +144,18 @@ const UserProfile = () => {
         mediaType: isMusica ? "audio" : isImagem ? "image" : isTexto ? "text" : undefined,
         mediaSrc: (isMusica || isImagem) ? `/media/${p.conteudo}` : undefined,
         mediaAlt: p.titulo || "Mídia do post",
+        authorName: user?.nome || user?.username || "Usuário",
+        authorUsername: user?.username || "",
       };
 
       if (isTexto) {
-        // ✅ Para posts de texto/letra: usar APENAS `texto` como corpo e (opcionalmente) `content` só para título
         return {
           ...base,
           content: p.titulo || "",
           texto: p.texto ?? p.conteudo ?? "",
-          authorName: user?.nome || user?.username || "Usuário",
-          authorUsername: user?.username || "",
         };
       }
 
-      // Para música/visual, manter `content` (ex.: título/legenda) e não enviar `texto`
       const content = p.titulo
         ? p.titulo
         : (isMusica || isImagem)
@@ -168,11 +167,10 @@ const UserProfile = () => {
         content,
       };
     })
-    // 👇 ÚNICA ADIÇÃO: ordenar do mais recente para o mais antigo (usa p.data / createdAt / time)
     .slice()
     .sort(
       (a, b) =>
-        new Date(b.data ?? b.createdAt ?? b.time) -
+        new Date(b.data ?? b.createdAt ?? b.time) - 
         new Date(a.data ?? a.createdAt ?? a.time)
     );
 
@@ -204,7 +202,6 @@ const UserProfile = () => {
     
     try {
       const result = await dispatch(fetchFollowersList(userIdKey)).unwrap();
-      // result tem a forma: { userId, followers }
       setFollowersList(result.followers || []);
       setShowFollowers(true);
       document.body.style.overflow = "hidden";
@@ -242,28 +239,21 @@ const UserProfile = () => {
 
   // Função para iniciar a edição
   const handleEditClick = (post) => {
-    setEditingPost(post.id || post._id);
+    const postId = post._id || post.id;
+    setEditingPost(postId);
     setEditText(post.texto || post.content || '');
   };
 
-  // Função para salvar a edição
+  // ✅ Função para salvar a edição (usando _id consistentemente)
   const handleSaveEdit = async (postId) => {
-    {/*para debbug
-    console.log('=== INICIANDO EDIÇÃO ===');
-    console.log('postId:', postId);
-    console.log('editText:', editText);
-    console.log('posts disponíveis:', posts.length);
-    console.log('userPosts disponíveis:', userPosts.length);*/}
-
     if (!editText.trim()) {
-      console.log('Texto vazio - cancelando');
       alert('O texto não pode estar vazio!');
       return;
     }
 
     try {
       // Busca o post original na lista do Redux (posts)
-      const postToUpdate = posts.find(p => String(p.id || p._id) === String(postId));
+      const postToUpdate = posts.find(p => String(p._id || p.id) === String(postId));
       
       if (!postToUpdate) {
         console.error('Post não encontrado para edição');
@@ -271,19 +261,14 @@ const UserProfile = () => {
         return;
       }
 
-      console.log('Post encontrado:', postToUpdate);
-
       // Prepara os dados para atualização mantendo TODOS os campos originais
       const updateData = {
-        ...postToUpdate, // ✅ Mantém todos os dados originais
+        ...postToUpdate,
         conteudo: editText.trim(),
         titulo: editText.trim().substring(0, 100),
-        // NÃO altera: usuarioId, data, tipo, etc.
       };
 
-      console.log('Enviando atualização para API:', updateData);
-
-      // ✅ FAZ A REQUISIÇÃO PUT
+      // ✅ FAZ A REQUISIÇÃO PUT usando _id
       const response = await axios.put(`http://localhost:5000/posts/${postId}`, updateData);
       console.log('Resposta da API:', response.data);
 
@@ -316,7 +301,7 @@ const UserProfile = () => {
           <div className="col-12">
             {/* key força remount ao trocar de username */}
             <div className="profile-container profile-shell glass-header" key={`profile-${username}`}>
-              {/* Se não houver usuário, só mostra aviso quando “ready” estiver true */} 
+              {/* Se não houver usuário, só mostra aviso quando "ready" estiver true */} 
               {(ready && usuarios.length > 0 && !user) ? (
                 <div className="container-fluid text-center py-5">
                   <h2>Usuário "{username}" não encontrado 😢</h2>
@@ -421,22 +406,25 @@ const UserProfile = () => {
                         <p className="mb-0">Nenhuma publicação ainda.</p>
                       </div>
                     ) : (
-                      userPosts.map((p) => (
-                        <div key={p.id || p._id} className="mb-3">
-                          <PostCard
-                            post={p}
-                            onMonetizeClick={handleMonetizeClick}
-                            onCommentClick={handleCommentClick}
-                            onEditClick={handleEditClick}
-                            onSaveEdit={handleSaveEdit}
-                            onCancelEdit={handleCancelEdit}
-                            isEditing={editingPost === (p.id || p._id)}
-                            editText={editText}
-                            onEditTextChange={setEditText}
-                            isOwnProfile={isOwnProfile} //referente tirar botoes apoiar e seguir no proprio perfil
-                          />
-                        </div>
-                      ))
+                      userPosts.map((p) => {
+                        const postId = p._id || p.id;
+                        return (
+                          <div key={postId} className="mb-3">
+                            <PostCard
+                              post={p}
+                              onMonetizeClick={handleMonetizeClick}
+                              onCommentClick={handleCommentClick}
+                              onEditClick={handleEditClick}
+                              onSaveEdit={handleSaveEdit}
+                              onCancelEdit={handleCancelEdit}
+                              isEditing={editingPost === postId}
+                              editText={editText}
+                              onEditTextChange={setEditText}
+                              isOwnProfile={isOwnProfile}
+                            />
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 </>
@@ -479,7 +467,7 @@ const UserProfile = () => {
               ) : (
                 <div className="users-list">
                   {followersList.map((follower) => (
-                    <div key={follower.id} className="user-list-item">
+                    <div key={follower._id} className="user-list-item">
                       <div className="user-avatar-small">
                         {follower.fotoPerfil ? (
                           <img src={follower.fotoPerfil} alt={follower.nome} />
@@ -528,7 +516,7 @@ const UserProfile = () => {
               ) : (
                 <div className="users-list">
                   {followingList.map((following) => (
-                    <div key={following.id} className="user-list-item">
+                    <div key={following._id} className="user-list-item">
                       <div className="user-avatar-small">
                         {following.fotoPerfil ? (
                           <img src={following.fotoPerfil} alt={following.nome} />
@@ -662,7 +650,6 @@ const UserProfile = () => {
           transform: translateY(-2px);
         }
 
-        /* ===== SOBRE O PERFIL ===== */
         .about-wrap{
           display: grid;
           gap: 12px;
@@ -713,9 +700,7 @@ const UserProfile = () => {
           transition: transform .15s ease;
         }
         .chip:hover{ transform: translateY(-1px); }
-        /* ===== FIM SOBRE O PERFIL ===== */
 
-        /* Estilos para os popups customizados */
         .custom-popup-overlay {
           position: fixed;
           top: 0;
@@ -758,8 +743,8 @@ const UserProfile = () => {
         }
 
         .popup-close-btn {
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.12);
           color: white;
           width: 36px;
           height: 36px;
@@ -768,116 +753,84 @@ const UserProfile = () => {
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          transition: all 0.2s ease;
         }
-
-        .popup-close-btn:hover {
-          background: rgba(255, 255, 255, 0.2);
-          transform: scale(1.1);
-        }
+        .popup-close-btn i { pointer-events: none; }
 
         .popup-body {
-          padding: 20px;
-          max-height: 60vh;
-          overflow-y: auto;
+          padding: 16px;
+          overflow: auto;
+          max-height: calc(80vh - 110px);
         }
 
         .empty-list-message {
-          text-align: center;
-          color: rgba(255, 255, 255, 0.7);
-          padding: 40px 20px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 28px 12px;
+          color: rgba(255,255,255,0.85);
         }
 
         .users-list {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 10px;
         }
 
         .user-list-item {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 12px;
-          background: rgba(255, 255, 255, 0.05);
+          padding: 8px 10px;
           border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          transition: all 0.2s ease;
-        }
-
-        .user-list-item:hover {
-          background: rgba(255, 255, 255, 0.1);
-          transform: translateX(4px);
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.03);
         }
 
         .user-avatar-small {
           width: 44px;
           height: 44px;
           border-radius: 50%;
-          background: linear-gradient(135deg, var(--roxo, #6a5ae0), #8c7ff2);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: 18px;
           overflow: hidden;
+          display: grid;
+          place-items: center;
+          background: rgba(255,255,255,0.03);
         }
-
         .user-avatar-small img {
           width: 100%;
           height: 100%;
           object-fit: cover;
         }
 
-        .user-info-small {
-          flex: 1;
-        }
-
+        .user-info-small { flex: 1; min-width: 0; }
         .user-name {
-          color: white;
+          color: #fff;
           font-weight: 600;
-          margin-bottom: 2px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
-
         .user-username {
-          color: rgba(255, 255, 255, 0.7);
-          font-size: 12px;
+          color: rgba(255,255,255,0.7);
+          font-size: 13px;
         }
 
         .view-profile-btn {
-          background: rgba(106, 90, 224, 0.3);
-          border: 1px solid rgba(106, 90, 224, 0.5);
-          color: white;
-          border-radius: 20px;
-          padding: 6px 12px;
-          font-size: 12px;
-          transition: all 0.2s ease;
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.08);
+          color: #fff;
+          padding: 6px 10px;
+          border-radius: 8px;
+          font-size: 13px;
         }
 
-        .view-profile-btn:hover {
-          background: rgba(106, 90, 224, 0.5);
-          transform: translateY(-1px);
+        /* responsive tweaks */
+        @media (max-width: 420px) {
+          .custom-popup-content { max-width: 92%; border-radius: 14px; }
+          .user-list-item { padding: 8px; gap: 8px; }
+          .view-profile-btn { padding: 6px 8px; font-size: 12px; }
+          .profile-name { font-size: 18px; }
         }
-
-        /* Scrollbar customizada */
-        .popup-body::-webkit-scrollbar {
-          width: 6px;
-        }
-
-        .popup-body::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 3px;
-        }
-
-        .popup-body::-webkit-scrollbar-thumb {
-          background: rgba(106, 90, 224, 0.5);
-          border-radius: 3px;
-        }
-
-        .popup-body::-webkit-scrollbar-thumb:hover {
-          background: rgba(106, 90, 224, 0.7);
-        }
-        
       `}</style>
     </>
   );

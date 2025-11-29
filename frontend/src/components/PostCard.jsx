@@ -52,27 +52,31 @@ const PostCard = ({
   const currentUser = currentUserState?.user ?? null;
   const currentUserId = currentUser?._id || currentUser?.id || null;
 
+  // --- ID do post (sempre usa _id do MongoDB)
+  const postId = post?._id || post?.id;
+
   // --- Dados do autor vêm do post prop
   const authorName = post?.authorName || post?.username || 'Usuário';
   const authorUsername = post?.authorUsername || post?.username?.replace('@', '') || '';
 
-  // rating
-  const ratingState = useSelector(selectRatingState(post?.id));
+  // rating - usa postId consistente
+  const ratingState = useSelector(selectRatingState(postId));
 
   // Buscar avaliação do usuário e média do post quando o componente monta
   useEffect(() => {
-    if (!post?.id) return;
+    if (!postId) return;
 
     if (currentUserId) {
-      dispatch(fetchMyRatingForPost({ postId: post.id, usuarioId: currentUserId }));
+      dispatch(fetchMyRatingForPost({ postId, usuarioId: currentUserId }));
     } else {
-      dispatch(fetchPostRating(post.id));
+      dispatch(fetchPostRating(postId));
     }
-  }, [dispatch, post?.id, currentUserId]);
+  }, [dispatch, postId, currentUserId]);
 
   // seguidores
-  const targetUserId = post?.usuarioId;
+  const targetUserId = post?.usuarioId || post?.userId;
   const isFollowing = useSelector(selectIsFollowing(currentUserId, targetUserId));
+  
   useEffect(() => {
     if (!currentUserId || !targetUserId || String(currentUserId) === String(targetUserId)) return;
     dispatch(fetchIsFollowing({ followerId: currentUserId, followingId: targetUserId }));
@@ -100,7 +104,7 @@ const PostCard = ({
     if (isDoubleClick && ratingState?.myStars > 0) {
       try {
         setSubmitting(true);
-        await dispatch(removeRating({ postId: post.id, usuarioId: currentUserId })).unwrap();
+        await dispatch(removeRating({ postId, usuarioId: currentUserId })).unwrap();
       } catch (err) {
         console.error('[PostCard] removeRating error:', err);
       } finally {
@@ -110,7 +114,7 @@ const PostCard = ({
       const estrelas = Math.min(5, Math.max(1, Number(value)));
       try {
         setSubmitting(true);
-        await dispatch(upsertRating({ postId: post.id, usuarioId: currentUserId, estrelas })).unwrap();
+        await dispatch(upsertRating({ postId, usuarioId: currentUserId, estrelas })).unwrap();
       } catch (err) {
         console.error('[PostCard] upsertRating error:', err);
       } finally {
@@ -170,7 +174,7 @@ const PostCard = ({
     return `${mm}:${ss}`;
   };
 
-  const { time, content, mediaType, mediaSrc, mediaAlt, id, texto } = post;
+  const { time, content, mediaType, mediaSrc, mediaAlt, texto } = post;
   const isText = mediaType === 'text' || mediaType === 'texto';
 
   const createdDataAttr =
@@ -181,7 +185,7 @@ const PostCard = ({
   const canDelete = !!currentUser && (
     currentUser.role === 'admin' ||
     currentUser.admin === true ||
-    String(currentUserId) === String(post?.usuarioId)
+    String(currentUserId) === String(targetUserId)
   );
 
   const handleDeletePost = async () => {
@@ -191,9 +195,9 @@ const PostCard = ({
 
     try {
       if (typeof onDeleteClick === 'function') {
-        await onDeleteClick(post.id);
+        await onDeleteClick(postId);
       } else {
-        await dispatch(deletePost(post.id)).unwrap();
+        await dispatch(deletePost(postId)).unwrap();
       }
     } catch (e) {
       console.error('[PostCard] delete error:', e);
@@ -212,7 +216,7 @@ const PostCard = ({
   };
 
   const handleSaveClick = () => {
-    if (typeof onSaveEdit === 'function') onSaveEdit(post.id);
+    if (typeof onSaveEdit === 'function') onSaveEdit(postId);
   };
 
   const handleCancelClick = () => {
@@ -223,7 +227,7 @@ const PostCard = ({
     if (typeof onEditClick === 'function') onEditClick(post);
   };
 
-  const canEdit = !!currentUser && String(currentUserId) === String(post?.usuarioId);
+  const canEdit = !!currentUser && String(currentUserId) === String(targetUserId);
 
   const myStars = ratingState?.myStars || 0;
   const ratingAvg = ratingState?.postAvg || 0;
@@ -264,8 +268,8 @@ const PostCard = ({
                   </div>
 
                   <div className="post-actions">
-                    {/* Botão Apoiar - SOMENTE se NÃO for o próprio perfil */}
-                    {!isOwnProfile && (
+                    {/* Botão Apoiar - esconde se for próprio post OU próprio perfil */}
+                    {!isOwnProfile && (String(currentUserId) !== String(targetUserId)) && (
                       <button
                         className="btn btn-sm support-button soft"
                         onClick={() => onMonetizeClick(authorUsername || authorName)}
@@ -274,18 +278,16 @@ const PostCard = ({
                       </button>
                     )}
 
-                    {/* Botão Seguir - SOMENTE se NÃO for o próprio perfil */}
-                    {!isOwnProfile && (
+                    {/* Botão Seguir - esconde se for próprio post OU próprio perfil */}
+                    {!isOwnProfile && (String(currentUserId) !== String(targetUserId)) && (
                       <button
                         className={`btn btn-sm follow-button ${isFollowing ? 'following' : 'notfollowing'} soft`}
                         onClick={handleFollowToggle}
-                        disabled={!currentUserId || !targetUserId || String(currentUserId) === String(targetUserId)}
+                        disabled={!currentUserId || !targetUserId}
                         title={
                           !currentUserId
                             ? 'Faça login para seguir'
-                            : String(currentUserId) === String(targetUserId)
-                              ? 'Você não pode seguir a si mesmo'
-                              : isFollowing
+                            : isFollowing
                                 ? 'Deixar de seguir'
                                 : 'Seguir'
                         }
@@ -447,7 +449,7 @@ const PostCard = ({
                         </small>
                       </div>
 
-                      <button className="btn comment-button glossy" onClick={() => onCommentClick(id)}>
+                      <button className="btn comment-button glossy" onClick={() => onCommentClick(postId)}>
                         <i className="far fa-comment-dots"></i>
                         <span className="comentarioTexto"> Comentar</span>
                       </button>
@@ -475,9 +477,8 @@ const PostCard = ({
         </div>
       </div>
 
-      {/* 🎨 Estilos (mantidos) */}
+      {/* 🎨 Estilos */}
       <style>{`
-        /* (styles kept exactly as before to preserve visual) */
         :root {
           --accent: var(--roxo, #5e17eb);
           --accent-2: #7b3ff2;
@@ -509,7 +510,6 @@ const PostCard = ({
 
         .post-card-body { color: var(--text); }
 
-        /* header */
         .user-avatar-container { display: grid; place-items: center; }
         .avatar-elevated {
           border-radius: 12px;
@@ -533,7 +533,6 @@ const PostCard = ({
         }
         .subtle { opacity: .8; }
 
-        /* botões */
         .delete-button.danger {
           margin-left: 8px;
           border: 1px solid rgba(255,255,255,.18);
@@ -645,7 +644,6 @@ const PostCard = ({
           gap: 8px;
         }
 
-        /* conteúdo */
         .post-content.readable {
           line-height: 1.6;
           color: var(--text);
@@ -656,7 +654,6 @@ const PostCard = ({
           opacity: .9;
         }
 
-        /* botões */
         .btn.soft {
           border: 1px solid rgba(255,255,255,.18);
           background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.08));
@@ -695,7 +692,6 @@ const PostCard = ({
           border-color: rgba(255,255,255,.28);
         }
 
-        /* estrelas */
         .elegant-star {
           font-size: 18px;
           line-height: 1;
@@ -712,7 +708,6 @@ const PostCard = ({
         }
         .rating-text.muted { color: var(--muted); margin-left: 6px; }
 
-        /* imagem refinada */
         .image-art.refined { position: relative; border-radius: 16px; overflow: hidden; }
         .post-image.art.smooth {
           display: block; width: 100%; height: auto; border-radius: 16px;
@@ -744,7 +739,6 @@ const PostCard = ({
           100% { transform: translateX(62%) rotate(8deg); opacity: 0; }
         }
 
-        /* player */
         .audio-modern.newskin.glass {
           background: var(--comment-btn-bg);
           border-radius: 16px;
@@ -753,151 +747,98 @@ const PostCard = ({
           box-shadow: 0 12px 26px rgba(0,0,0,.22);
           color: #fff;
           backdrop-filter: blur(4px) saturate(1.05);
-        }
-        .audio-modern.newskin.glass audio { display: none; }
-        .audio-ui { display: grid; grid-template-columns: auto 56px 1fr 56px auto; align-items: center; gap: 10px; }
-        .au-btn {
-          width: 44px; height: 44px; border-radius: 12px;
-          border: 1px solid rgba(255,255,255,.25);
-          background: rgba(255,255,255,.12); color: #fff;
-          font-weight: 700; font-size: 16px; display: grid; place-items: center;
-          transition: transform .12s ease, background .2s ease, border-color .2s ease, box-shadow .25s ease;
-        }
-        .au-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,.18); box-shadow: 0 8px 18px rgba(0,0,0,.22); }
-        .au-times { display: flex; justify-content: center; min-width: 56px; }
-        .au-time { font-variant-numeric: tabular-nums; opacity: .98; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.22); }
-        .au-seek {
-          -webkit-appearance: none; appearance: none; width: 100%; height: 10px;
-          background: rgba(255,255,255,.24); border-radius: 999px; outline: none;
-        }
-        .au-seek::-webkit-slider-thumb {
-          -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%;
-          background: #fff; border: 2px solid rgba(0,0,0,.15); box-shadow: 0 2px 6px rgba(0,0,0,.25);
-          cursor: pointer; margin-top: -4px;
-        }
-        .au-vol { display: flex; align-items: center; gap: 8px; min-width: 120px; }
-        .au-vol-ico { font-size: 16px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.25)); }
-        .au-vol-range {
-          -webkit-appearance: none; appearance: none; width: 100px; height: 8px;
-          background: rgba(255,255,255,.24); border-radius: 999px; outline: none;
-        }
-        .au-vol-range::-webkit-slider-thumb {
-          -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%;
-          background: #fff; border: 2px solid rgba(0,0,0,.15); box-shadow: 0 2px 6px rgba(0,0,0,.25); cursor: pointer; margin-top: -3px;
-        }
+          
+          @media (max-width: 576px) {
+      .audio-ui {
+        grid-template-columns: 44px 1fr 44px;
+        grid-template-rows: auto auto;
+        grid-template-areas:
+          "play seek vol"
+          "timeL seek timeR";
+        align-items: center;
+        gap: 6px;
+        padding: 4px 0;
+      }
 
-        /* 📱 RESPONSIVIDADE DO PLAYER */
-        @media (max-width: 576px) {
-          .audio-ui {
-            grid-template-columns: 44px 1fr 44px;
-            grid-template-rows: auto auto;
-            grid-template-areas:
-              "play seek vol"
-              "timeL seek timeR";
-            align-items: center;
-            gap: 6px;
-            padding: 4px 0;
-          }
+      .audio-ui > .au-btn {
+        grid-area: play;
+        width: 40px;
+        height: 40px;
+      }
 
-          .audio-ui > .au-btn {
-            grid-area: play;
-            width: 40px;
-            height: 40px;
-          }
+      .audio-ui > .au-seek {
+        grid-area: seek;
+        height: 10px;
+        width: 210px;
+        margin: 0;
+        margin-bottom: 15px;
+        align-self: center;
+      }
 
-          .audio-ui > .au-seek {
-            grid-area: seek;
-            height: 10px;
-            width: 210px;
-            margin: 0;
-            margin-bottom: 15px;
-            align-self: center;
-          }
+      .audio-ui > .au-vol {
+        grid-area: vol;
+        justify-self: end;
+        min-width: auto;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        height: 40px;
+        margin: 0;
+        padding: 0;
+      }
 
-          .audio-ui > .au-vol {
-            grid-area: vol;
-            justify-self: end;
-            min-width: auto;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            height: 40px;
-            margin: 0;
-            padding: 0;
-          }
+      .audio-ui > .au-times:first-of-type {
+        grid-area: timeL;
+        justify-content: flex-start;
+        align-self: start;
+        margin-top: 2px;
+      }
 
-          .audio-ui > .au-vol-btn {
-            width: 36px;
-            height: 36px;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
+      .audio-ui > .au-times:last-of-type {
+        grid-area: timeR;
+        justify-content: flex-end;
+        align-self: start;
+        margin-top: 2px;
+      }
 
-          .audio-ui > .au-times:first-of-type {
-            grid-area: timeL;
-            justify-content: flex-start;
-            align-self: start;
-            margin-top: 2px;
-          }
+      .au-time {
+        font-size: 11px;
+        opacity: .9;
+        line-height: 1;
+      }
 
-          .audio-ui > .au-times:last-of-type {
-            grid-area: timeR;
-            justify-content: flex-end;
-            align-self: start;
-            margin-top: 2px;
-          }
+      .au-vol-range {
+        width: 70px;
+        height: 10px;
+        margin-left: 4px;
+      }
 
-          .au-time {
-            font-size: 11px;
-            opacity: .9;
-            line-height: 1;
-          }
+      .au-seek::-webkit-slider-thumb {
+        width: 16px;
+        height: 16px;
+        margin-top: -3px;
+      }
 
-          .au-vol-range {
-            width: 70px;
-            height: 10px;
-            margin-left: 4px;
-          }
+      .au-vol-range::-webkit-slider-thumb {
+        width: 14px;
+        height: 14px;
+        margin-top: -3px;
+      }
 
-          .au-seek::-webkit-slider-thumb {
-            width: 16px;
-            height: 16px;
-            margin-top: -3px;
-          }
+      .media-container.audio-modern.newskin.glass {
+        padding: 10px;
+      }
+    }
 
-          .au-vol-range::-webkit-slider-thumb {
-            width: 14px;
-            height: 14px;
-            margin-top: -3px;
-          }
-
-          .media-container.audio-modern.newskin.glass {
-            padding: 10px;
-          }
-
-          .au-vol-container {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            height: 100%;
-            gap: 6px;
-          }
-        }
-
-        /* acessibilidade: menos movimento */
-        @media (prefers-reduced-motion: reduce) {
-          .post-card.elegant, .avatar-elevated, .btn.soft, .comment-button.glossy,
-          .elegant-star, .image-art.refined::after { transition: none !important; animation: none !important; }
-        }
-        .prewrap {
-          white-space: pre-wrap;
-          word-break: break-word;
-        }
-      `}</style>
-    </div>
-  );
+    @media (prefers-reduced-motion: reduce) {
+      .post-card.elegant, .avatar-elevated, .btn.soft, .comment-button.glossy,
+      .elegant-star, .image-art.refined::after { transition: none !important; animation: none !important; }
+    }
+    .prewrap {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  `}</style>
+</div>);
 };
-
 export default PostCard;

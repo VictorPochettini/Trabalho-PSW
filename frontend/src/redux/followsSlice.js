@@ -2,67 +2,46 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../api/axios";
 
-function key(followerId, followingId) {
-  return `${String(followerId)}-${String(followingId)}`;
-}
+const API_URL = "/follows";
 
-// verifica relação (GET /seguidores?followerId=&followingId=)
+// Thunks
 export const fetchIsFollowing = createAsyncThunk(
   "follows/fetchIsFollowing",
   async ({ followerId, followingId }, { rejectWithValue }) => {
     try {
-      const res = await api.get(`/seguidores?followerId=${followerId}&followingId=${followingId}`);
-      const isFollowing = Array.isArray(res.data) && res.data.length > 0;
-      return { followerId, followingId, isFollowing };
+      const res = await api.get(`${API_URL}/is-following`, {
+        params: { followerId, followingId }
+      });
+      return { 
+        followerId, 
+        followingId, 
+        isFollowing: res.data.isFollowing || false 
+      };
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Erro ao verificar follow");
+      return rejectWithValue(err.response?.data?.message || "Erro ao verificar seguidor");
     }
   }
 );
 
-// buscar contagens
-export const fetchFollowCounts = createAsyncThunk(
-  "follows/fetchCounts",
-  async ({ userId }, { rejectWithValue }) => {
-    try {
-      const [followersRes, followingRes] = await Promise.all([
-        api.get(`/seguidores?followingId=${userId}`),
-        api.get(`/seguidores?followerId=${userId}`)
-      ]);
-      return { userId, followersCount: followersRes.data.length, followingCount: followingRes.data.length };
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Erro ao carregar contagens");
-    }
-  }
-);
-
-// seguir
 export const followUser = createAsyncThunk(
   "follows/followUser",
   async ({ followerId, followingId }, { rejectWithValue }) => {
     try {
-      // id composed is optional — backend /seguidores POST expects followerId & followingId
-      const res = await api.post("/seguidores", { followerId, followingId });
-      // atualizar contagens
-      await api.patch(`/usuarios/${followingId}`, {}); // opcional - backend pode calcular
-      return { followerId, followingId, created: true, item: res.data };
+      const res = await api.post(API_URL, { followerId, followingId });
+      return { followerId, followingId, data: res.data };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Erro ao seguir usuário");
     }
   }
 );
 
-// unfollow
 export const unfollowUser = createAsyncThunk(
   "follows/unfollowUser",
   async ({ followerId, followingId }, { rejectWithValue }) => {
     try {
-      // buscar relação para remover (backend supports GET /seguidores?followerId=&followingId=)
-      const res = await api.get(`/seguidores?followerId=${followerId}&followingId=${followingId}`);
-      const rel = Array.isArray(res.data) ? res.data[0] : null;
-      if (rel && (rel._id || rel.id)) {
-        await api.delete(`/seguidores/${rel._id || rel.id}`);
-      }
+      await api.delete(API_URL, {
+        data: { followerId, followingId }
+      });
       return { followerId, followingId };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Erro ao deixar de seguir");
@@ -70,24 +49,34 @@ export const unfollowUser = createAsyncThunk(
   }
 );
 
-// buscar listas (followers / following) com detalhes do usuário
+// NOVOS THUNKS para contagem e listas
+export const fetchFollowCounts = createAsyncThunk(
+  "follows/fetchFollowCounts",
+  async ({ userId }, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`${API_URL}/counts/${userId}`);
+      return { 
+        userId, 
+        followersCount: res.data.followersCount || 0,
+        followingCount: res.data.followingCount || 0
+      };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao buscar contagens");
+    }
+  }
+);
+
 export const fetchFollowersList = createAsyncThunk(
   "follows/fetchFollowersList",
   async (userId, { rejectWithValue }) => {
     try {
-      const followersRes = await api.get(`/seguidores?followingId=${userId}`);
-      const followers = followersRes.data;
-      const followersWithDetails = await Promise.all(followers.map(async (f) => {
-        try {
-          const u = (await api.get(`/usuarios/${f.followerId}`)).data;
-          return { id: u._id || u.id, nome: u.name || u.nome, username: u.username, fotoPerfil: u.fotoPerfil };
-        } catch {
-          return { id: f.followerId, nome: "Usuário", username: "usuario", fotoPerfil: null };
-        }
-      }));
-      return { userId, followers: followersWithDetails };
+      const res = await api.get(`${API_URL}/followers/${userId}`);
+      return { 
+        userId,
+        followers: res.data.followers || []
+      };
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Erro ao carregar seguidores");
+      return rejectWithValue(err.response?.data?.message || "Erro ao buscar seguidores");
     }
   }
 );
@@ -96,94 +85,177 @@ export const fetchFollowingList = createAsyncThunk(
   "follows/fetchFollowingList",
   async (userId, { rejectWithValue }) => {
     try {
-      const followingRes = await api.get(`/seguidores?followerId=${userId}`);
-      const following = followingRes.data;
-      const followingWithDetails = await Promise.all(following.map(async (f) => {
-        try {
-          const u = (await api.get(`/usuarios/${f.followingId}`)).data;
-          return { id: u._id || u.id, nome: u.name || u.nome, username: u.username, fotoPerfil: u.fotoPerfil };
-        } catch {
-          return { id: f.followingId, nome: "Usuário", username: "usuario", fotoPerfil: null };
-        }
-      }));
-      return { userId, following: followingWithDetails };
+      const res = await api.get(`${API_URL}/following/${userId}`);
+      return { 
+        userId,
+        following: res.data.following || []
+      };
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Erro ao carregar seguindo");
+      return rejectWithValue(err.response?.data?.message || "Erro ao buscar seguindo");
     }
   }
 );
 
+// Slice
 const followsSlice = createSlice({
   name: "follows",
   initialState: {
-    byPair: {}, // key -> { isFollowing, loading, error }
-    counts: {}, // userId -> { followersCount, followingCount, loading }
-    followersLists: {},
-    followingLists: {},
+    // Estrutura: { "followerId_followingId": true/false }
+    following: {},
+    // Estrutura: { userId: { followersCount, followingCount } }
+    counts: {},
     loading: false,
     error: null,
   },
-  reducers: {},
-  extraReducers: (b) => {
-    b
-      .addCase(fetchIsFollowing.fulfilled, (s, a) => {
-        const { followerId, followingId, isFollowing } = a.payload;
-        s.byPair[key(followerId, followingId)] = { isFollowing, loading: false, error: null };
+  reducers: {
+    clearFollowsError: (state) => {
+      state.error = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // fetchIsFollowing
+      .addCase(fetchIsFollowing.pending, (state) => {
+        state.loading = true;
+        state.error = null;
       })
-      .addCase(fetchIsFollowing.rejected, (s, a) => {
-        const { followerId, followingId } = a.meta.arg;
-        s.byPair[key(followerId, followingId)] = { isFollowing: false, loading: false, error: a.payload || a.error?.message };
+      .addCase(fetchIsFollowing.fulfilled, (state, action) => {
+        state.loading = false;
+        const { followerId, followingId, isFollowing } = action.payload;
+        const key = `${followerId}_${followingId}`;
+        state.following[key] = isFollowing;
       })
-
-      .addCase(followUser.pending, (s, a) => {
-        const { followerId, followingId } = a.meta.arg;
-        s.byPair[key(followerId, followingId)] = { isFollowing: true, loading: true, error: null };
-      })
-      .addCase(followUser.fulfilled, (s, a) => {
-        const { followerId, followingId } = a.payload;
-        s.byPair[key(followerId, followingId)] = { isFollowing: true, loading: false, error: null };
-      })
-      .addCase(followUser.rejected, (s, a) => {
-        const { followerId, followingId } = a.meta.arg;
-        s.byPair[key(followerId, followingId)] = { isFollowing: false, loading: false, error: a.payload || a.error?.message };
+      .addCase(fetchIsFollowing.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error?.message;
       })
 
-      .addCase(unfollowUser.fulfilled, (s, a) => {
-        const { followerId, followingId } = a.payload;
-        s.byPair[key(followerId, followingId)] = { isFollowing: false, loading: false, error: null };
+      // followUser - atualiza estado imediatamente
+      .addCase(followUser.pending, (state, action) => {
+        // Atualização otimista
+        const { followerId, followingId } = action.meta.arg;
+        const key = `${followerId}_${followingId}`;
+        state.following[key] = true;
+        state.error = null;
+        
+        // Atualiza contagens otimisticamente
+        if (state.counts[followingId]) {
+          state.counts[followingId].followersCount++;
+        }
+        if (state.counts[followerId]) {
+          state.counts[followerId].followingCount++;
+        }
       })
-      .addCase(unfollowUser.rejected, (s, a) => {
-        const { followerId, followingId } = a.meta.arg;
-        s.byPair[key(followerId, followingId)] = { isFollowing: true, loading: false, error: a.payload || a.error?.message };
+      .addCase(followUser.fulfilled, (state, action) => {
+        const { followerId, followingId } = action.payload;
+        const key = `${followerId}_${followingId}`;
+        state.following[key] = true;
+      })
+      .addCase(followUser.rejected, (state, action) => {
+        // Reverte atualização otimista em caso de erro
+        const { followerId, followingId } = action.meta.arg;
+        const key = `${followerId}_${followingId}`;
+        state.following[key] = false;
+        
+        // Reverte contagens
+        if (state.counts[followingId]) {
+          state.counts[followingId].followersCount--;
+        }
+        if (state.counts[followerId]) {
+          state.counts[followerId].followingCount--;
+        }
+        
+        state.error = action.payload || action.error?.message;
       })
 
-      .addCase(fetchFollowCounts.fulfilled, (s, a) => {
-        const { userId, followersCount, followingCount } = a.payload;
-        s.counts[userId] = { followersCount, followingCount, loading: false };
+      // unfollowUser - atualiza estado imediatamente
+      .addCase(unfollowUser.pending, (state, action) => {
+        // Atualização otimista
+        const { followerId, followingId } = action.meta.arg;
+        const key = `${followerId}_${followingId}`;
+        state.following[key] = false;
+        state.error = null;
+        
+        // Atualiza contagens otimisticamente
+        if (state.counts[followingId]) {
+          state.counts[followingId].followersCount--;
+        }
+        if (state.counts[followerId]) {
+          state.counts[followerId].followingCount--;
+        }
       })
-      .addCase(fetchFollowersList.fulfilled, (s, a) => {
-        s.followersLists[a.payload.userId] = { list: a.payload.followers, loading: false, error: null };
+      .addCase(unfollowUser.fulfilled, (state, action) => {
+        const { followerId, followingId } = action.payload;
+        const key = `${followerId}_${followingId}`;
+        state.following[key] = false;
       })
-      .addCase(fetchFollowingList.fulfilled, (s, a) => {
-        s.followingLists[a.payload.userId] = { list: a.payload.following, loading: false, error: null };
+      .addCase(unfollowUser.rejected, (state, action) => {
+        // Reverte atualização otimista em caso de erro
+        const { followerId, followingId } = action.meta.arg;
+        const key = `${followerId}_${followingId}`;
+        state.following[key] = true;
+        
+        // Reverte contagens
+        if (state.counts[followingId]) {
+          state.counts[followingId].followersCount++;
+        }
+        if (state.counts[followerId]) {
+          state.counts[followerId].followingCount++;
+        }
+        
+        state.error = action.payload || action.error?.message;
       })
-      .addMatcher((action) => action.type.endsWith("/rejected") && action.type.includes("follows"), (s, a) => {
-        s.error = a.payload || a.error?.message;
+
+      // fetchFollowCounts
+      .addCase(fetchFollowCounts.fulfilled, (state, action) => {
+        const { userId, followersCount, followingCount } = action.payload;
+        state.counts[userId] = { followersCount, followingCount };
+      })
+      .addCase(fetchFollowCounts.rejected, (state, action) => {
+        state.error = action.payload || action.error?.message;
+      })
+
+      // fetchFollowersList
+      .addCase(fetchFollowersList.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchFollowersList.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(fetchFollowersList.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error?.message;
+      })
+
+      // fetchFollowingList
+      .addCase(fetchFollowingList.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchFollowingList.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(fetchFollowingList.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error?.message;
       });
   },
 });
 
+export const { clearFollowsError } = followsSlice.actions;
+
+// Selectors
+export const selectIsFollowing = (followerId, followingId) => (state) => {
+  if (!followerId || !followingId) return false;
+  const key = `${followerId}_${followingId}`;
+  return state.follows.following[key] || false;
+};
+
+export const selectFollowCounts = (userId) => (state) => {
+  if (!userId) return { followersCount: 0, followingCount: 0 };
+  return state.follows.counts[userId] || { followersCount: 0, followingCount: 0 };
+};
+
+export const selectFollowsLoading = (state) => state.follows.loading;
+export const selectFollowsError = (state) => state.follows.error;
+
 export default followsSlice.reducer;
-
-// selectors
-export const selectIsFollowing = (followerId, followingId) => (state) =>
-  state.follows.byPair[key(followerId, followingId)]?.isFollowing || false;
-
-export const selectFollowCounts = (userId) => (state) =>
-  state.follows.counts[Number(userId)] || { followersCount: 0, followingCount: 0, loading: false };
-
-export const selectFollowersList = (userId) => (state) =>
-  state.follows.followersLists[Number(userId)] || { list: [], loading: false, error: null };
-
-export const selectFollowingList = (userId) => (state) =>
-  state.follows.followingLists[Number(userId)] || { list: [], loading: false, error: null };
