@@ -4,7 +4,7 @@ import api from "../api/axios";
 
 const API_URL = "/follows";
 
-// Thunks
+// Thunks (Mantidos iguais)
 export const fetchIsFollowing = createAsyncThunk(
   "follows/fetchIsFollowing",
   async ({ followerId, followingId }, { rejectWithValue }) => {
@@ -49,7 +49,6 @@ export const unfollowUser = createAsyncThunk(
   }
 );
 
-// NOVOS THUNKS para contagem e listas
 export const fetchFollowCounts = createAsyncThunk(
   "follows/fetchFollowCounts",
   async ({ userId }, { rejectWithValue }) => {
@@ -100,9 +99,8 @@ export const fetchFollowingList = createAsyncThunk(
 const followsSlice = createSlice({
   name: "follows",
   initialState: {
-    // Estrutura: { "followerId_followingId": true/false }
     following: {},
-    // Estrutura: { userId: { followersCount, followingCount } }
+    myFollowingList: [],
     counts: {},
     loading: false,
     error: null,
@@ -115,135 +113,110 @@ const followsSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // fetchIsFollowing
-      .addCase(fetchIsFollowing.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(fetchIsFollowing.fulfilled, (state, action) => {
         state.loading = false;
         const { followerId, followingId, isFollowing } = action.payload;
         const key = `${followerId}_${followingId}`;
         state.following[key] = isFollowing;
       })
-      .addCase(fetchIsFollowing.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || action.error?.message;
-      })
 
-      // followUser - atualiza estado imediatamente
+      // followUser
       .addCase(followUser.pending, (state, action) => {
-        // Atualização otimista
         const { followerId, followingId } = action.meta.arg;
         const key = `${followerId}_${followingId}`;
         state.following[key] = true;
         state.error = null;
         
-        // Atualiza contagens otimisticamente
+        const followingIdStr = String(followingId);
+        if (!state.myFollowingList.includes(followingIdStr)) {
+          state.myFollowingList.push(followingIdStr);
+        }
+        
+        // ✅ CORREÇÃO: Só incrementa se JÁ EXISTIR. Não inventa valor.
         if (state.counts[followingId]) {
           state.counts[followingId].followersCount++;
         }
+        
         if (state.counts[followerId]) {
           state.counts[followerId].followingCount++;
         }
-      })
-      .addCase(followUser.fulfilled, (state, action) => {
-        const { followerId, followingId } = action.payload;
-        const key = `${followerId}_${followingId}`;
-        state.following[key] = true;
       })
       .addCase(followUser.rejected, (state, action) => {
-        // Reverte atualização otimista em caso de erro
         const { followerId, followingId } = action.meta.arg;
         const key = `${followerId}_${followingId}`;
         state.following[key] = false;
         
-        // Reverte contagens
-        if (state.counts[followingId]) {
+        const followingIdStr = String(followingId);
+        state.myFollowingList = state.myFollowingList.filter(id => id !== followingIdStr);
+        
+        // Reverte
+        if (state.counts[followingId] && state.counts[followingId].followersCount > 0) {
           state.counts[followingId].followersCount--;
         }
-        if (state.counts[followerId]) {
+        if (state.counts[followerId] && state.counts[followerId].followingCount > 0) {
           state.counts[followerId].followingCount--;
         }
-        
         state.error = action.payload || action.error?.message;
       })
 
-      // unfollowUser - atualiza estado imediatamente
+      // unfollowUser
       .addCase(unfollowUser.pending, (state, action) => {
-        // Atualização otimista
         const { followerId, followingId } = action.meta.arg;
         const key = `${followerId}_${followingId}`;
         state.following[key] = false;
         state.error = null;
         
-        // Atualiza contagens otimisticamente
-        if (state.counts[followingId]) {
+        const followingIdStr = String(followingId);
+        state.myFollowingList = state.myFollowingList.filter(id => id !== followingIdStr);
+        
+        // ✅ CORREÇÃO: Só decrementa se JÁ EXISTIR.
+        if (state.counts[followingId] && state.counts[followingId].followersCount > 0) {
           state.counts[followingId].followersCount--;
         }
-        if (state.counts[followerId]) {
+        
+        if (state.counts[followerId] && state.counts[followerId].followingCount > 0) {
           state.counts[followerId].followingCount--;
         }
       })
-      .addCase(unfollowUser.fulfilled, (state, action) => {
-        const { followerId, followingId } = action.payload;
-        const key = `${followerId}_${followingId}`;
-        state.following[key] = false;
-      })
       .addCase(unfollowUser.rejected, (state, action) => {
-        // Reverte atualização otimista em caso de erro
         const { followerId, followingId } = action.meta.arg;
         const key = `${followerId}_${followingId}`;
         state.following[key] = true;
         
-        // Reverte contagens
+        const followingIdStr = String(followingId);
+        if (!state.myFollowingList.includes(followingIdStr)) {
+          state.myFollowingList.push(followingIdStr);
+        }
+        
         if (state.counts[followingId]) {
           state.counts[followingId].followersCount++;
         }
         if (state.counts[followerId]) {
           state.counts[followerId].followingCount++;
         }
-        
         state.error = action.payload || action.error?.message;
       })
 
-      // fetchFollowCounts
+      // Resto dos reducers (fetchFollowCounts, list, etc) iguais
       .addCase(fetchFollowCounts.fulfilled, (state, action) => {
         const { userId, followersCount, followingCount } = action.payload;
         state.counts[userId] = { followersCount, followingCount };
       })
-      .addCase(fetchFollowCounts.rejected, (state, action) => {
-        state.error = action.payload || action.error?.message;
-      })
-
-      // fetchFollowersList
-      .addCase(fetchFollowersList.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(fetchFollowersList.fulfilled, (state) => {
+      .addCase(fetchFollowingList.fulfilled, (state, action) => {
         state.loading = false;
-      })
-      .addCase(fetchFollowersList.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || action.error?.message;
-      })
-
-      // fetchFollowingList
-      .addCase(fetchFollowingList.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(fetchFollowingList.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(fetchFollowingList.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || action.error?.message;
+        const { userId, following } = action.payload;
+        state.myFollowingList = following.map(u => String(u._id || u.id));
+        following.forEach(u => {
+          const targetId = String(u._id || u.id);
+          const key = `${userId}_${targetId}`;
+          state.following[key] = true;
+        });
       });
   },
 });
 
 export const { clearFollowsError } = followsSlice.actions;
 
-// Selectors
 export const selectIsFollowing = (followerId, followingId) => (state) => {
   if (!followerId || !followingId) return false;
   const key = `${followerId}_${followingId}`;
@@ -255,7 +228,5 @@ export const selectFollowCounts = (userId) => (state) => {
   return state.follows.counts[userId] || { followersCount: 0, followingCount: 0 };
 };
 
-export const selectFollowsLoading = (state) => state.follows.loading;
-export const selectFollowsError = (state) => state.follows.error;
-
+export const selectMyFollowingList = (state) => state.follows.myFollowingList || [];
 export default followsSlice.reducer;

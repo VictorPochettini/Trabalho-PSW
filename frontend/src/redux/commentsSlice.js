@@ -6,7 +6,7 @@ export const fetchCommentsByPost = createAsyncThunk(
   "comments/fetchByPost",
   async (postId, { rejectWithValue }) => {
     try {
-      const res = await api.get(`/comentarios?postId=${postId}&_sort=createdAt&_order=asc`);
+      const res = await api.get(`/comentarios?postId=${postId}&_sort=createdAt&_order=desc`);
       return { postId: String(postId), items: res.data };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Erro ao carregar comentários");
@@ -38,12 +38,30 @@ export const createComment = createAsyncThunk(
   }
 );
 
+// ✅ NOVA ACTION: Update Comment
+export const updateComment = createAsyncThunk(
+  "comments/update",
+  async ({ commentId, texto }, { rejectWithValue }) => {
+    try {
+      const body = {
+        texto: texto.trim(),
+        updatedAt: new Date().toISOString(),
+      };
+      const res = await api.patch(`/comentarios/${commentId}`, body);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao atualizar comentário");
+    }
+  }
+);
+
+// src/redux/commentsSlice.js - Correção no deleteComment
 export const deleteComment = createAsyncThunk(
   "comments/delete",
-  async ({ id }, { rejectWithValue }) => {
+  async (commentId, { rejectWithValue }) => { // ✅ Recebe commentId diretamente
     try {
-      await api.delete(`/comentarios/${id}`);
-      return { id };
+      await api.delete(`/comentarios/${commentId}`);
+      return { id: commentId }; // ✅ Retorna o ID
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Erro ao excluir comentário");
     }
@@ -83,7 +101,23 @@ const commentsSlice = createSlice({
         const c = action.payload;
         const postId = String(c.postId);
         state.byPostId[postId] = state.byPostId[postId] || { items: [], loading: false, error: null };
-        state.byPostId[postId].items.push(c);
+        // Adiciona no início (mais recente primeiro)
+        state.byPostId[postId].items.unshift(c);
+      })
+      // ✅ NOVO CASE: Update Comment
+      .addCase(updateComment.fulfilled, (state, action) => {
+        const updatedComment = action.payload;
+        const postId = String(updatedComment.postId);
+        
+        if (state.byPostId[postId]) {
+          const idx = state.byPostId[postId].items.findIndex(
+            (c) => String(c._id || c.id) === String(updatedComment._id || updatedComment.id)
+          );
+          if (idx !== -1) {
+            // Substitui o comentário atualizado mantendo a posição
+            state.byPostId[postId].items[idx] = updatedComment;
+          }
+        }
       })
       .addCase(deleteComment.fulfilled, (state, action) => {
         const { id } = action.payload;

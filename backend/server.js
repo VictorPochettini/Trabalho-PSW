@@ -7,7 +7,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import passport from 'passport';
-
+import mongoose from 'mongoose';
 import { conectaDB } from './server/database.js';
 
 // modelos
@@ -293,52 +293,265 @@ app.delete('/participacoes/:id', requireAuth, async (req, res) => {
 
 // -----------------------------
 // /comentarios
+// -----------------------------
+// /comentarios
+// GET - Listar comentários (com filtros e ordenação)
 app.get('/comentarios', async (req, res) => {
   try {
-    const { postId, _sort, _order } = req.query;
+    const { postId, usuarioId, parentId, _sort, _order, includeDeleted } = req.query;
     const filtro = {};
+    
     if (postId) filtro.postId = postId;
+    if (usuarioId) filtro.usuarioId = usuarioId;
+    if (parentId !== undefined) {
+      filtro.parentId = parentId === 'null' ? null : parentId;
+    }
+    
+    // Por padrão, não retornar comentários deletados
+    if (!includeDeleted || includeDeleted === 'false') {
+      filtro.deletedAt = null;
+    }
+    
     let query = Comentario.find(filtro);
+    
+    // Ordenação
     if (_sort === 'createdAt') {
       const ordem = _order === 'desc' ? -1 : 1;
       query = query.sort({ createdAt: ordem });
+    } else if (_sort === 'likes') {
+      const ordem = _order === 'desc' ? -1 : 1;
+      query = query.sort({ likes: ordem });
+    } else {
+      query = query.sort({ createdAt: -1 }); // Default: mais recentes primeiro
     }
+    
     const comentarios = await query;
+    
+    console.log(`✅ Encontrados ${comentarios.length} comentários`, {
+      postId,
+      usuarioId,
+      parentId
+    });
+    
     res.json(comentarios);
   } catch (error) {
+    console.error('❌ Erro ao buscar comentários:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// criar comentário -> exige auth, associa usuario logado
+// GET - Buscar comentário específico por ID
+app.get('/comentarios/:id', async (req, res) => {
+  try {
+    const comentario = await Comentario.findById(req.params.id);
+    
+    if (!comentario) {
+      return res.status(404).json({ error: 'Comentário não encontrado' });
+    }
+    
+    res.json(comentario);
+  } catch (error) {
+    console.error('❌ Erro ao buscar comentário:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET - Buscar respostas de um comentário (comentários aninhados)
+app.get('/comentarios/:id/respostas', async (req, res) => {
+  try {
+    const respostas = await Comentario.find({
+      parentId: req.params.id,
+      deletedAt: null
+    }).sort({ createdAt: 1 });
+    
+    res.json(respostas);
+  } catch (error) {
+    console.error('❌ Erro ao buscar respostas:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST - Criar novo comentário
 app.post('/comentarios', requireAuth, async (req, res) => {
   try {
-    const body = req.body || {};
-    if (!body.postId || !body.texto) return res.status(400).json({ error: 'postId e texto são obrigatórios' });
-    const novo = new Comentario({ ...body, usuarioId: req.user._id, updatedAt: new Date() });
+    const { postId, texto, parentId } = req.body;
+    const usuarioId = req.user._id;
+    
+    if (!postId || !texto) {
+      return res.status(400).json({ error: 'postId e texto são obrigatórios' });
+    }
+    
+    // Validar se o post existe
+    const postExists = await Post.findById(postId);
+    if (!postExists) {
+      return res.status(404).json({ error: 'Post não encontrado' });
+    }
+    
+    // Se for resposta, validar se o comentário pai existe
+    if (parentId) {
+      const parentExists = await Comentario.findById(parentId);
+      if (!parentExists) {
+        return res.status(404).json({ error: 'Comentário pai não encontrado' });
+      }
+    }
+    
+    const novo = new Comentario({ 
+      postId, 
+      usuarioId, 
+      texto: texto.trim(),
+      parentId: parentId || null,
+      likes: 0,
+      updatedAt: new Date() 
+    });
+    
     await novo.save();
+    
+    console.log('✅ Comentário criado:', {
+      id: novo._id,
+      postId: novo.postId,
+      usuarioId: novo.usuarioId,
+      parentId: novo.parentId
+    });
+    
     res.status(201).json(novo);
   } catch (error) {
+    console.error('❌ Erro ao criar comentário:', error);
     res.status(400).json({ error: error.message });
   }
 });
 
-app.delete('/comentarios/:id', requireAuth, async (req, res) => {
+// PATCH - Atualizar comentário (texto ou likes)
+app.patch('/comentarios/:id', requireAuth, async (req, res) => {
   try {
     const comentario = await Comentario.findById(req.params.id);
-    if (!comentario) return res.status(404).json({ error: 'Comentário não encontrado' });
-
-    if (String(comentario.usuarioId) !== String(req.user._id) && req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Acesso negado' });
+    
+    if (!comentario) {
+      return res.status(404).json({ error: 'Comentário não encontrado' });
     }
-
-    await Comentario.findByIdAndDelete(req.params.id);
-    res.status(204).end();
+    
+    // Verificar se foi deletado
+    if (comentario.deletedAt) {
+      return res.status(410).json({ error: 'Comentário foi deletado' });
+    }
+    
+    // Verificar ownership para editar texto
+    if (req.body.texto) {
+      if (String(comentario.usuarioId) !== String(req.user._id) && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Acesso negado' });
+      }
+      comentario.texto = req.body.texto.trim();
+    }
+    
+    // Qualquer um pode dar like (se implementar sistema de likes)
+    if (req.body.likes !== undefined) {
+      comentario.likes = Number(req.body.likes);
+    }
+    
+    comentario.updatedAt = new Date();
+    await comentario.save();
+    
+    console.log('✅ Comentário atualizado:', comentario._id);
+    res.json(comentario);
   } catch (error) {
+    console.error('❌ Erro ao atualizar comentário:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// POST - Dar like em comentário
+app.post('/comentarios/:id/like', requireAuth, async (req, res) => {
+  try {
+    const comentario = await Comentario.findById(req.params.id);
+    
+    if (!comentario) {
+      return res.status(404).json({ error: 'Comentário não encontrado' });
+    }
+    
+    if (comentario.deletedAt) {
+      return res.status(410).json({ error: 'Comentário foi deletado' });
+    }
+    
+    comentario.likes = (comentario.likes || 0) + 1;
+    comentario.updatedAt = new Date();
+    await comentario.save();
+    
+    console.log('✅ Like adicionado ao comentário:', comentario._id);
+    res.json({ likes: comentario.likes });
+  } catch (error) {
+    console.error('❌ Erro ao dar like:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
+// DELETE - Soft delete (marca como deletado)
+app.delete('/comentarios/:id', requireAuth, async (req, res) => {
+  try {
+    const comentario = await Comentario.findById(req.params.id);
+    
+    if (!comentario) {
+      return res.status(404).json({ error: 'Comentário não encontrado' });
+    }
+    
+    // Verificar ownership
+    if (String(comentario.usuarioId) !== String(req.user._id) && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+    
+    // Soft delete: marca data de deleção em vez de deletar
+    comentario.deletedAt = new Date();
+    comentario.updatedAt = new Date();
+    await comentario.save();
+    
+    console.log('✅ Comentário marcado como deletado:', comentario._id);
+    res.status(204).end();
+  } catch (error) {
+    console.error('❌ Erro ao deletar comentário:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE - Hard delete (remove permanentemente) - apenas admin
+app.delete('/comentarios/:id/permanent', requireAuth, async (req, res) => {
+  try {
+    // Apenas admin pode fazer hard delete
+    if (req.user.role !== 'admin' && req.user.admin !== true) {
+      return res.status(403).json({ error: 'Apenas administradores podem deletar permanentemente' });
+    }
+    
+    const comentario = await Comentario.findById(req.params.id);
+    
+    if (!comentario) {
+      return res.status(404).json({ error: 'Comentário não encontrado' });
+    }
+    
+    // Deletar também todas as respostas deste comentário
+    await Comentario.deleteMany({ parentId: req.params.id });
+    
+    // Deletar o comentário
+    await Comentario.findByIdAndDelete(req.params.id);
+    
+    console.log('✅ Comentário deletado permanentemente:', req.params.id);
+    res.status(204).end();
+  } catch (error) {
+    console.error('❌ Erro ao deletar comentário permanentemente:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET - Contar comentários de um post
+app.get('/comentarios/count/:postId', async (req, res) => {
+  try {
+    const count = await Comentario.countDocuments({
+      postId: req.params.postId,
+      deletedAt: null
+    });
+    
+    res.json({ count });
+  } catch (error) {
+    console.error('❌ Erro ao contar comentários:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 // -----------------------------
 // /seguidores
 app.get('/seguidores', async (req, res) => {
@@ -583,75 +796,236 @@ app.delete('/follows', requireAuth, async (req, res) => {
 
 // -----------------------------
 // /avaliacoes
+// -----------------------------
+// /avaliacoes
+// Buscar todas as avaliações (com filtros opcionais)
 app.get('/avaliacoes', async (req, res) => {
   try {
-    const { postId } = req.query;
+    const { postId, usuarioId } = req.query;
     const filtro = {};
+    
     if (postId) filtro.postId = postId;
+    if (usuarioId) filtro.usuarioId = usuarioId;
+    
     const avaliacoes = await Avaliacao.find(filtro);
     res.json(avaliacoes);
   } catch (error) {
+    console.error('❌ Erro ao buscar avaliações:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
+// ✅ NOVO: Buscar avaliação de um usuário específico em um post
+app.get('/avaliacoes/user/:usuarioId/post/:postId', async (req, res) => {
+  try {
+    const { usuarioId, postId } = req.params;
+    
+    const avaliacao = await Avaliacao.findOne({ 
+      postId: postId, 
+      usuarioId: usuarioId 
+    });
+    
+    if (!avaliacao) {
+      return res.json({ estrelas: 0, exists: false });
+    }
+    
+    res.json({ 
+      estrelas: avaliacao.estrelas, 
+      exists: true,
+      _id: avaliacao._id,
+      createdAt: avaliacao.createdAt,
+      updatedAt: avaliacao.updatedAt
+    });
+  } catch (error) {
+    console.error('❌ Erro ao buscar avaliação do usuário:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ✅ NOVO: Buscar estatísticas de avaliações de um post (média e contagem)
+// ❌ DELETAR código com aggregate
+// ✅ SUBSTITUIR por:
+
+app.get('/avaliacoes/stats/:postId', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    
+    console.log('📊 [Stats] Buscando avaliações para postId:', postId);
+    
+    const avaliacoes = await Avaliacao.find({ postId: String(postId) });
+    
+    console.log('✅ [Stats] Avaliações encontradas:', avaliacoes.length);
+    
+    if (!avaliacoes || avaliacoes.length === 0) {
+      return res.json({ average: 0, count: 0 });
+    }
+    
+    const soma = avaliacoes.reduce((acc, av) => acc + Number(av.estrelas || 0), 0);
+    const media = soma / avaliacoes.length;
+    
+    res.json({
+      average: Number(media.toFixed(2)),
+      count: avaliacoes.length
+    });
+  } catch (error) {
+    console.error('❌ [Stats] Erro:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Buscar avaliação específica por ID
 app.get('/avaliacoes/:id', async (req, res) => {
   try {
     const avaliacao = await Avaliacao.findById(req.params.id);
-    if (!avaliacao) return res.status(404).json({ error: 'Avaliação não encontrada' });
+    if (!avaliacao) {
+      return res.status(404).json({ error: 'Avaliação não encontrada' });
+    }
     res.json(avaliacao);
   } catch (error) {
+    console.error('❌ Erro ao buscar avaliação:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// criar avaliação -> exige auth (associa usuario logado)
+// Criar ou atualizar avaliação (upsert)
 app.post('/avaliacoes', requireAuth, async (req, res) => {
   try {
-    const body = req.body || {};
-    if (!body.postId) return res.status(400).json({ error: 'postId é obrigatório' });
+    const { postId, estrelas } = req.body;
+    const usuarioId = req.user._id;
+    
+    if (!postId) {
+      return res.status(400).json({ error: 'postId é obrigatório' });
+    }
+    
+    if (!estrelas || estrelas < 1 || estrelas > 5) {
+      return res.status(400).json({ error: 'estrelas deve ser entre 1 e 5' });
+    }
+    
+    // Usar findOneAndUpdate com upsert para criar ou atualizar
+    const avaliacao = await Avaliacao.findOneAndUpdate(
+      {
+        postId: String(postId),      // ← Converter para String
+        usuarioId: String(usuarioId) // ← Converter para String
 
-    // evita dupla avaliação do mesmo usuário (pelo post)
-    const existe = await Avaliacao.findOne({ postId: body.postId, usuarioId: req.user._id });
-    if (existe) return res.status(409).json({ error: 'Avaliação já existe' });
-
-    const nova = new Avaliacao({ ...body, usuarioId: req.user._id });
-    await nova.save();
-    res.status(201).json(nova);
+      },
+      { 
+        estrelas: Number(estrelas),
+        updatedAt: new Date()
+      },
+      { 
+        new: true, 
+        upsert: true,
+        runValidators: true
+      }
+    );
+    
+    console.log('✅ Avaliação salva:', avaliacao);
+    res.status(200).json(avaliacao);
   } catch (error) {
+    console.error('❌ Erro ao criar/atualizar avaliação:', error);
+    
+    // Se for erro de duplicação (code 11000), tenta atualizar
+    if (error.code === 11000) {
+      try {
+        const { postId, estrelas } = req.body;
+        const usuarioId = req.user._id;
+        
+        const updated = await Avaliacao.findOneAndUpdate(
+          { postId, usuarioId },
+          { estrelas: Number(estrelas), updatedAt: new Date() },
+          { new: true }
+        );
+        
+        return res.status(200).json(updated);
+      } catch (updateError) {
+        return res.status(500).json({ error: updateError.message });
+      }
+    }
+    
     res.status(400).json({ error: error.message });
   }
 });
 
+// Atualizar avaliação existente
 app.patch('/avaliacoes/:id', requireAuth, async (req, res) => {
   try {
     const avaliacao = await Avaliacao.findById(req.params.id);
-    if (!avaliacao) return res.status(404).json({ error: 'Avaliação não encontrada' });
-
+    
+    if (!avaliacao) {
+      return res.status(404).json({ error: 'Avaliação não encontrada' });
+    }
+    
+    // Verificar ownership
     if (String(avaliacao.usuarioId) !== String(req.user._id) && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Acesso negado' });
     }
-
-    Object.assign(avaliacao, req.body, { updatedAt: new Date() });
+    
+    if (req.body.estrelas) {
+      const estrelas = Number(req.body.estrelas);
+      if (estrelas < 1 || estrelas > 5) {
+        return res.status(400).json({ error: 'estrelas deve ser entre 1 e 5' });
+      }
+      avaliacao.estrelas = estrelas;
+    }
+    
+    avaliacao.updatedAt = new Date();
     await avaliacao.save();
+    
+    console.log('✅ Avaliação atualizada:', avaliacao);
     res.json(avaliacao);
   } catch (error) {
+    console.error('❌ Erro ao atualizar avaliação:', error);
     res.status(400).json({ error: error.message });
   }
 });
 
+// Deletar avaliação
 app.delete('/avaliacoes/:id', requireAuth, async (req, res) => {
   try {
     const avaliacao = await Avaliacao.findById(req.params.id);
-    if (!avaliacao) return res.status(404).json({ error: 'Avaliação não encontrada' });
-
+    
+    if (!avaliacao) {
+      return res.status(404).json({ error: 'Avaliação não encontrada' });
+    }
+    
+    // Verificar ownership
     if (String(avaliacao.usuarioId) !== String(req.user._id) && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Acesso negado' });
     }
-
+    
     await Avaliacao.findByIdAndDelete(req.params.id);
+    
+    console.log('✅ Avaliação deletada');
     res.status(204).end();
   } catch (error) {
+    console.error('❌ Erro ao deletar avaliação:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ✅ NOVO: Deletar avaliação por postId e usuarioId
+app.delete('/avaliacoes/user/:usuarioId/post/:postId', requireAuth, async (req, res) => {
+  try {
+    const { usuarioId, postId } = req.params;
+    
+    // Verificar ownership
+    if (String(usuarioId) !== String(req.user._id) && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+    
+    const result = await Avaliacao.findOneAndDelete({ 
+      postId, 
+      usuarioId 
+    });
+    
+    if (!result) {
+      return res.status(404).json({ error: 'Avaliação não encontrada' });
+    }
+    
+    console.log('✅ Avaliação removida');
+    res.status(204).end();
+  } catch (error) {
+    console.error('❌ Erro ao remover avaliação:', error);
     res.status(500).json({ error: error.message });
   }
 });

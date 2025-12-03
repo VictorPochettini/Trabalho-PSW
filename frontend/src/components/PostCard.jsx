@@ -34,7 +34,6 @@ const PostCard = ({
   isOwnProfile = false
 }) => {
   const [submitting, setSubmitting] = useState(false);
-  const [localEditText, setLocalEditText] = useState('');
   const [lastStarClickTime, setLastStarClickTime] = useState(0);
 
   // 🎵 player custom
@@ -95,28 +94,42 @@ const PostCard = ({
     }
   };
 
-  const handleStarClick = async (value) => {
+    const handleStarClick = async (value) => {
     if (!currentUserId || submitting) return;
 
     const currentTime = new Date().getTime();
     const isDoubleClick = currentTime - lastStarClickTime < 300;
 
     if (isDoubleClick && ratingState?.myStars > 0) {
+      // 🔥 REMOVER AVALIAÇÃO (duplo clique)
       try {
         setSubmitting(true);
         await dispatch(removeRating({ postId, usuarioId: currentUserId })).unwrap();
+        
+        // ✅ CRÍTICO: Recarregar dados após remover
+        await dispatch(fetchMyRatingForPost({ postId, usuarioId: currentUserId })).unwrap();
+        
+        console.log('✅ [PostCard] Avaliação removida e recarregada');
       } catch (err) {
         console.error('[PostCard] removeRating error:', err);
+        alert('Não foi possível remover a avaliação. Tente novamente.');
       } finally {
         setSubmitting(false);
       }
     } else {
+      // 🔥 ADICIONAR/ATUALIZAR AVALIAÇÃO (clique simples)
       const estrelas = Math.min(5, Math.max(1, Number(value)));
       try {
         setSubmitting(true);
         await dispatch(upsertRating({ postId, usuarioId: currentUserId, estrelas })).unwrap();
+        
+        // ✅ CRÍTICO: Recarregar dados após avaliar
+        await dispatch(fetchMyRatingForPost({ postId, usuarioId: currentUserId })).unwrap();
+        
+        console.log('✅ [PostCard] Avaliação salva e recarregada');
       } catch (err) {
         console.error('[PostCard] upsertRating error:', err);
+        alert('Não foi possível salvar a avaliação. Tente novamente.');
       } finally {
         setSubmitting(false);
       }
@@ -124,6 +137,7 @@ const PostCard = ({
 
     setLastStarClickTime(currentTime);
   };
+
 
   // perfil → /user/username
   const goToProfile = () => {
@@ -204,6 +218,9 @@ const PostCard = ({
     }
   };
 
+  // ✅ CORREÇÃO: Gerenciar texto de edição localmente
+  const [localEditText, setLocalEditText] = useState('');
+
   useEffect(() => {
     if (isEditing) {
       setLocalEditText(editText);
@@ -211,20 +228,30 @@ const PostCard = ({
   }, [isEditing, editText]);
 
   const handleLocalEditChange = (e) => {
-    setLocalEditText(e.target.value);
-    if (typeof onEditTextChange === 'function') onEditTextChange(e.target.value);
+    const newValue = e.target.value;
+    setLocalEditText(newValue);
+    if (typeof onEditTextChange === 'function') {
+      onEditTextChange(newValue);
+    }
   };
 
   const handleSaveClick = () => {
-    if (typeof onSaveEdit === 'function') onSaveEdit(postId);
+    if (typeof onSaveEdit === 'function') {
+      onSaveEdit(postId);
+    }
   };
 
   const handleCancelClick = () => {
-    if (typeof onCancelEdit === 'function') onCancelEdit();
+    setLocalEditText(''); // ✅ Limpa o estado local
+    if (typeof onCancelEdit === 'function') {
+      onCancelEdit();
+    }
   };
 
   const handleEditClick = () => {
-    if (typeof onEditClick === 'function') onEditClick(post);
+    if (typeof onEditClick === 'function') {
+      onEditClick(post);
+    }
   };
 
   const canEdit = !!currentUser && String(currentUserId) === String(targetUserId);
@@ -593,6 +620,7 @@ const PostCard = ({
         .save-button.success:disabled {
           background: rgba(255,255,255,.2);
           cursor: not-allowed;
+          opacity: 0.5;
         }
 
         .cancel-button.secondary {
@@ -623,6 +651,7 @@ const PostCard = ({
           resize: vertical;
           font-family: inherit;
           font-size: inherit;
+          min-height: 100px;
         }
 
         .edit-textarea:focus {
@@ -747,98 +776,102 @@ const PostCard = ({
           box-shadow: 0 12px 26px rgba(0,0,0,.22);
           color: #fff;
           backdrop-filter: blur(4px) saturate(1.05);
+        }
           
-          @media (max-width: 576px) {
-      .audio-ui {
-        grid-template-columns: 44px 1fr 44px;
-        grid-template-rows: auto auto;
-        grid-template-areas:
-          "play seek vol"
-          "timeL seek timeR";
-        align-items: center;
-        gap: 6px;
-        padding: 4px 0;
-      }
+        @media (max-width: 576px) {
+          .audio-ui {
+            grid-template-columns: 44px 1fr 44px;
+            grid-template-rows: auto auto;
+            grid-template-areas:
+              "play seek vol"
+              "timeL seek timeR";
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0;
+          }
 
-      .audio-ui > .au-btn {
-        grid-area: play;
-        width: 40px;
-        height: 40px;
-      }
+          .audio-ui > .au-btn {
+            grid-area: play;
+            width: 40px;
+            height: 40px;
+          }
 
-      .audio-ui > .au-seek {
-        grid-area: seek;
-        height: 10px;
-        width: 210px;
-        margin: 0;
-        margin-bottom: 15px;
-        align-self: center;
-      }
+          .audio-ui > .au-seek {
+            grid-area: seek;
+            height: 10px;
+            width: 210px;
+            margin: 0;
+            margin-bottom: 15px;
+            align-self: center;
+          }
 
-      .audio-ui > .au-vol {
-        grid-area: vol;
-        justify-self: end;
-        min-width: auto;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        height: 40px;
-        margin: 0;
-        padding: 0;
-      }
+          .audio-ui > .au-vol {
+            grid-area: vol;
+            justify-self: end;
+            min-width: auto;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            height: 40px;
+            margin: 0;
+            padding: 0;
+          }
 
-      .audio-ui > .au-times:first-of-type {
-        grid-area: timeL;
-        justify-content: flex-start;
-        align-self: start;
-        margin-top: 2px;
-      }
+          .audio-ui > .au-times:first-of-type {
+            grid-area: timeL;
+            justify-content: flex-start;
+            align-self: start;
+            margin-top: 2px;
+          }
 
-      .audio-ui > .au-times:last-of-type {
-        grid-area: timeR;
-        justify-content: flex-end;
-        align-self: start;
-        margin-top: 2px;
-      }
+          .audio-ui > .au-times:last-of-type {
+            grid-area: timeR;
+            justify-content: flex-end;
+            align-self: start;
+            margin-top: 2px;
+          }
 
-      .au-time {
-        font-size: 11px;
-        opacity: .9;
-        line-height: 1;
-      }
+          .au-time {
+            font-size: 11px;
+            opacity: .9;
+            line-height: 1;
+          }
 
-      .au-vol-range {
-        width: 70px;
-        height: 10px;
-        margin-left: 4px;
-      }
+          .au-vol-range {
+            width: 70px;
+            height: 10px;
+            margin-left: 4px;
+          }
 
-      .au-seek::-webkit-slider-thumb {
-        width: 16px;
-        height: 16px;
-        margin-top: -3px;
-      }
+          .au-seek::-webkit-slider-thumb {
+            width: 16px;
+            height: 16px;
+            margin-top: -3px;
+          }
 
-      .au-vol-range::-webkit-slider-thumb {
-        width: 14px;
-        height: 14px;
-        margin-top: -3px;
-      }
+          .au-vol-range::-webkit-slider-thumb {
+            width: 14px;
+            height: 14px;
+            margin-top: -3px;
+          }
 
-      .media-container.audio-modern.newskin.glass {
-        padding: 10px;
-      }
-    }
+          .media-container.audio-modern.newskin.glass {
+            padding: 10px;
+          }
+        }
 
-    @media (prefers-reduced-motion: reduce) {
-      .post-card.elegant, .avatar-elevated, .btn.soft, .comment-button.glossy,
-      .elegant-star, .image-art.refined::after { transition: none !important; animation: none !important; }
-    }
-    .prewrap {
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-  `}</style>
-</div>);
+        @media (prefers-reduced-motion: reduce) {
+          .post-card.elegant, .avatar-elevated, .btn.soft, .comment-button.glossy,
+          .elegant-star, .image-art.refined::after { transition: none !important; animation: none !important; }
+        }
+        
+        .prewrap {
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+      `}</style>
+    </div>
+  );
 };
+
 export default PostCard;

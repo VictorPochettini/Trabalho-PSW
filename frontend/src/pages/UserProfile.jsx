@@ -1,12 +1,11 @@
-// src/pages/UserProfile.jsx
+// src/pages/UserProfile.jsx - VERSÃO CORRIGIDA
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import botaoVolta from "../images/botaoVolta.png";
 import styles from "../css/Login.module.css";
-import axios from 'axios';
-import { fetchUsuarios } from "../redux/usuariosSlice"; // ✅ Corrigido para userSlice
-import { fetchPosts } from "../redux/postsSlice";
+import { fetchUsuarios } from "../redux/usuariosSlice";
+import { fetchPosts, updatePost } from "../redux/postsSlice"; // ✅ Importar updatePost
 import { fetchFollowCounts, selectFollowCounts, fetchFollowersList, fetchFollowingList } from '../redux/followsSlice';
 
 import PostCard from "../components/PostCard";
@@ -28,22 +27,17 @@ const BackButton = () => {
 };
 
 const UserProfile = () => {
-  // ---------- hooks no topo ----------
   const { username } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // ✅ Adaptado para o novo userSlice
   const usuarios = useSelector((state) => state.user.usuarios || []);
   const posts = useSelector((state) => state.posts.lista || []);
-
-  // novo formato: currentUserState = { user, token }
   const currentUserState = useSelector((state) => state.user.currentUser);
   const currentUser = currentUserState?.user ?? null;
 
   const isOwnProfile = currentUser?.username === username;
 
-  // loading flags para "ready"
   const usersLoading = useSelector((s) => s.user.loading);
   const postsLoading = useSelector((s) => s.posts.loading);
   const ready = !usersLoading && !postsLoading;
@@ -51,23 +45,20 @@ const UserProfile = () => {
   const [profilePhoto, setProfilePhoto] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Popups (iguais ao Feed) — DEVEM vir antes de qualquer return condicional
   const [showMonetization, setShowMonetization] = useState(false);
   const [monetizationUsername, setMonetizationUsername] = useState("");
   const [showComments, setShowComments] = useState(false);
   const [currentPostIdForComments, setCurrentPostIdForComments] = useState(null);
 
-  // NOVOS ESTADOS para popups de seguidores/seguindo
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
   const [followersList, setFollowersList] = useState([]);
   const [followingList, setFollowingList] = useState([]);
 
-  //referente a edição do texto
+  // ✅ ESTADO DE EDIÇÃO CORRIGIDO
   const [editingPost, setEditingPost] = useState(null);
   const [editText, setEditText] = useState('');
 
-  // Buscas iniciais (protegido contra StrictMode em dev)
   const didInitRef = useRef(false);
   useEffect(() => {
     if (didInitRef.current) return;
@@ -76,13 +67,11 @@ const UserProfile = () => {
     if (!posts.length) dispatch(fetchPosts());
   }, [dispatch, usuarios.length, posts.length]);
 
-  // ---------- derivação com memo, só quando "ready" ----------
   const user = useMemo(() => {
     if (!ready) return null;
     return usuarios.find((u) => u.username === username) || null;
   }, [ready, usuarios, username]);
 
-  // dispara contagem de seguidores/seguindo quando soubermos o user.id (sem duplicar)
   const lastCountUserIdRef = useRef(null);
   useEffect(() => {
     const userId = user ? (user._id || user.id) : null;
@@ -92,14 +81,12 @@ const UserProfile = () => {
     dispatch(fetchFollowCounts({ userId }));
   }, [dispatch, user]);
 
-  // lê as contagens do Redux (usa seu selector)
   const followCounts = useSelector((state) =>
     selectFollowCounts(user ? (user._id || user.id) : 0)(state)
   );
   const followersCount = followCounts?.followersCount || 0;
   const followingCount = followCounts?.followingCount || 0;
 
-  // foto de perfil (preview local) – mantém seu comportamento original
   useEffect(() => {
     if (user?.fotoPerfil) setProfilePhoto(user.fotoPerfil);
   }, [user?.fotoPerfil]);
@@ -113,7 +100,6 @@ const UserProfile = () => {
     }
   };
 
-  // Fechar popups ao trocar de perfil + cleanup overflow
   useEffect(() => {
     setShowMonetization(false);
     setMonetizationUsername("");
@@ -127,11 +113,11 @@ const UserProfile = () => {
 
   const handleEditProfile = () => navigate("/edit-profile");
 
-  // ✅ mapear posts do usuário → formato do PostCard (usando _id consistentemente)
   const userIdKey = user ? String(user._id || user.id) : null;
   const userPostsRaw = user
     ? posts.filter((p) => String(p.usuarioId || p.userId) === String(userIdKey))
     : [];
+  
   const userPosts = userPostsRaw
     .map((p) => {
       const isTexto = p.tipo === "texto" || p.tipo === "letra";
@@ -174,12 +160,12 @@ const UserProfile = () => {
         new Date(a.data ?? a.createdAt ?? a.time)
     );
 
-  // Handlers dos popups (iguais ao Feed)
   const handleMonetizeClick = (uname) => {
     setMonetizationUsername(uname || username);
     setShowMonetization(true);
     document.body.style.overflow = "hidden";
   };
+  
   const handleCloseMonetization = () => {
     setShowMonetization(false);
     document.body.style.overflow = "";
@@ -190,13 +176,13 @@ const UserProfile = () => {
     setShowComments(true);
     document.body.style.overflow = "hidden";
   };
+  
   const handleCloseComments = () => {
     setShowComments(false);
     setCurrentPostIdForComments(null);
     document.body.style.overflow = "";
   };
 
-  // NOVAS FUNÇÕES para seguidores/seguindo
   const handleShowFollowers = async () => {
     if (!userIdKey) return;
     
@@ -237,14 +223,35 @@ const UserProfile = () => {
     document.body.style.overflow = "";
   };
 
-  // Função para iniciar a edição
+  // ✅ FUNÇÃO CORRIGIDA - Iniciar edição
   const handleEditClick = (post) => {
     const postId = post._id || post.id;
     setEditingPost(postId);
-    setEditText(post.texto || post.content || '');
+    
+    // ✅ BUSCA O TEXTO CORRETO DEPENDENDO DO TIPO DE POST
+    let textToEdit = '';
+    
+    if (post.tipo === 'texto' || post.tipo === 'letra') {
+      // Para posts de texto, usa o campo 'texto' ou 'conteudo'
+      textToEdit = post.texto || post.conteudo || post.content || '';
+    } else if (post.tipo === 'musica' || post.tipo === 'visual') {
+      // Para posts de mídia, usa o 'titulo'
+      textToEdit = post.titulo || post.content || '';
+    } else {
+      // Fallback
+      textToEdit = post.content || post.texto || post.titulo || '';
+    }
+    
+    console.log('📝 Iniciando edição:', {
+      postId,
+      tipo: post.tipo,
+      textoParaEditar: textToEdit
+    });
+    
+    setEditText(textToEdit);
   };
 
-  // ✅ Função para salvar a edição (usando _id consistentemente)
+  // ✅ FUNÇÃO CORRIGIDA - Salvar edição usando Redux
   const handleSaveEdit = async (postId) => {
     if (!editText.trim()) {
       alert('O texto não pode estar vazio!');
@@ -252,7 +259,7 @@ const UserProfile = () => {
     }
 
     try {
-      // Busca o post original na lista do Redux (posts)
+      // Busca o post original
       const postToUpdate = posts.find(p => String(p._id || p.id) === String(postId));
       
       if (!postToUpdate) {
@@ -261,47 +268,65 @@ const UserProfile = () => {
         return;
       }
 
-      // Prepara os dados para atualização mantendo TODOS os campos originais
-      const updateData = {
-        ...postToUpdate,
-        conteudo: editText.trim(),
-        titulo: editText.trim().substring(0, 100),
-      };
-
-      // ✅ FAZ A REQUISIÇÃO PUT usando _id
-      const response = await axios.put(`http://localhost:5000/posts/${postId}`, updateData);
-      console.log('Resposta da API:', response.data);
-
-      // ✅ RECARREGA OS POSTS para atualizar a interface
-      await dispatch(fetchPosts());
+      // ✅ PREPARA OS DADOS CORRETAMENTE BASEADO NO TIPO
+      let updateData = {};
       
-      // ✅ LIMPA O ESTADO de edição
+      if (postToUpdate.tipo === 'texto' || postToUpdate.tipo === 'letra') {
+        // Para posts de texto, atualiza 'conteudo' e 'titulo'
+        updateData = {
+          conteudo: editText.trim(),
+          titulo: editText.trim().substring(0, 100),
+        };
+      } else if (postToUpdate.tipo === 'musica' || postToUpdate.tipo === 'visual') {
+        // Para posts de mídia, atualiza apenas o 'titulo' (descrição)
+        updateData = {
+          titulo: editText.trim(),
+        };
+      } else {
+        // Fallback
+        updateData = {
+          conteudo: editText.trim(),
+          titulo: editText.trim().substring(0, 100),
+        };
+      }
+
+      console.log('💾 Salvando edição:', {
+        postId,
+        tipo: postToUpdate.tipo,
+        updateData
+      });
+
+      // ✅ USA O REDUX ACTION updatePost
+      await dispatch(updatePost({ 
+        id: postId, 
+        data: updateData 
+      })).unwrap();
+
+      // ✅ LIMPA O ESTADO DE EDIÇÃO
       setEditingPost(null);
       setEditText('');
 
-      console.log('Post editado com sucesso!');
+      console.log('✅ Post editado com sucesso!');
       
     } catch (error) {
-      console.error('Erro ao editar post:', error);
-      console.error('Detalhes do erro:', error.response?.data || error.message);
+      console.error('❌ Erro ao editar post:', error);
       alert('Erro ao salvar a edição. Verifique o console para mais detalhes.');
     }
   };
 
-  // Função para cancelar edição
+  // ✅ FUNÇÃO CORRIGIDA - Cancelar edição
   const handleCancelEdit = () => {
     setEditingPost(null);
     setEditText('');
   };
 
   return (
-    <><BackButton/>
+    <>
+      <BackButton/>
       <div className="container-fluid">
         <div className="row justify-content-center">
           <div className="col-12">
-            {/* key força remount ao trocar de username */}
             <div className="profile-container profile-shell glass-header" key={`profile-${username}`}>
-              {/* Se não houver usuário, só mostra aviso quando "ready" estiver true */} 
               {(ready && usuarios.length > 0 && !user) ? (
                 <div className="container-fluid text-center py-5">
                   <h2>Usuário "{username}" não encontrado 😢</h2>
@@ -311,7 +336,6 @@ const UserProfile = () => {
                 </div>
               ) : (
                 <>
-                  {/* Header / capa do perfil */}
                   <div className="profile-header position-relative profile-header-glass banner-narrow">
                     {user?.username === currentUser?.username && (
                       <button className="lapis" onClick={handleEditProfile} title="Editar perfil">
@@ -355,7 +379,6 @@ const UserProfile = () => {
                       </div>
                     </div>
 
-                    {/* ====== SOBRE O PERFIL: bio + interesses ====== */}
                     {(user?.bio || user?.generosMusicais || user?.estilosArte) && (
                       <div className="about-wrap banner-narrow">
                         {user?.bio && (
@@ -395,10 +418,8 @@ const UserProfile = () => {
                         )}
                       </div>
                     )}
-                    {/* ====== FIM SOBRE O PERFIL ====== */}
                   </div>
 
-                  {/* Feed de posts com PostCard real */}
                   <div className="posts-container posts-feed">
                     {userPosts.length === 0 ? (
                       <div className="card text-center text-muted py-5 empty-card">
@@ -434,7 +455,6 @@ const UserProfile = () => {
         </div>
       </div>
 
-      {/* Popups iguais ao Feed*/}
       <MonetizationPopup
         show={showMonetization}
         onClose={handleCloseMonetization}
@@ -448,7 +468,6 @@ const UserProfile = () => {
 
       <FloatingActionButton />
 
-      {/* Popup de Seguidores */}
       {showFollowers && (
         <div className="custom-popup-overlay" onClick={handleCloseFollowers}>
           <div className="custom-popup-content" onClick={(e) => e.stopPropagation()}>
@@ -497,7 +516,6 @@ const UserProfile = () => {
         </div>
       )}
 
-      {/* Popup de Seguindo */}
       {showFollowing && (
         <div className="custom-popup-overlay" onClick={handleCloseFollowing}>
           <div className="custom-popup-content" onClick={(e) => e.stopPropagation()}>
@@ -567,11 +585,9 @@ const UserProfile = () => {
             transition: all 0.3s ease;
             z-index: 10;
           }
-
           .lapis:hover {
             transform: scale(1.1);
           }
-
           .lapis i {
             font-size: 18px !important;
           }
@@ -583,7 +599,6 @@ const UserProfile = () => {
           padding-left: 16px;
           padding-right: 16px;
         }
-
         .glass-header .profile-header-glass {
           position: relative;
           background: rgba(255,255,255,.10);
@@ -629,7 +644,6 @@ const UserProfile = () => {
           text-shadow: 0 2px 12px rgba(0,0,0,.25);
         }
         .stat-label { color: rgba(255,255,255,.8); font-size: 13px; }
-
         .empty-card {
           background: rgba(255,255,255,.08);
           border: 1px solid rgba(255,255,255,.14);
@@ -637,19 +651,16 @@ const UserProfile = () => {
           backdrop-filter: blur(6px);
           margin-top: 10px;
         }
-
         .clickable-stat {
           cursor: pointer;
           transition: all 0.2s ease;
           padding: 8px 12px;
           border-radius: 12px;
         }
-
         .clickable-stat:hover {
           background: rgba(255, 255, 255, 0.1);
           transform: translateY(-2px);
         }
-
         .about-wrap{
           display: grid;
           gap: 12px;
@@ -700,7 +711,6 @@ const UserProfile = () => {
           transition: transform .15s ease;
         }
         .chip:hover{ transform: translateY(-1px); }
-
         .custom-popup-overlay {
           position: fixed;
           top: 0;
@@ -715,7 +725,6 @@ const UserProfile = () => {
           z-index: 9999;
           padding: 20px;
         }
-
         .custom-popup-content {
           background: linear-gradient(135deg, rgba(30, 30, 40, 0.95), rgba(40, 40, 60, 0.95));
           border: 1px solid rgba(255, 255, 255, 0.15);
@@ -727,7 +736,6 @@ const UserProfile = () => {
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
           backdrop-filter: blur(20px);
         }
-
         .popup-header {
           display: flex;
           justify-content: space-between;
@@ -735,13 +743,11 @@ const UserProfile = () => {
           padding: 20px 24px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-
         .popup-header h3 {
           margin: 0;
           color: white;
           font-weight: 600;
         }
-
         .popup-close-btn {
           background: rgba(255, 255, 255, 0.06);
           border: 1px solid rgba(255, 255, 255, 0.12);
@@ -755,13 +761,11 @@ const UserProfile = () => {
           cursor: pointer;
         }
         .popup-close-btn i { pointer-events: none; }
-
         .popup-body {
           padding: 16px;
           overflow: auto;
           max-height: calc(80vh - 110px);
         }
-
         .empty-list-message {
           display: flex;
           flex-direction: column;
@@ -770,13 +774,11 @@ const UserProfile = () => {
           padding: 28px 12px;
           color: rgba(255,255,255,0.85);
         }
-
         .users-list {
           display: flex;
           flex-direction: column;
           gap: 10px;
         }
-
         .user-list-item {
           display: flex;
           align-items: center;
@@ -786,7 +788,6 @@ const UserProfile = () => {
           background: rgba(255,255,255,0.02);
           border: 1px solid rgba(255,255,255,0.03);
         }
-
         .user-avatar-small {
           width: 44px;
           height: 44px;
@@ -801,7 +802,6 @@ const UserProfile = () => {
           height: 100%;
           object-fit: cover;
         }
-
         .user-info-small { flex: 1; min-width: 0; }
         .user-name {
           color: #fff;
@@ -814,7 +814,6 @@ const UserProfile = () => {
           color: rgba(255,255,255,0.7);
           font-size: 13px;
         }
-
         .view-profile-btn {
           background: rgba(255,255,255,0.06);
           border: 1px solid rgba(255,255,255,0.08);
@@ -823,8 +822,6 @@ const UserProfile = () => {
           border-radius: 8px;
           font-size: 13px;
         }
-
-        /* responsive tweaks */
         @media (max-width: 420px) {
           .custom-popup-content { max-width: 92%; border-radius: 14px; }
           .user-list-item { padding: 8px; gap: 8px; }

@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
-import { fetchPosts } from "../redux/postsSlice";
+// 1. IMPORTAR updatePost AQUI
+import { fetchPosts, updatePost } from "../redux/postsSlice"; 
 import { fetchUsuarios } from "../redux/usuariosSlice";
 
 import Header from "../components/Header2";
@@ -18,18 +19,16 @@ const Feed = () => {
   const loadingPosts = useSelector((state) => state.posts.loading);
   const errorPosts = useSelector((state) => state.posts.error);
 
-  // novo formato: currentUserState = { user, token }
   const currentUserState = useSelector((state) => state.user?.currentUser);
   const currentUser = currentUserState?.user ?? null;
   const viewerId = currentUser?._id ?? currentUser?.id ?? null;
 
-  // usuários agora via Redux
   const usuarios = useSelector((state) => state.user.usuarios || []);
   const loadingUsuarios = useSelector((state) => state.user.loading);
 
   const [postsComUsuario, setPostsComUsuario] = useState([]);
   const [postsDosSeguidos, setPostsDosSeguidos] = useState([]);
-  const [seguindoIds, setSeguindoIds] = useState([]); // ✅ AGORA É ARRAY DE STRINGS
+  const [seguindoIds, setSeguindoIds] = useState([]); 
   const [loadingSeguindo, setLoadingSeguindo] = useState(true);
 
   const [showMonetization, setShowMonetization] = useState(false);
@@ -37,67 +36,48 @@ const Feed = () => {
   const [showComments, setShowComments] = useState(false);
   const [currentPostIdForComments, setCurrentPostIdForComments] = useState(null);
 
-  // ✅ busca quem o viewer está seguindo
+  // 2. ESTADOS DE EDIÇÃO (Faltavam aqui)
+  const [editingPost, setEditingPost] = useState(null);
+  const [editText, setEditText] = useState('');
+
+  // --- Funções de Seguir (Inalteradas) ---
   useEffect(() => {
     const fetchSeguindo = async () => {
       if (viewerId) {
         try {
           setLoadingSeguindo(true);
-          
-          // ✅ Usa o endpoint /seguidores do seu backend
           const res = await axios.get(`http://localhost:5000/seguidores?followerId=${viewerId}`);
-          
-          // ✅ CONVERTE PARA STRING, NÃO PARA NUMBER
           const ids = Array.isArray(res.data) 
             ? res.data.map((item) => String(item.followingId))
             : [];
-          
-          console.log('✅ IDs de quem você segue:', ids);
-          console.log('✅ Seu ID:', viewerId);
-          
           setSeguindoIds(ids);
-          
           try {
             localStorage.setItem(`seguindoIds_${viewerId}`, JSON.stringify(ids));
-          } catch (e) { 
-            console.warn('Erro ao salvar no localStorage:', e);
-          }
+          } catch (e) { console.warn(e); }
         } catch (err) {
           console.error("❌ Erro ao buscar seguindo:", err);
-          // fallback para localStorage se houver
           try {
             const saved = localStorage.getItem(`seguindoIds_${viewerId}`);
-            if (saved) {
-              const parsed = JSON.parse(saved);
-              setSeguindoIds(parsed);
-              console.log('📦 Carregado do localStorage:', parsed);
-            } else {
-              setSeguindoIds([]);
-            }
-          } catch (e) {
-            setSeguindoIds([]);
-          }
+            if (saved) setSeguindoIds(JSON.parse(saved));
+            else setSeguindoIds([]);
+          } catch (e) { setSeguindoIds([]); }
         } finally {
           setLoadingSeguindo(false);
         }
       } else {
-        // sem usuário logado
-        console.log('⚠️ Sem usuário logado');
         setSeguindoIds([]);
         setLoadingSeguindo(false);
       }
     };
-
     fetchSeguindo();
   }, [viewerId]);
 
-  // carregar posts e usuários via redux
   useEffect(() => {
     dispatch(fetchPosts());
     dispatch(fetchUsuarios());
   }, [dispatch]);
 
-  // combinar posts com dados do usuário (apenas quando ambos carregarem)
+  // --- Combinação de Posts (Inalterada) ---
   useEffect(() => {
     if (!loadingPosts && !loadingUsuarios && usuarios.length >= 0) {
       const combinados = (posts || []).map((post) => {
@@ -113,7 +93,7 @@ const Feed = () => {
           content: post.titulo ?? post.content ?? "",
           texto: post.conteudo ?? post.texto ?? "",
           username: usuario ? (usuario.nome || usuario.username) : "@desconhecido",
-          usuarioId: String(post.usuarioId ?? post.userId), // ✅ SEMPRE STRING
+          usuarioId: String(post.usuarioId ?? post.userId),
           mediaType:
             post.tipo === "musica" ? "audio" : post.tipo === "visual" ? "image" : "text",
           mediaSrc: (post.tipo === "musica" || post.tipo === "visual") ? `/media/${post.conteudo}` : null,
@@ -122,45 +102,29 @@ const Feed = () => {
         };
       });
 
-      // ordenar do mais recente para o mais antigo
       const getDate = (p) => p?.data ?? p?.createdAt ?? p?.time;
       combinados.sort((a, b) => new Date(getDate(b)) - new Date(getDate(a)));
-
-      console.log('📝 Total de posts combinados:', combinados.length);
       setPostsComUsuario(combinados);
     }
   }, [loadingPosts, loadingUsuarios, posts, usuarios]);
 
-  // ✅ filtrar posts apenas dos seguidos + próprios posts
+  // --- Filtro de Feed (Inalterado) ---
   useEffect(() => {
     if (postsComUsuario.length > 0) {
       const viewerIdString = String(viewerId);
-      
       const filtrados = postsComUsuario.filter((post) => {
         const postUserId = String(post.usuarioId);
-        
-        // ✅ COMPARAÇÃO DE STRINGS
         const isSeguindo = seguindoIds.includes(postUserId);
         const isProprioPost = viewerId && (postUserId === viewerIdString);
-        
         return isSeguindo || isProprioPost;
       });
-      
-      console.log('🎯 Posts filtrados para feed:', filtrados.length);
-      console.log('👥 IDs seguidos:', seguindoIds);
-      console.log('👤 Seu ID:', viewerIdString);
-      
-      // Log detalhado dos posts
-      filtrados.forEach(p => {
-        console.log(`  - Post de ${p.username} (ID: ${p.usuarioId})`);
-      });
-      
       setPostsDosSeguidos(filtrados);
     } else {
       setPostsDosSeguidos([]);
     }
   }, [postsComUsuario, seguindoIds, viewerId]);
 
+  // --- Handlers de UI ---
   const handleMonetizeClick = (username) => {
     setMonetizationUsername(username);
     setShowMonetization(true);
@@ -184,15 +148,81 @@ const Feed = () => {
     document.body.style.overflow = "";
   };
 
+  // 3. IMPLEMENTAÇÃO DA LÓGICA DE EDIÇÃO (Copiada do UserProfile e adaptada)
+  const handleEditClick = (post) => {
+    const postId = post._id || post.id;
+    setEditingPost(postId);
+    
+    let textToEdit = '';
+    
+    // Lógica para pegar o texto correto baseado no tipo
+    if (post.tipo === 'texto' || post.tipo === 'letra') {
+      textToEdit = post.texto || post.conteudo || post.content || '';
+    } else if (post.tipo === 'musica' || post.tipo === 'visual') {
+      textToEdit = post.titulo || post.content || '';
+    } else {
+      textToEdit = post.content || post.texto || post.titulo || '';
+    }
+    
+    setEditText(textToEdit);
+  };
+
+  const handleSaveEdit = async (postId) => {
+    if (!editText.trim()) {
+      alert('O texto não pode estar vazio!');
+      return;
+    }
+
+    try {
+      // Procura no array geral de posts (do Redux) para garantir dados frescos
+      const postToUpdate = posts.find(p => String(p._id || p.id) === String(postId));
+      
+      if (!postToUpdate) {
+        alert('Post não encontrado');
+        return;
+      }
+
+      let updateData = {};
+      
+      if (postToUpdate.tipo === 'texto' || postToUpdate.tipo === 'letra') {
+        updateData = {
+          conteudo: editText.trim(),
+          titulo: editText.trim().substring(0, 100),
+        };
+      } else if (postToUpdate.tipo === 'musica' || postToUpdate.tipo === 'visual') {
+        updateData = {
+          titulo: editText.trim(),
+        };
+      } else {
+        updateData = {
+          conteudo: editText.trim(),
+          titulo: editText.trim().substring(0, 100),
+        };
+      }
+
+      await dispatch(updatePost({ 
+        id: postId, 
+        data: updateData 
+      })).unwrap();
+
+      setEditingPost(null);
+      setEditText('');
+      
+    } catch (error) {
+      console.error('❌ Erro ao editar post:', error);
+      alert('Erro ao salvar a edição.');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPost(null);
+    setEditText('');
+  };
+
+
   if (loadingPosts || loadingUsuarios || loadingSeguindo) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        color: 'white'
-      }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', color: 'white' }}>
         <p>Carregando feed...</p>
       </div>
     );
@@ -206,40 +236,34 @@ const Feed = () => {
 
       <div className="feed-content-wrapper">
         {postsDosSeguidos.length === 0 ? (
-          <div style={{
-            textAlign: "center",
-            padding: "40px",
-            color: "rgba(255,255,255,0.7)"
-          }}>
+          <div style={{ textAlign: "center", padding: "40px", color: "rgba(255,255,255,0.7)" }}>
             <h3>Nenhuma publicação de pessoas que você segue</h3>
             <p>Comece a seguir alguns artistas para ver suas publicações aqui!</p>
             <p style={{ fontSize: "0.9rem", marginTop: "10px", color: "rgba(255,255,255,0.5)" }}>
               {currentUser ? `Você está seguindo ${seguindoIds.length} pessoas` : "Faça login para seguir pessoas"}
             </p>
-            {currentUser && (
-              <div style={{ marginTop: "20px", padding: "15px", background: "rgba(255,255,255,0.05)", borderRadius: "10px" }}>
-                <p style={{ margin: 0, fontSize: "0.9rem" }}>
-                  <strong>Debug - IDs que você segue:</strong><br />
-                  {seguindoIds.length > 0 ? seguindoIds.join(", ") : "Nenhum"}
-                </p>
-                <p style={{ margin: "10px 0 0 0", fontSize: "0.9rem" }}>
-                  <strong>Seu ID:</strong> {viewerId}
-                </p>
-                <p style={{ margin: "10px 0 0 0", fontSize: "0.9rem" }}>
-                  <strong>Total de posts no sistema:</strong> {postsComUsuario.length}
-                </p>
-              </div>
-            )}
           </div>
         ) : (
-          postsDosSeguidos.map((post) => (
-            <PostCard
-              key={post._id ?? post.id}
-              post={post}
-              onMonetizeClick={handleMonetizeClick}
-              onCommentClick={handleCommentClick}
-            />
-          ))
+          postsDosSeguidos.map((post) => {
+            const currentPostId = post._id || post.id;
+            return (
+              <PostCard
+                key={currentPostId}
+                post={post}
+                onMonetizeClick={handleMonetizeClick}
+                onCommentClick={handleCommentClick}
+                // 4. PASSAR AS PROPS DE EDIÇÃO PARA O POSTCARD
+                onEditClick={handleEditClick}
+                onSaveEdit={handleSaveEdit}
+                onCancelEdit={handleCancelEdit}
+                isEditing={editingPost === currentPostId}
+                editText={editText}
+                onEditTextChange={setEditText}
+                // O PostCard já calcula se pode editar checando os IDs, 
+                // mas podemos reforçar passando o ID correto se necessário
+              />
+            );
+          })
         )}
       </div>
 
@@ -263,7 +287,7 @@ const Feed = () => {
           margin: 0 auto;
           padding: 20px;
         }
-
+        /* ... resto dos estilos iguais ... */
         .no-login-message,
         .no-posts-message {
           text-align: center;
@@ -272,13 +296,11 @@ const Feed = () => {
           max-width: 500px;
           margin: 0 auto;
         }
-
         .no-login-message h3,
         .no-posts-message h3 {
           margin-bottom: 15px;
           color: rgba(255, 255, 255, 0.9);
         }
-
         .follow-stats {
           margin-top: 20px;
           padding: 15px;
@@ -286,15 +308,8 @@ const Feed = () => {
           border-radius: 10px;
           border: 1px solid rgba(255, 255, 255, 0.1);
         }
-
-        .follow-stats p {
-          margin: 0;
-          color: rgba(255, 255, 255, 0.8);
-        }
-
-        .follow-stats strong {
-          color: #5e17eb;
-        }
+        .follow-stats p { margin: 0; color: rgba(255, 255, 255, 0.8); }
+        .follow-stats strong { color: #5e17eb; }
       `}</style>
     </>
   );

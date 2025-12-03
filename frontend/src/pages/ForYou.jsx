@@ -1,7 +1,7 @@
-// src/pages/ForYou.jsx (adaptado ao novo modelo currentUser = { user, token })
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 import HeaderForYou from "../components/Header2";
 import MonetizationPopup from "../components/MonetizationPopup";
@@ -11,31 +11,30 @@ import { fetchUsuarios } from "../redux/usuariosSlice";
 import {
   followUser,
   unfollowUser,
-  fetchFollowCounts,
+  fetchFollowCounts
 } from "../redux/followsSlice";
 
 const ForYou = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Redux state
+  // --- Redux State ---
   const posts = useSelector((s) => s.posts.lista || []);
-  const loadingPosts = useSelector((s) => s.posts.loading);
+  const usuarios = useSelector((s) => s.user.usuarios || []);
+  const loadingUsuarios = useSelector((s) => s.user.loading);
   const currentUserState = useSelector((s) => s.user.currentUser);
-  // novo formato: currentUserState = { user, token }
   const currentUser = currentUserState?.user ?? null;
   const viewerId = currentUser?._id ?? currentUser?.id ?? null;
 
-  const followsByPair = useSelector((s) => s.follows?.byPair || {});
+  // Contagens vindas do Redux (Fonte da Verdade do Servidor)
   const followsCounts = useSelector((s) => s.follows?.counts || {});
 
-  // Local state (como no Feed)
-  const usuarios = useSelector((s) => s.user.usuarios || []);
-  const loadingUsuarios = useSelector((s) => s.user.loading);
-
+  // Estado Local
+  const [myFollowingIds, setMyFollowingIds] = useState(new Set());
+  const [localFollowerCounts, setLocalFollowerCounts] = useState({});
   const [artistsData, setArtistsData] = useState([]);
-
-  // UI state
+  
+  // UI State
   const [showMonetization, setShowMonetization] = useState(false);
   const [monetizationUsername, setMonetizationUsername] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
@@ -43,382 +42,373 @@ const ForYou = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
-  // evita requisições duplicadas de contagens
-  const countsRequestedRef = useRef(new Set());
+  // ✅ CORREÇÃO 1: Ref para evitar requisições duplicadas para o mesmo ID
+  const countsRequested = useRef(new Set());
 
-  // carregar posts + usuarios via redux (já convertido em outras páginas)
+  // 1. Carregar Dados Iniciais (Posts, Usuários)
   useEffect(() => {
     dispatch(fetchPosts());
     dispatch(fetchUsuarios());
   }, [dispatch]);
 
-  // busca as contagens de seguidores para cada usuário carregado (se necessário)
+  // 2. Sincroniza lista de "Quem eu sigo"
   useEffect(() => {
-    if (loadingUsuarios || !usuarios.length) return;
+    const fetchMyFollowing = async () => {
+      if (!viewerId) return;
+      try {
+        const res = await axios.get(`http://localhost:5000/follows/following/${viewerId}`);
+        const ids = res.data.following.map(u => String(u._id || u.id));
+        setMyFollowingIds(new Set(ids));
+      } catch (error) {
+        console.error("Erro ao buscar lista de seguindo:", error);
+      }
+    };
+    fetchMyFollowing();
+  }, [viewerId]);
 
-    usuarios.forEach((u) => {
-      const id = Number(u?.id);
-      if (!id) return;
+  // ✅ CORREÇÃO 2: Buscar contagens de seguidores para os usuários listados
+  // Sem isso, os números aparecem zerados até você visitar o perfil
+  useEffect(() => {
+    if (!usuarios.length) return;
 
-      const alreadyLoaded = followsCounts[id]?.followersCount != null;
-      const alreadyRequested = countsRequestedRef.current.has(id);
-
-      if (!alreadyLoaded && !alreadyRequested) {
-        countsRequestedRef.current.add(id);
-        dispatch(fetchFollowCounts({ userId: id }));
+    usuarios.forEach(u => {
+      const uid = String(u._id || u.id);
+      
+      // Se não temos a contagem no Redux E ainda não pedimos ao servidor
+      if (followsCounts[uid] === undefined && !countsRequested.current.has(uid)) {
+        // Marca como pedido para não pedir de novo no próximo render
+        countsRequested.current.add(uid);
+        // Dispara a busca
+        dispatch(fetchFollowCounts({ userId: uid }));
       }
     });
-  }, [loadingUsuarios, usuarios, dispatch, followsCounts]);
+  }, [usuarios, followsCounts, dispatch]);
 
-  // Combinação de dados (inspirado no Feed)
+  // 3. Processar Artistas e Montar Dados
   useEffect(() => {
-    if (!loadingUsuarios && usuarios.length > 0 && !loadingPosts) {
-      const artists = usuarios.map((usuario) => {
-        const userPosts = posts.filter((p) => Number(p.usuarioId) === Number(usuario.id));
-        const rating = ratingUserAvg(usuario.id);
-        const catKey = inferCategoria(usuario.id);
+    // Não bloqueamos se loadingUsuarios for true, pois queremos atualizações progressivas
+    
+    // Helper para média de estrelas
+    const calculateRatingFromPosts = (userPosts) => {
+      if (!userPosts?.length) return 0;
+      const ratings = userPosts.map(p => Number(p.ratingAvg || 0)).filter(r => r > 0);
+      return ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+    };
 
-        return {
-          id: usuario.id,
-          name: usuario.nome || usuario.username || `@user${usuario.id}`,
-          username: usuario.username,
-          category: catKey === "musica" ? "Música" : catKey === "texto" ? "Texto/Letra" : catKey === "arte" ? "Imagem/Arte" : "Outros",
-          categoryKey: catKey,
-          followers: followerCountFromRedux(usuario.id),
-          works: userPosts.length,
-          rating: rating,
-          userData: usuario,
-        };
+    const processed = usuarios.map((usuario) => {
+      const uid = String(usuario._id || usuario.id);
+      const userPosts = posts.filter((p) => String(p.usuarioId || p.userId) === uid);
+
+      // Rating
+      let finalRating = Number(usuario.ratingAvgRecebida || 0);
+      if (finalRating === 0) finalRating = calculateRatingFromPosts(userPosts);
+
+      // Categoria
+      const counts = { musica: 0, visual: 0, texto: 0 };
+      userPosts.forEach(p => {
+        const t = (p.tipo || "").toLowerCase();
+        if (t === "musica") counts.musica++;
+        else if (t === "visual" || t === "arte") counts.visual++;
+        else counts.texto++;
       });
+      
+      let catKey = "outros";
+      if (counts.musica >= counts.visual && counts.musica >= counts.texto && counts.musica > 0) catKey = "musica";
+      else if (counts.visual >= counts.musica && counts.visual >= counts.texto && counts.visual > 0) catKey = "visual";
+      else if (counts.texto > 0) catKey = "texto";
 
-      setArtistsData(artists);
-    }
-  }, [loadingUsuarios, usuarios, posts, loadingPosts, followsCounts]);
+      // ✅ Lógica de Prioridade de Contagem:
+      // 1. Local (Otimista - clicou agora)
+      // 2. Redux (Veio do servidor via fetchFollowCounts)
+      // 3. Objeto Usuário (Fallback, geralmente desatualizado)
+      // 4. Zero
+      let followers = 0;
+      
+      if (localFollowerCounts[uid] !== undefined) {
+        followers = localFollowerCounts[uid];
+      } else if (followsCounts[uid]?.followersCount !== undefined) {
+        followers = followsCounts[uid].followersCount;
+      } else {
+        followers = usuario.followersCount || 0;
+      }
 
-  // ---- Helpers ----
-  const normalizeCategoryKey = (k) => {
-    const t = String(k || "").toLowerCase();
-    if (t === "letra" || t === "texto") return "texto";
-    if (t === "visual" || t === "arte") return "arte";
-    if (t === "musica") return "musica";
-    return "outros";
-  };
-
-  const inferCategoria = (userId) => {
-    const myPosts = posts.filter((p) => Number(p.usuarioId) === Number(userId));
-    if (myPosts.length === 0) return "outros";
-
-    const rawCounts = { musica: 0, letra: 0, texto: 0, visual: 0 };
-    myPosts.forEach((p) => {
-      const t = String(p.tipo || "").toLowerCase();
-      if (t in rawCounts) rawCounts[t] += 1;
+      return {
+        id: uid,
+        name: usuario.nome || usuario.username || "Artista",
+        username: usuario.username,
+        fotoPerfil: usuario.fotoPerfil,
+        categoryKey: catKey,
+        category: catKey === "musica" ? "Música" : catKey === "visual" ? "Arte Visual" : catKey === "texto" ? "Texto/Letra" : "Variados",
+        followers: Number(followers),
+        works: userPosts.length,
+        rating: finalRating
+      };
     });
 
-    const agg = { musica: 0, texto: 0, arte: 0, outros: 0 };
-    Object.entries(rawCounts).forEach(([k, v]) => {
-      agg[normalizeCategoryKey(k)] += v;
-    });
+    setArtistsData(processed);
+  }, [usuarios, posts, followsCounts, localFollowerCounts]);
 
-    const entries = Object.entries(agg).sort((a, b) => b[1] - a[1]);
-    return entries[0]?.[0] || "outros";
-  };
+  // --- Handlers ---
 
-  const ratingUserAvg = (userId) => {
-    const myPosts = posts.filter((p) => Number(p.usuarioId) === Number(userId));
-    const ratings = myPosts.map((p) => Number(p.ratingAvg || 0)).filter((v) => !Number.isNaN(v));
-    if (!ratings.length) return 0;
-    const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
-    return Math.round(avg * 10) / 10;
-  };
-
-  const followerCountFromRedux = (userId) => Number(followsCounts[Number(userId)]?.followersCount || 0);
-
-  // filtros / busca
-  const highRatedArtists = useMemo(() => artistsData.filter((artist) => artist.rating > 4), [artistsData]);
-
-  const handleSearch = (term) => {
-    setSearchTerm(term);
-    setIsSearching(!!term.trim());
-  };
-
-  const filteredAndSorted = useMemo(() => {
-    let list = isSearching ? artistsData : highRatedArtists;
-
-    if (activeFilter !== "all") {
-      list = list.filter((a) => a.categoryKey === activeFilter);
-    }
-
-    if (isSearching && activeFilter === "all") {
-      const term = searchTerm.toLowerCase();
-      list = list.filter((a) => (a.name || "").toLowerCase().includes(term) || (a.username || "").toLowerCase().includes(term));
-    }
-
-    const sorted = [...list];
-    if (sortBy === "rating") {
-      sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-    } else if (sortBy === "followers") {
-      sorted.sort((a, b) => (b.followers || 0) - (a.followers || 0));
-    } else if (sortBy === "newest") {
-      sorted.sort((a, b) => Number(b.id) - Number(a.id));
-    }
-    return sorted;
-  }, [artistsData, highRatedArtists, activeFilter, sortBy, searchTerm, isSearching]);
-
-  // navegação
-  const handleProfileClick = (username, e) => {
-    if (e) e.stopPropagation();
-    if (!username) return;
-    navigate(`/user/${username}`);
-  };
-
-  // follow/unfollow usando viewerId
-  const isFollowingUser = (targetId) => {
-    if (!viewerId || !targetId) return false;
-    const k = `${Number(viewerId)}-${Number(targetId)}`;
-    return Boolean(followsByPair[k]?.isFollowing);
-  };
-
-  const handleFollowClick = async (targetId, e) => {
+  const handleFollowClick = async (targetId, currentCount, e) => {
     e.stopPropagation();
-    if (!viewerId || !targetId || Number(viewerId) === Number(targetId)) return;
+    if (!viewerId) return alert("Faça login para seguir.");
+    
+    const targetIdString = String(targetId);
+    if (String(viewerId) === targetIdString) return;
+
+    const isFollowing = myFollowingIds.has(targetIdString);
+
+    // Atualização Visual Imediata (Botão)
+    setMyFollowingIds(prev => {
+      const newSet = new Set(prev);
+      if (isFollowing) newSet.delete(targetIdString);
+      else newSet.add(targetIdString);
+      return newSet;
+    });
+
+    // Atualização Visual Imediata (Número)
+    setLocalFollowerCounts(prev => ({
+      ...prev,
+      [targetIdString]: (prev[targetIdString] ?? currentCount) + (isFollowing ? -1 : 1)
+    }));
+
     try {
-      const following = isFollowingUser(targetId);
-      if (following) {
+      if (isFollowing) {
         await dispatch(unfollowUser({ followerId: viewerId, followingId: targetId })).unwrap();
       } else {
         await dispatch(followUser({ followerId: viewerId, followingId: targetId })).unwrap();
       }
-      // atualizar contagem do usuário afetado
+      
+      // ✅ Sincroniza com o servidor para garantir o número real final
       dispatch(fetchFollowCounts({ userId: targetId }));
+      
     } catch (err) {
-      console.error("follow/unfollow error", err);
+      console.error("Erro follow:", err);
+      // Reverter em caso de erro
+      setMyFollowingIds(prev => {
+        const newSet = new Set(prev);
+        if (isFollowing) newSet.add(targetIdString);
+        else newSet.delete(targetIdString);
+        return newSet;
+      });
+      setLocalFollowerCounts(prev => ({
+        ...prev,
+        [targetIdString]: (prev[targetIdString] ?? currentCount) // volta ao valor original
+      }));
     }
-  };
-
-  // monetização
-  const handleMonetizeClick = (uname, e) => {
-    e.stopPropagation();
-    setMonetizationUsername(uname);
-    setShowMonetization(true);
-    document.body.style.overflow = "hidden";
-  };
-
-  const handleCloseMonetization = () => {
-    setShowMonetization(false);
-    document.body.style.overflow = "";
   };
 
   const renderStars = (rating) => {
     const r = Math.max(0, Math.min(5, Number(rating) || 0));
-    const full = "★".repeat(Math.floor(r));
-    const empty = "☆".repeat(5 - Math.floor(r));
-    return `${full}${empty}`;
+    return <span style={{color: '#f5c542'}}>{"★".repeat(Math.floor(r))}{r % 1 >= 0.5 ? "½" : ""}{"☆".repeat(5 - Math.ceil(r))}</span>;
   };
 
-  const loading = loadingUsuarios || loadingPosts;
+  const filteredList = useMemo(() => {
+    let list = isSearching ? artistsData : artistsData.filter(a => a.rating >= 0);
+    
+    if (activeFilter !== "all") {
+      list = list.filter(a => a.categoryKey === activeFilter);
+    }
+    
+    if (isSearching && searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      list = list.filter(a => 
+        a.name.toLowerCase().includes(term) || 
+        (a.username || "").toLowerCase().includes(term)
+      );
+    }
+    
+    return list.sort((a, b) => {
+      if (sortBy === "rating") return b.rating - a.rating;
+      if (sortBy === "followers") return b.followers - a.followers;
+      if (sortBy === "works") return b.works - a.works;
+      return 0;
+    });
+  }, [artistsData, activeFilter, searchTerm, isSearching, sortBy]);
+
+  if (loadingUsuarios && !artistsData.length) {
+    return <div style={{color:'#fff', padding: 50, textAlign:'center'}}>Carregando artistas...</div>;
+  }
 
   return (
     <>
       <HeaderForYou />
-
       <div className="fy-container">
         <h1 className="fy-title">Artistas em Destaque</h1>
-        <p className="fy-subtitle">
-          {isSearching ? `Resultados da pesquisa por "${searchTerm}"` : "Descubra os artistas mais populares e bem avaliados da plataforma (rating acima de 4.0)"}
-        </p>
-
+        
         <div className="fy-search-container">
-          <div className="fy-search-box">
-            <i className="fas fa-search fy-search-icon"></i>
-            <input
-              type="text"
-              className="fy-search-input"
-              placeholder="Pesquisar artistas por nome ou usuário..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-            />
-            {searchTerm && (
-              <button className="fy-search-clear" onClick={() => handleSearch("")}>
-                <i className="fas fa-times"></i>
-              </button>
-            )}
-          </div>
-
-          {isSearching && (
-            <div className="fy-search-results-info">
-              <span>{filteredAndSorted.length} resultado(s) encontrado(s) para "{searchTerm}"</span>
-              <button className="fy-search-clear-btn" onClick={() => handleSearch("")}>Limpar pesquisa</button>
-            </div>
-          )}
+          <input 
+            type="text" 
+            className="fy-search-input" 
+            placeholder="Buscar..." 
+            value={searchTerm}
+            onChange={e => { setSearchTerm(e.target.value); setIsSearching(!!e.target.value); }}
+            style={{padding: '12px', width: '100%', borderRadius: '12px', border: 'none', background: 'rgba(255,255,255,0.1)', color: 'white'}}
+          />
+        </div>
+        
+        <div className="fy-filters" style={{marginBottom: '30px', display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'space-between', alignItems: 'center'}}>
+           <div style={{display: 'flex', gap: '8px'}}>
+             {['all', 'musica', 'texto', 'visual'].map(f => (
+               <button 
+                key={f} 
+                onClick={() => setActiveFilter(f)} 
+                style={{
+                  padding: '8px 16px', 
+                  borderRadius: 20, 
+                  border: '1px solid rgba(255,255,255,0.2)', 
+                  background: activeFilter === f ? '#5e17eb' : 'rgba(255,255,255,0.05)', 
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: activeFilter === f ? 'bold' : 'normal'
+                }}
+               >
+                 {f === 'all' ? 'Todos' : f.charAt(0).toUpperCase() + f.slice(1)}
+               </button>
+             ))}
+           </div>
+           
+           <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+             <span style={{color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem'}}>Ordenar:</span>
+             <select 
+              value={sortBy} 
+              onChange={e => setSortBy(e.target.value)} 
+              style={{
+                borderRadius: 8, 
+                padding: '8px', 
+                background: 'rgba(0,0,0,0.3)', 
+                color: 'white', 
+                border: '1px solid rgba(255,255,255,0.2)',
+                cursor: 'pointer'
+              }}
+             >
+               <option value="rating">Avaliação</option>
+               <option value="followers">Seguidores</option>
+               <option value="works">Obras</option>
+             </select>
+           </div>
         </div>
 
-        <div className="fy-filters">
-          <div className="fy-filter-buttons">
-            <button className={`fy-filter-btn ${activeFilter === "all" ? "active" : ""}`} onClick={() => setActiveFilter("all")}>Todos</button>
-            <button className={`fy-filter-btn ${activeFilter === "musica" ? "active" : ""}`} onClick={() => { setActiveFilter("musica"); if (isSearching) handleSearch(""); }}>Música</button>
-            <button className={`fy-filter-btn ${activeFilter === "texto" ? "active" : ""}`} onClick={() => { setActiveFilter("texto"); if (isSearching) handleSearch(""); }}>Texto</button>
-            <button className={`fy-filter-btn ${activeFilter === "arte" ? "active" : ""}`} onClick={() => { setActiveFilter("arte"); if (isSearching) handleSearch(""); }}>Imagem</button>
-          </div>
+        <div className="fy-grid">
+          {filteredList.map((artist) => {
+            const isFollowing = myFollowingIds.has(String(artist.id));
+            const isMe = String(viewerId) === String(artist.id);
 
-          <div className="fy-sort">
-            <label htmlFor="sort-by">Ordenar por:</label>
-            <select id="sort-by" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-              <option value="rating">Maior Avaliação</option>
-              <option value="followers">Mais Seguidos</option>
-              <option value="newest">Mais Recentes</option>
-            </select>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="fy-loading">Carregando…</div>
-        ) : (
-          <>
-            {filteredAndSorted.length === 0 ? (
-              <div className="fy-no-results">
-                <i className="fas fa-search fa-3x mb-3"></i>
-                <h4>{isSearching ? `Nenhum artista encontrado para "${searchTerm}"` : "Nenhum artista com rating acima de 4.0"}</h4>
-                <p>{isSearching ? "Tente outros termos de pesquisa." : "No momento não há artistas que atendam aos critérios de qualidade."}</p>
-              </div>
-            ) : (
-              <div className="fy-grid">
-                {filteredAndSorted.map((artist) => {
-                  const following = isFollowingUser(artist.id);
-                  return (
-                    <div key={artist.id} className="fy-card">
-                      <div className="fy-card-header">
-                        <div className="fy-avatar clickable" onClick={(e) => handleProfileClick(artist.username, e)} title={`Ver perfil de ${artist.name}`}>
-                          <i className="fas fa-user" />
-                        </div>
-                      </div>
-
-                      <div className="fy-card-info">
-                        <h3 className="fy-name clickable" onClick={(e) => handleProfileClick(artist.username, e)} title={`Ver perfil de ${artist.name}`}>{artist.name}</h3>
-                        <span className="fy-category">{artist.category}</span>
-
-                        <div className="fy-stats">
-                          <div className="fy-stat">
-                            <div className="fy-stat-value">{Number(artist.followers || 0).toLocaleString("pt-BR")}</div>
-                            <div className="fy-stat-label">Seguidores</div>
-                          </div>
-                          <div className="fy-stat">
-                            <div className="fy-stat-value">{artist.works}</div>
-                            <div className="fy-stat-label">Obras</div>
-                          </div>
-                        </div>
-
-                        <div className="fy-rating">
-                          <div className="fy-stars">{renderStars(artist.rating)}</div>
-                          <span className="fy-rating-value">{Number(artist.rating || 0).toFixed(1)}</span>
-                        </div>
-
-                        <div className="fy-actions">
-                          <button
-                            className={`fy-btn-follow ${following ? "is-following" : ""}`}
-                            onClick={(e) => handleFollowClick(artist.id, e)}
-                            disabled={!viewerId || Number(viewerId) === Number(artist.id)}
-                            title={
-                              !viewerId
-                                ? "Faça login para seguir"
-                                : Number(viewerId) === Number(artist.id)
-                                ? "Você não pode seguir a si mesmo"
-                                : following
-                                ? "Deixar de seguir"
-                                : "Seguir"
-                            }
-                          >
-                            {following ? "Seguindo" : "Seguir"}
-                          </button>
-
-                          <button className="fy-btn-monetize" onClick={(e) => handleMonetizeClick(artist.username, e)} title="Apoiar">
-                            <i className="fa-solid fa-hand-holding-usd"></i>
-                          </button>
-                        </div>
-                      </div>
+            return (
+              <div key={artist.id} className="fy-card" onClick={() => navigate(`/user/${artist.username}`)}>
+                <div className="fy-card-header">
+                  <div className="fy-avatar">
+                    {artist.fotoPerfil ? <img src={artist.fotoPerfil} alt={artist.name} /> : <i className="fas fa-user"></i>}
+                  </div>
+                </div>
+                <div className="fy-card-info">
+                  <h3 className="fy-name">{artist.name}</h3>
+                  <span className="fy-category">{artist.category}</span>
+                  
+                  <div className="fy-stats">
+                    <div className="fy-stat">
+                      <div className="fy-stat-value">{artist.followers}</div>
+                      <div className="fy-stat-label">Seguidores</div>
                     </div>
-                  );
-                })}
+                    <div className="fy-stat">
+                      <div className="fy-stat-value">{artist.works}</div>
+                      <div className="fy-stat-label">Obras</div>
+                    </div>
+                  </div>
+                  
+                  <div className="fy-rating">
+                    <div className="fy-stars">{renderStars(artist.rating)}</div>
+                    <span className="fy-rating-value">{artist.rating.toFixed(1)}</span>
+                  </div>
+                  
+                  <div className="fy-actions">
+                    {!isMe && (
+                      <button
+                        className={`fy-btn-follow ${isFollowing ? "is-following" : ""}`}
+                        // ✅ Passamos artist.followers para manter a referência correta na atualização otimista
+                        onClick={(e) => handleFollowClick(artist.id, artist.followers, e)}
+                      >
+                        {isFollowing ? "Seguindo" : "Seguir"}
+                      </button>
+                    )}
+                    
+                    {!isMe && (
+                      <button 
+                        className="fy-btn-monetize" 
+                        onClick={(e) => { e.stopPropagation(); setMonetizationUsername(artist.username); setShowMonetization(true); }}
+                      >
+                        <i className="fas fa-dollar-sign"></i>
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
-          </>
-        )}
+            );
+          })}
+        </div>
       </div>
 
-      <MonetizationPopup show={showMonetization} onClose={handleCloseMonetization} username={monetizationUsername} />
-
-      {/* --- estilos (mantidos) --- */}
-      <style jsx>{/* ...mantive exatamente os estilos que você já tinha... copiei-os para não alterar o visual */`
+      <MonetizationPopup
+        show={showMonetization}
+        onClose={() => setShowMonetization(false)}
+        username={monetizationUsername}
+      />
+      
+      <style jsx>{`
+        /* Mesmos estilos anteriores para consistência */
         :root {
-          --accent: #5e17eb; --accent-2: #7b3ff2; --accent-3: #3726a5;
+          --accent: #5e17eb; --accent-2: #7b3ff2;
           --surface-glass: rgba(18, 20, 38, 0.50);
           --surface-border: rgba(255, 255, 255, 0.18);
-          --surface-hover-border: rgba(255, 255, 255, 0.26);
           --text-strong: #f7f8ff; --text-soft: rgba(255,255,255,.9); --muted: rgba(255,255,255,.75);
-          --shadow-1: 0 12px 26px rgba(0,0,0,.28); --shadow-2: 0 16px 36px rgba(0,0,0,.34);
-          --ok: #34c759; --ok-2: #2fb151; --gold: #f5c542; --gold-2: #e7b418;
+          --ok: #34c759; --gold: #f5c542;
         }
 
         .fy-container { max-width: 1100px; margin: 0 auto; padding: 48px 20px 60px; }
-        .fy-title{ margin:0 0 6px; font-weight:800; letter-spacing:.2px; font-size:clamp(26px,2.4vw,34px); background:linear-gradient(90deg,#ffffff,#d6d9ff 40%,#bfc6ff 70%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-shadow: 0 2px 18px rgba(0,0,0,.35); }
-        .fy-subtitle{ margin:0 0 22px; color:var(--text-soft); text-shadow:0 1px 10px rgba(0,0,0,.28); }
+        .fy-title{ margin:0 0 6px; font-weight:800; font-size:clamp(26px,2.4vw,34px); background:linear-gradient(90deg,#ffffff,#d6d9ff 40%,#bfc6ff 70%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .fy-subtitle{ margin:0 0 22px; color:var(--text-soft); }
 
         .fy-search-container{ max-width:600px; margin:0 auto 30px; }
-        .fy-search-box{ position:relative; display:flex; align-items:center; background:var(--surface-glass); border:1px solid var(--surface-border); border-radius:16px; padding:12px 20px; backdrop-filter: blur(10px); transition:all .3s ease; box-shadow: var(--shadow-1); }
-        .fy-search-box:focus-within{ border-color:var(--accent); box-shadow: 0 0 0 3px rgba(94,23,235,0.1), var(--shadow-2); }
-        .fy-search-icon{ color:var(--muted); margin-right:12px; font-size:1.1rem; }
-        .fy-search-input{ flex:1; border:none; background:transparent; color:var(--text-strong); font-size:1rem; outline:none; }
-        .fy-search-input::placeholder{ color:var(--muted); }
-        .fy-search-clear{ background:none; border:none; color:var(--muted); cursor:pointer; padding:4px; border-radius:50%; transition:all .2s ease; }
-        .fy-search-clear:hover{ background: rgba(255,255,255,0.1); color:var(--text-strong); }
-        .fy-search-results-info{ display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px; margin-top:10px; color:var(--text-soft); }
-        .fy-search-clear-btn{ background:var(--surface-glass); border:1px solid var(--surface-border); color:var(--text-strong); padding:6px 12px; border-radius:8px; font-size:.9rem; cursor:pointer; transition:all .2s ease; }
-        .fy-search-clear-btn:hover{ background: rgba(255,255,255,0.1); border-color:var(--surface-hover-border); }
+        .fy-search-box{ display:flex; align-items:center; background:var(--surface-glass); border:1px solid var(--surface-border); border-radius:16px; padding:12px 20px; backdrop-filter: blur(10px); }
+        .fy-search-input{ flex:1; border:none; background:transparent; color:var(--text-strong); font-size:1rem; outline:none; margin: 0 10px; }
+        .fy-search-clear, .fy-search-icon { color: var(--muted); background: none; border: none; cursor: pointer;}
 
-        .fy-filters{ display:grid; grid-template-columns:1fr auto; align-items:center; gap:14px; margin-bottom:22px; }
+        .fy-filters{ display:grid; grid-template-columns:1fr auto; gap:14px; margin-bottom:22px; }
         .fy-filter-buttons{ display:flex; flex-wrap:wrap; gap:10px; }
-        .fy-filter-btn{ border:1px solid var(--surface-border); color:#fff; background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.10)); padding:10px 18px; border-radius:999px; font-weight:700; letter-spacing:.2px; backdrop-filter: blur(8px); transition: transform .15s ease, border-color .2s ease, box-shadow .25s ease, background .25s ease; }
-        .fy-filter-btn:hover{ transform:translateY(-1px); border-color:var(--surface-hover-border); background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.12)); box-shadow: 0 10px 24px rgba(0,0,0,.22); }
-        .fy-filter-btn.active{ background:linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: rgba(255,255,255,.26); box-shadow: 0 12px 26px rgba(94,23,235,.36); }
-        .fy-sort{ display:flex; align-items:center; gap:10px; color:var(--text-soft); font-weight:700; }
-        .fy-sort select{ background:var(--surface-glass); color:#fff; border:1px solid var(--surface-border); border-radius:12px; padding:8px 12px; outline:none; box-shadow: var(--shadow-1); }
-        .fy-loading{ color:var(--text-soft); }
-        .fy-no-results{ background:var(--surface-glass); border:1px solid var(--surface-border); border-radius:16px; padding:40px 20px; backdrop-filter: blur(10px); text-align:center; color:var(--text-soft); }
-        .fy-no-results i{ color:var(--muted); } .fy-no-results h4{ color:var(--text-strong); margin-bottom:10px; }
+        .fy-filter-btn{ border:1px solid var(--surface-border); color:#fff; background: rgba(255,255,255,.1); padding:8px 16px; border-radius:99px; transition:all .2s; cursor: pointer; }
+        .fy-filter-btn:hover, .fy-filter-btn.active{ background: var(--accent); border-color: var(--accent); transform: translateY(-1px); }
+        
+        .fy-sort select{ background:var(--surface-glass); color:#fff; border:1px solid var(--surface-border); border-radius:12px; padding:8px 12px; margin-left: 8px; cursor: pointer; }
 
         .fy-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:18px; }
-        .fy-card{ background:var(--surface-glass); color:var(--text-strong); border:1px solid var(--surface-border); border-radius:18px; box-shadow:var(--shadow-1); backdrop-filter: blur(10px) saturate(1.08); padding:18px 16px; transition: transform .18s ease, box-shadow .25s ease, border-color .22s ease; }
-        .fy-card:hover{ transform:translateY(-2px); box-shadow: var(--shadow-2); border-color: var(--surface-hover-border); }
+        .fy-card{ background:var(--surface-glass); color:var(--text-strong); border:1px solid var(--surface-border); border-radius:18px; padding:18px 16px; backdrop-filter: blur(10px); transition: transform .2s; cursor: pointer; }
+        .fy-card:hover{ transform: translateY(-4px); box-shadow: 0 12px 26px rgba(0,0,0,.28); border-color: rgba(255,255,255,0.3); }
 
-        .fy-card-header{ display:grid; place-items:center; margin-bottom:10px; }
-        .fy-avatar{ width:84px; height:84px; display:grid; place-items:center; color:#fff; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 10px 24px rgba(94,23,235,.35); font-size:34px; border:3px solid rgba(255,255,255,.75); text-shadow: 0 2px 10px rgba(0,0,0,.25); cursor:pointer; transition: transform .2s ease; }
-        .fy-avatar:hover{ transform: scale(1.05); }
+        .fy-card-header{ display:flex; justify-content:center; margin-bottom:12px; }
+        .fy-avatar{ width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--accent-2)); display:flex; align-items:center; justify-content:center; font-size:32px; color:#fff; overflow: hidden; border: 3px solid rgba(255,255,255,0.8); }
+        .fy-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-        .fy-card-info{ text-align:center; }
-        .fy-name{ font-weight:800; font-size:1.1rem; margin-bottom:2px; color:#fff; text-shadow:0 1px 10px rgba(0,0,0,.25); display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; transition: color .2s ease; }
-        .fy-name:hover{ color:var(--accent-2); }
+        .fy-name{ text-align:center; font-size:1.2rem; font-weight:700; margin-bottom:4px; }
+        .fy-category{ display:block; text-align:center; color:var(--muted); font-size:0.9rem; margin-bottom:12px; }
 
-        .fy-category{ display:inline-block; font-size:.9rem; color:var(--muted); margin-bottom:10px; }
-        .fy-stats{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:10px 0 12px; }
-        .fy-stat{ background: rgba(255,255,255,.08); border:1px solid var(--surface-border); border-radius:14px; padding:10px 8px; backdrop-filter: blur(6px); }
-        .fy-stat-value{ font-weight:800; font-size:1.05rem; color:#fff; }
-        .fy-stat-label{ font-size:.8rem; color:var(--muted); }
+        .fy-stats{ display:flex; justify-content:center; gap:12px; margin-bottom:12px; }
+        .fy-stat{ text-align:center; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:10px; min-width: 80px; }
+        .fy-stat-value{ font-weight:700; font-size:1.1rem; }
+        .fy-stat-label{ font-size:0.75rem; color:var(--muted); }
 
-        .fy-rating{ display:inline-flex; align-items:center; gap:8px; background: rgba(255,255,255,.08); border:1px solid var(--surface-border); border-radius:999px; padding:8px 12px; margin-bottom:12px; }
-        .fy-stars{ font-size:1rem; letter-spacing:1px; color:#fff; text-shadow:0 1px 10px rgba(0,0,0,.25); }
-        .fy-rating-value{ font-weight:700; color:var(--gold); text-shadow:0 1px 10px rgba(0,0,0,.25); }
+        .fy-rating{ display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:16px; background:rgba(255,255,255,0.05); padding:6px 12px; border-radius:20px; width: fit-content; margin-left: auto; margin-right: auto; }
+        .fy-rating-value{ font-weight:bold; color: var(--gold); }
 
-        .fy-actions{ display:grid; grid-template-columns:1fr 44px; gap:10px; align-items:center; }
-        .fy-btn-follow{ border-radius:12px; border:1px solid rgba(255,255,255,.18); color:#fff; font-weight:800; letter-spacing:.2px; padding:10px 12px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow:0 12px 26px rgba(94,23,235,.3); transition: transform .12s ease, filter .2s ease, box-shadow .25s ease, border-color .2s ease; cursor:pointer; }
-        .fy-btn-follow:hover{ transform:translateY(-1px); filter:brightness(1.05); border-color:rgba(255,255,255,.26); box-shadow:0 16px 32px rgba(94,23,235,.38); }
-        .fy-btn-follow.is-following{ background: linear-gradient(135deg, var(--ok), var(--ok-2)); box-shadow: 0 12px 26px rgba(52,199,89,.28); }
+        .fy-actions{ display:flex; justify-content:center; gap:10px; }
+        .fy-btn-follow{ background:var(--accent); color:white; border:none; padding:8px 20px; border-radius:10px; font-weight:600; cursor:pointer; transition: background .2s; }
+        .fy-btn-follow.is-following{ background:var(--ok); }
+        .fy-btn-monetize{ background:var(--gold); color:#000; border:none; width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+        
+        .no-results-msg { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 40px; font-size: 1.1rem; }
 
-        .fy-btn-monetize{ width:44px; height:44px; display:grid; place-items:center; border-radius:12px; border:1px solid rgba(255,255,255,.22); background: linear-gradient(135deg, var(--gold), var(--gold-2)); color:#1a1a1a; font-size:18px; box-shadow:0 10px 22px rgba(0,0,0,.24); transition: transform .12s ease, filter .2s ease, box-shadow .25s ease, border-color .2s ease; cursor:pointer; }
-        .fy-btn-monetize:hover{ transform:translateY(-1px); filter:brightness(1.05); border-color:rgba(255,255,255,.28); box-shadow:0 14px 32px rgba(0,0,0,.28); }
-
-        @media (max-width:640px) {
-          .fy-filters{ grid-template-columns:1fr; gap:12px; }
-          .fy-search-container{ margin:0 auto 20px; }
-          .fy-search-results-info{ flex-direction:column; text-align:center; }
+        @media (max-width: 600px) {
+          .fy-filters { grid-template-columns: 1fr; }
         }
       `}</style>
     </>
