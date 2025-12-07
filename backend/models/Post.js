@@ -8,6 +8,9 @@ const PostSchema = new mongoose.Schema({
   tipo: String,     // musica, texto, visual etc.
   genero: String,
 
+  mediaPath: String || null,
+  mediaType: String || null,
+
   data: { type: Date, default: Date.now },
 
   ratingAvg: { type: Number, default: 0 },

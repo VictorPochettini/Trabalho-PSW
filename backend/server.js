@@ -9,6 +9,9 @@ import rateLimit from 'express-rate-limit';
 import passport from 'passport';
 import mongoose from 'mongoose';
 import { conectaDB } from './server/database.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 // modelos
 import Avaliacao from './models/Avaliacao.js';
@@ -33,6 +36,42 @@ await conectaDB();
 
 const app = express();
 
+['uploads/image', 'uploads/audio'].forEach(dir => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+});
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const isImage = file.mimetype.startsWith('image/');
+    const isAudio = file.mimetype.startsWith('audio/');
+    
+    if (isImage) cb(null, 'uploads/image/');
+    else if (isAudio) cb(null, 'uploads/audio/');
+    else cb(new Error('Tipo de arquivo não suportado'));
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueName + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  const allowedImages = /jpeg|jpg|png|gif|webp/;
+  const allowedAudio = /mp3|wav|ogg|m4a|mpeg/;
+  
+  const ext = path.extname(file.originalname).toLowerCase().slice(1);
+  const isImage = file.mimetype.startsWith('image/') && allowedImages.test(ext);
+  const isAudio = file.mimetype.startsWith('audio/') && allowedAudio.test(ext);
+  
+  (isImage || isAudio) ? cb(null, true) : cb(new Error('Tipo não suportado'));
+};
+
+const upload = multer({ 
+  storage, 
+  fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
+
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
   console.log('Body:', req.body);
@@ -54,6 +93,7 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(passport.initialize());
+app.use('/uploads', express.static('uploads'));
 
 // rate limiter básico para endpoints sensíveis
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
@@ -161,9 +201,20 @@ app.get('/posts/:id', async (req, res) => {
 });
 
 // criar post -> exige autenticação (associa autor ao req.user._id)
-app.post('/posts', requireAuth, async (req, res) => {
+app.post('/posts', requireAuth, upload.single('media'), async (req, res) => {
   try {
-    const novo = new Post({ ...req.body, usuarioId: req.user._id });
+    const postData = {
+      ...req.body,
+      usuarioId: req.user._id
+    };
+    
+    // Se houver arquivo, adicionar caminho e tipo
+    if (req.file) {
+      postData.mediaPath = req.file.path;
+      postData.mediaType = req.file.mimetype.startsWith('image/') ? 'image' : 'audio';
+    }
+    
+    const novo = new Post(postData);
     await novo.save();
     res.status(201).json(novo);
   } catch (error) {
