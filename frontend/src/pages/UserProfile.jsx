@@ -119,46 +119,52 @@ const UserProfile = () => {
     : [];
   
   const userPosts = userPostsRaw
-    .map((p) => {
-      const isTexto = p.tipo === "texto" || p.tipo === "letra";
-      const isMusica = p.tipo === "musica";
-      const isImagem = p.tipo === "visual";
+  .map((p) => {
+    const isTexto = p.tipo === "texto" || p.tipo === "letra";
+    const isMusica = p.tipo === "musica";
+    const isImagem = p.tipo === "visual";
 
-      const base = {
-        ...p,
-        time: new Date(p.data).toLocaleString("pt-BR"),
-        mediaType: isMusica ? "audio" : isImagem ? "image" : isTexto ? "text" : undefined,
-        mediaSrc: (isMusica || isImagem) ? `/media/${p.conteudo}` : undefined,
-        mediaAlt: p.titulo || "Mídia do post",
-        authorName: user?.nome || user?.username || "Usuário",
-        authorUsername: user?.username || "",
-      };
+    // ✅ CORREÇÃO: Construir mediaSrc usando mediaPath
+    const API_URL = import.meta?.env?.VITE_API_URL ||
+  (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL) ||
+  'http://localhost:5000';
+    let mediaSrc = undefined;
+    if ((isMusica || isImagem) && p.mediaPath) {
+      const normalizedPath = p.mediaPath.replace(/\\/g, '/');
+      mediaSrc = `${API_URL}/${normalizedPath}`;
+    }
 
-      if (isTexto) {
-        return {
-          ...base,
-          content: p.titulo || "",
-          texto: p.texto ?? p.conteudo ?? "",
-        };
-      }
+    const base = {
+      ...p,
+      time: new Date(p.data).toLocaleString("pt-BR"),
+      mediaType: isMusica ? "audio" : isImagem ? "image" : isTexto ? "text" : undefined,
+      mediaSrc: mediaSrc,  // ✅ CORRIGIDO
+      mediaAlt: p.titulo || "Mídia do post",
+      authorName: user?.nome || user?.username || "Usuário",
+      authorUsername: user?.username || "",
+    };
 
-      const content = p.titulo
-        ? p.titulo
-        : (isMusica || isImagem)
-          ? (p.conteudo || "")
-          : "";
-
+    if (isTexto) {
       return {
         ...base,
-        content,
+        content: p.titulo || "",
+        texto: p.texto ?? p.conteudo ?? "",
       };
-    })
-    .slice()
-    .sort(
-      (a, b) =>
-        new Date(b.data ?? b.createdAt ?? b.time) - 
-        new Date(a.data ?? a.createdAt ?? a.time)
-    );
+    }
+
+    const content = p.titulo
+      ? p.titulo
+      : (isMusica || isImagem)
+        ? (p.conteudo || "")
+        : "";
+
+    return {
+      ...base,
+      content,
+      texto: p.texto ?? "",
+    };
+  })
+  .sort((a, b) => new Date(b.data) - new Date(a.data));
 
   const handleMonetizeClick = (uname) => {
     setMonetizationUsername(uname || username);

@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { addPost } from "../redux/postsSlice";
+import { createPostWithUpload } from "../redux/postsSlice";
 import PublicarLayout from "../components/layout/PublicarLayout";
 import DescricaoInput from "../components/publicar/DescricaoInput";
 import GeneroSelect from "../components/publicar/GeneroSelect";
@@ -28,17 +28,23 @@ const BackButton = () => {
 const PublicarMusica = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const posts = useSelector((state) => state.posts.lista || []);
 
-  // suporta novo/velho formato de currentUser
   const currentUserState = useSelector((s) => s.user?.currentUser);
   const currentUser = currentUserState?.user ?? currentUserState ?? null;
   const userId = currentUser?._id ?? currentUser?.id ?? null;
   const username = currentUser?.username ?? currentUser?.nome ?? "";
+  
+  // Estados do Redux
+  const uploading = useSelector((state) => state.posts.uploading);
+  const error = useSelector((state) => state.posts.error);
 
   const [descricao, setDescricao] = useState("");
   const [genero, setGenero] = useState("");
   const [arquivo, setArquivo] = useState(null);
+
+  const handleFileSelect = (file) => {
+    setArquivo(file);
+  };
 
   const handleEnviar = async () => {
     if (!descricao || !genero || !arquivo) {
@@ -50,40 +56,34 @@ const PublicarMusica = () => {
       return;
     }
 
-    const numericIds = posts.map((p) => Number(p.id)).filter((n) => !Number.isNaN(n));
-    const nextId = numericIds.length ? Math.max(...numericIds) + 1 : 1;
-
-    // Observação: aqui assumimos que o upload do arquivo já foi tratado
-    // pelo UploadArea (ou que você só salva o nome e faz upload separado).
-    const novoPost = {
-      id: String(nextId),
-      usuarioId: userId,
-      titulo: descricao.trim(),
-      conteudo: arquivo.name,
-      tipo: "musica",
-      genero,
-      data: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
     try {
-      const res = await dispatch(addPost(novoPost));
-      // se usas json-server/local slice, o retorno pode não ter payload
-      if (res && res.error) {
-        console.error("addPost returned error:", res.error);
-        alert("Erro ao enviar o post. Tente novamente.");
-        return;
-      }
+      // Preparar dados do post
+      const postData = {
+        titulo: descricao.trim(),
+        tipo: "musica",
+        genero,
+        conteudo: descricao.trim(),
+      };
+
+      // Dispatch da action com FormData
+      const result = await dispatch(
+        createPostWithUpload({ postData, file: arquivo })
+      ).unwrap();
+
+      console.log("✅ Post criado:", result);
       alert("Post enviado com sucesso!");
+      
+      // Limpar formulário
       setDescricao("");
       setGenero("");
       setArquivo(null);
+      
+      // Navegar para o perfil do usuário
       if (username) navigate(`/user/${username}`);
       else navigate("/");
     } catch (err) {
-      console.error("Erro ao enviar post:", err);
-      alert("Erro ao enviar o post. Tente novamente.");
+      console.error("❌ Erro ao enviar post:", err);
+      alert(err || "Erro ao enviar o post. Tente novamente.");
     }
   };
 
@@ -92,10 +92,39 @@ const PublicarMusica = () => {
       <BackButton />
       <PublicarLayout>
         <div className="container-publicar">
-          <DescricaoInput value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Escreva sobre sua música..." />
+          <DescricaoInput
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            placeholder="Escreva sobre sua música..."
+          />
           <GeneroSelect tipo="musica" value={genero} onChange={setGenero} />
-          <UploadArea tipo="audio" accept=".mp3,.wav" textoPrincipal="Faça upload do arquivo de áudio" textoSecundario=".mp3 ou .wav" onFileSelect={setArquivo} />
-          <EnviarButton onClick={handleEnviar} />
+          
+          {arquivo && (
+            <div className="arquivo-info" style={{ margin: "20px 0", padding: "10px", background: "#f5f5f5", borderRadius: "8px" }}>
+              <p style={{ margin: 0, fontSize: "14px" }}>
+                <strong>Arquivo selecionado:</strong> {arquivo.name}
+              </p>
+              <p style={{ margin: "5px 0 0 0", fontSize: "12px", color: "#666" }}>
+                Tamanho: {(arquivo.size / (1024 * 1024)).toFixed(2)} MB
+              </p>
+            </div>
+          )}
+          
+          <UploadArea
+            tipo="audio"
+            accept=".mp3,.wav,.ogg,.m4a"
+            textoPrincipal="Faça upload do arquivo de áudio"
+            textoSecundario=".mp3, .wav, .ogg ou .m4a"
+            onFileSelect={handleFileSelect}
+          />
+          
+          {error && (
+            <div style={{ color: "red", margin: "10px 0", textAlign: "center" }}>
+              {error}
+            </div>
+          )}
+          
+          <EnviarButton onClick={handleEnviar} loading={uploading} disabled={uploading} />
         </div>
       </PublicarLayout>
     </>

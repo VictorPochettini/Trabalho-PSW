@@ -58,6 +58,17 @@ const PostCard = ({
   const authorName = post?.authorName || post?.username || 'Usuário';
   const authorUsername = post?.authorUsername || post?.username?.replace('@', '') || '';
 
+  // ✅ NOVO: Pegar foto de perfil do autor
+  const authorPhoto = post?.authorPhoto || post?.fotoPerfil || null;
+  const API_URL = 'http://localhost:5000';
+  
+  const getAuthorPhotoUrl = () => {
+    if (!authorPhoto) return null;
+    if (authorPhoto.startsWith('data:')) return authorPhoto;
+    if (authorPhoto.startsWith('http')) return authorPhoto;
+    return `${API_URL}/${authorPhoto}`;
+  };
+
   // rating - usa postId consistente
   const ratingState = useSelector(selectRatingState(postId));
 
@@ -278,7 +289,19 @@ const PostCard = ({
                         role="button"
                         aria-label={`Abrir perfil de ${authorName}`}
                       >
-                        <i className="fas fa-user text-white"></i>
+                        {/* ✅ MUDANÇA: Usar foto de perfil do autor */}
+                        {getAuthorPhotoUrl() ? (
+                          <img 
+                            src={getAuthorPhotoUrl()} 
+                            alt={authorName}
+                            className="avatar-image"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <i className="fas fa-user text-white avatar-fallback" style={{ display: getAuthorPhotoUrl() ? 'none' : 'flex' }}></i>
                       </div>
                     </div>
                     <div className="user-details">
@@ -388,9 +411,9 @@ const PostCard = ({
                       <span className="quote-end">"</span>
                     </div>
 
-                    {/* Mídia */}
+                    {/* ✅ PLAYER DE ÁUDIO REDESENHADO */}
                     {mediaType === 'audio' && mediaSrc && (
-                      <div className="media-container audio-modern newskin glass">
+                      <div className="audio-player-container">
                         <audio
                           ref={audioRef}
                           src={mediaSrc}
@@ -398,39 +421,67 @@ const PostCard = ({
                           onTimeUpdate={onTimeUpdate}
                           onEnded={() => setIsPlaying(false)}
                         />
-                        <div className="audio-ui">
-                          <button className="au-btn" onClick={togglePlay} aria-label={isPlaying ? 'Pausar' : 'Reproduzir'} type="button">
-                            {isPlaying ? '❚❚' : '▶'}
+                        
+                        {/* Botão Play/Pause Grande */}
+                        <div className="audio-main-controls">
+                          <button 
+                            className="play-button-large" 
+                            onClick={togglePlay} 
+                            aria-label={isPlaying ? 'Pausar' : 'Reproduzir'}
+                            type="button"
+                          >
+                            <i className={`fas ${isPlaying ? 'fa-pause' : 'fa-play'}`}></i>
                           </button>
-                          <div className="au-times">
-                            <span className="au-time">{fmt(current)}</span>
+                          
+                          <div className="audio-progress-area">
+                            <div className="audio-times-top">
+                              <span className="time-current">{fmt(current)}</span>
+                              <span className="time-duration">{fmt(duration)}</span>
+                            </div>
+                            
+                            <div className="progress-bar-wrapper">
+                              <input
+                                className="progress-bar"
+                                type="range"
+                                min="0"
+                                max={Math.max(0, duration)}
+                                step="0.1"
+                                value={Math.min(current, duration || 0)}
+                                onChange={seek}
+                                aria-label="Progresso da música"
+                              />
+                              <div 
+                                className="progress-fill" 
+                                style={{ width: `${duration > 0 ? (current / duration) * 100 : 0}%` }}
+                              ></div>
+                            </div>
                           </div>
+                        </div>
+                        
+                        {/* Controle de Volume */}
+                        <div className="audio-volume-control">
+                          <button 
+                            className="volume-icon"
+                            onClick={() => {
+                              const newVolume = volume === 0 ? 1 : 0;
+                              changeVolume({ target: { value: newVolume } });
+                            }}
+                            aria-label={volume === 0 ? 'Ativar som' : 'Mutar'}
+                            type="button"
+                          >
+                            <i className={`fas ${volume === 0 ? 'fa-volume-mute' : volume < 0.5 ? 'fa-volume-down' : 'fa-volume-up'}`}></i>
+                          </button>
                           <input
-                            className="au-seek"
+                            className="volume-slider"
                             type="range"
                             min="0"
-                            max={Math.max(0, duration)}
-                            step="1"
-                            value={Math.min(current, duration || 0)}
-                            onChange={seek}
-                            aria-label="Linha do tempo"
+                            max="1"
+                            step="0.01"
+                            value={volume}
+                            onChange={changeVolume}
+                            aria-label="Volume"
                           />
-                          <div className="au-times">
-                            <span className="au-time">{fmt(duration)}</span>
-                          </div>
-                          <div className="au-vol">
-                            <span className="au-vol-ico">{volume === 0 ? '🔇' : volume < 0.6 ? '🔉' : '🔊'}</span>
-                            <input
-                              className="au-vol-range"
-                              type="range"
-                              min="0"
-                              max="1"
-                              step="0.01"
-                              value={volume}
-                              onChange={changeVolume}
-                              aria-label="Volume"
-                            />
-                          </div>
+                          <span className="volume-percentage">{Math.round(volume * 100)}%</span>
                         </div>
                       </div>
                     )}
@@ -538,15 +589,40 @@ const PostCard = ({
         .post-card-body { color: var(--text); }
 
         .user-avatar-container { display: grid; place-items: center; }
+        
+        /* ✅ AVATAR COM FOTO */
         .avatar-elevated {
-          border-radius: 12px;
+          border-radius: 50%;
           background: linear-gradient(135deg, var(--accent), var(--accent-2));
           box-shadow: 0 6px 18px rgba(94,23,235,.45);
           transition: filter .25s ease, transform .2s ease, box-shadow .25s ease;
+          width: 48px;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          position: relative;
         }
+        
+        .avatar-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 50%;
+        }
+        
+        .avatar-fallback {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100%;
+        }
+        
         .avatar-elevated:hover {
           filter: brightness(1.03);
-          transform: translateY(-1px);
+          transform: translateY(-1px) scale(1.05);
           box-shadow: 0 10px 26px rgba(94,23,235,.55);
         }
 
@@ -559,6 +635,219 @@ const PostCard = ({
           text-shadow: 0 2px 18px rgba(94,23,235, .35);
         }
         .subtle { opacity: .8; }
+
+        /* ✅ PLAYER DE ÁUDIO REDESENHADO - MODERNO E RESPONSIVO */
+        .audio-player-container {
+          background: linear-gradient(135deg, rgba(94, 23, 235, 0.15), rgba(123, 63, 242, 0.08));
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 20px;
+          padding: 24px;
+          margin: 16px 0;
+          backdrop-filter: blur(10px);
+          box-shadow: 0 8px 32px rgba(94, 23, 235, 0.2);
+        }
+        
+        .audio-main-controls {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          margin-bottom: 16px;
+        }
+        
+        .play-button-large {
+          width: 64px;
+          height: 64px;
+          min-width: 64px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #5e17eb, #7b3ff2);
+          border: none;
+          color: white;
+          font-size: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: 0 8px 24px rgba(94, 23, 235, 0.4);
+          transition: all 0.3s ease;
+        }
+        
+        .play-button-large:hover {
+          transform: scale(1.05);
+          box-shadow: 0 12px 32px rgba(94, 23, 235, 0.6);
+        }
+        
+        .play-button-large:active {
+          transform: scale(0.95);
+        }
+        
+        .play-button-large i {
+          margin-left: 2px;
+        }
+        
+        .play-button-large .fa-pause {
+          margin-left: 0;
+        }
+        
+        .audio-progress-area {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        
+        .audio-times-top {
+          display: flex;
+          justify-content: space-between;
+          font-size: 13px;
+          color: rgba(255, 255, 255, 0.8);
+          font-weight: 500;
+        }
+        
+        .progress-bar-wrapper {
+          position: relative;
+          height: 8px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+          overflow: hidden;
+        }
+        
+        .progress-fill {
+          position: absolute;
+          top: 0;
+          left: 0;
+          height: 100%;
+          background: linear-gradient(90deg, #5e17eb, #7b3ff2);
+          border-radius: 10px;
+          transition: width 0.1s linear;
+          pointer-events: none;
+        }
+        
+        .progress-bar {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          opacity: 0;
+          cursor: pointer;
+          z-index: 2;
+        }
+        
+        .progress-bar::-webkit-slider-thumb {
+          width: 16px;
+          height: 16px;
+          background: white;
+          border-radius: 50%;
+          cursor: pointer;
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+        
+        .progress-bar-wrapper:hover .progress-bar::-webkit-slider-thumb {
+          opacity: 1;
+        }
+        
+        .audio-volume-control {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding-top: 8px;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .volume-icon {
+          width: 36px;
+          height: 36px;
+          min-width: 36px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.1);
+          border: none;
+          color: white;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        
+        .volume-icon:hover {
+          background: rgba(255, 255, 255, 0.15);
+          transform: scale(1.05);
+        }
+        
+        .volume-slider {
+          flex: 1;
+          height: 6px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.1);
+          outline: none;
+          -webkit-appearance: none;
+          appearance: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 14px;
+          height: 14px;
+          background: white;
+          border-radius: 50%;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .volume-slider::-moz-range-thumb {
+          width: 14px;
+          height: 14px;
+          background: white;
+          border-radius: 50%;
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .volume-percentage {
+          font-size: 13px;
+          color: rgba(255, 255, 255, 0.8);
+          font-weight: 500;
+          min-width: 40px;
+          text-align: right;
+        }
+        
+        /* ✅ RESPONSIVIDADE DO PLAYER */
+        @media (max-width: 576px) {
+          .audio-player-container {
+            padding: 16px;
+          }
+          
+          .audio-main-controls {
+            gap: 12px;
+          }
+          
+          .play-button-large {
+            width: 56px;
+            height: 56px;
+            min-width: 56px;
+            font-size: 20px;
+          }
+          
+          .audio-times-top {
+            font-size: 11px;
+          }
+          
+          .volume-icon {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            font-size: 14px;
+          }
+          
+          .volume-percentage {
+            font-size: 11px;
+            min-width: 35px;
+          }
+        }
 
         .delete-button.danger {
           margin-left: 8px;
@@ -766,98 +1055,6 @@ const PostCard = ({
           0% { transform: translateX(-62%) rotate(8deg); opacity: 0; }
           12% { opacity: .7; }
           100% { transform: translateX(62%) rotate(8deg); opacity: 0; }
-        }
-
-        .audio-modern.newskin.glass {
-          background: var(--comment-btn-bg);
-          border-radius: 16px;
-          padding: 12px;
-          border: 1px solid rgba(255,255,255,.16);
-          box-shadow: 0 12px 26px rgba(0,0,0,.22);
-          color: #fff;
-          backdrop-filter: blur(4px) saturate(1.05);
-        }
-          
-        @media (max-width: 576px) {
-          .audio-ui {
-            grid-template-columns: 44px 1fr 44px;
-            grid-template-rows: auto auto;
-            grid-template-areas:
-              "play seek vol"
-              "timeL seek timeR";
-            align-items: center;
-            gap: 6px;
-            padding: 4px 0;
-          }
-
-          .audio-ui > .au-btn {
-            grid-area: play;
-            width: 40px;
-            height: 40px;
-          }
-
-          .audio-ui > .au-seek {
-            grid-area: seek;
-            height: 10px;
-            width: 210px;
-            margin: 0;
-            margin-bottom: 15px;
-            align-self: center;
-          }
-
-          .audio-ui > .au-vol {
-            grid-area: vol;
-            justify-self: end;
-            min-width: auto;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            height: 40px;
-            margin: 0;
-            padding: 0;
-          }
-
-          .audio-ui > .au-times:first-of-type {
-            grid-area: timeL;
-            justify-content: flex-start;
-            align-self: start;
-            margin-top: 2px;
-          }
-
-          .audio-ui > .au-times:last-of-type {
-            grid-area: timeR;
-            justify-content: flex-end;
-            align-self: start;
-            margin-top: 2px;
-          }
-
-          .au-time {
-            font-size: 11px;
-            opacity: .9;
-            line-height: 1;
-          }
-
-          .au-vol-range {
-            width: 70px;
-            height: 10px;
-            margin-left: 4px;
-          }
-
-          .au-seek::-webkit-slider-thumb {
-            width: 16px;
-            height: 16px;
-            margin-top: -3px;
-          }
-
-          .au-vol-range::-webkit-slider-thumb {
-            width: 14px;
-            height: 14px;
-            margin-top: -3px;
-          }
-
-          .media-container.audio-modern.newskin.glass {
-            padding: 10px;
-          }
         }
 
         @media (prefers-reduced-motion: reduce) {

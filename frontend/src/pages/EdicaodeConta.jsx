@@ -1,4 +1,4 @@
-﻿// src/pages/EdicaoDeConta.jsx
+﻿// src/pages/EdicaoDeConta.jsx - COM UPLOAD REAL DE FOTO
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateUser } from "../redux/usuariosSlice";
@@ -9,66 +9,164 @@ const EdicaoDeConta = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // novo formato: currentUser = { user, token }
   const currentUserState = useSelector((state) => state.user?.currentUser ?? null);
   const user = currentUserState?.user ?? null;
+  const token = currentUserState?.token;
 
-  // estados locais — inicializam vazios e serão preenchidos no useEffect quando 'user' chegar
   const [nomeUsuario, setNomeUsuario] = useState("");
   const [bio, setBio] = useState("");
-  // armazenamos como string (csv) para simplificar selects simples
   const [generosMusicais, setGenerosMusicais] = useState("");
   const [estilosArte, setEstilosArte] = useState("");
   const [previewUrl, setPreviewUrl] = useState(avatarPadrao);
+  
+  // ✅ NOVOS ESTADOS para upload
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState(null);
 
-  // popula campos quando o usuário estiver disponível (evita erro quando ainda não carregou)
+  const API_URL = 'http://localhost:5000';
+
   useEffect(() => {
     if (!user) return;
     setNomeUsuario(user.username ?? user.nome ?? "");
     setBio(user.bio ?? "");
-    // aceita string ou array — normaliza para csv string
+    
     if (Array.isArray(user.generosMusicais)) {
       setGenerosMusicais(user.generosMusicais.join(", "));
     } else {
       setGenerosMusicais(user.generosMusicais ?? "");
     }
+    
     if (Array.isArray(user.estilosArte)) {
       setEstilosArte(user.estilosArte.join(", "));
     } else {
       setEstilosArte(user.estilosArte ?? "");
     }
-    setPreviewUrl(user.fotoPerfil ?? avatarPadrao);
-  }, [user]);
+    
+    // ✅ Construir URL correta da foto
+    if (user.fotoPerfil) {
+      if (user.fotoPerfil.startsWith('data:')) {
+        setPreviewUrl(user.fotoPerfil);
+      } else if (user.fotoPerfil.startsWith('http')) {
+        setPreviewUrl(user.fotoPerfil);
+      } else {
+        setPreviewUrl(`${API_URL}/${user.fotoPerfil}`);
+      }
+    } else {
+      setPreviewUrl(avatarPadrao);
+    }
+  }, [user, API_URL]);
 
+  // ✅ NOVO: handleFileChange com preview E armazenar arquivo
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setPreviewUrl(URL.createObjectURL(file));
+    
+    if (!file) return;
+    
+    // Validar tipo
+    if (!file.type.startsWith("image/")) {
+      alert('Por favor, selecione uma imagem válida (JPG, PNG, etc.)');
+      return;
+    }
+    
+    // Validar tamanho (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Imagem muito grande! Máximo 5MB');
+      return;
+    }
+    
+    // Armazenar arquivo para upload posterior
+    setSelectedFile(file);
+    
+    // Preview imediato
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setPreviewUrl(event.target.result);
+    };
+    reader.readAsDataURL(file);
+    
+    console.log('📸 Arquivo selecionado:', file.name, 'Tamanho:', (file.size / 1024).toFixed(2) + 'KB');
+  };
+
+  // ✅ NOVO: Função para fazer upload da foto
+  const uploadProfilePhoto = async () => {
+    if (!selectedFile || !user || !token) return null;
+    
+    const userId = user._id || user.id;
+    
+    setUploadingPhoto(true);
+    setPhotoError(null);
+    
+    try {
+      const formData = new FormData();
+      formData.append('profilePhoto', selectedFile);
+      
+      console.log('📤 Fazendo upload da foto de perfil...');
+      
+      const response = await fetch(`${API_URL}/usuarios/${userId}/profile-photo`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao fazer upload da foto');
+      }
+      
+      const data = await response.json();
+      console.log('✅ Foto enviada com sucesso:', data);
+      
+      return data.fotoPerfil; // Retorna o caminho da foto salva
+      
+    } catch (error) {
+      console.error('❌ Erro ao fazer upload da foto:', error);
+      setPhotoError(error.message);
+      throw error;
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
+  // ✅ ATUALIZADO: handleSubmit com upload de foto
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user) return alert("Usuário não carregado.");
-
-    // Prepara payload: apenas campos editáveis
-    const dadosAtualizados = {
-      username: nomeUsuario?.trim(),
-      bio: bio ?? "",
-      // salva como string (backend pode aceitar string; se precisar array, alterar aqui)
-      generosMusicais: generosMusicais ?? "",
-      estilosArte: estilosArte ?? "",
-      fotoPerfil: previewUrl ?? avatarPadrao,
-    };
+    
+    if (!user) {
+      return alert("Usuário não carregado.");
+    }
 
     try {
-      // o thunk updateUser implementado no redux usa getState para identificar o usuário logado,
-      // portanto aqui só passamos os campos a atualizar.
+      // 1️⃣ Se tem foto nova, fazer upload primeiro
+      let fotoPerfilPath = user.fotoPerfil; // Mantém a foto atual
+      
+      if (selectedFile) {
+        console.log('🔄 Fazendo upload da nova foto...');
+        fotoPerfilPath = await uploadProfilePhoto();
+      }
+
+      // 2️⃣ Atualizar dados do usuário
+      const dadosAtualizados = {
+        username: nomeUsuario?.trim(),
+        bio: bio ?? "",
+        generosMusicais: generosMusicais ?? "",
+        estilosArte: estilosArte ?? "",
+        fotoPerfil: fotoPerfilPath, // ✅ Usa o caminho retornado pelo upload
+      };
+
+      console.log('💾 Salvando dados do usuário...', dadosAtualizados);
+      
       await dispatch(updateUser(dadosAtualizados)).unwrap();
-      // navegar para o perfil do novo username (se alterou)
+      
+      alert('✅ Perfil atualizado com sucesso!');
+      
+      // Navegar para o perfil
       navigate(`/user/${dadosAtualizados.username}`);
+      
     } catch (err) {
-      console.error("Erro ao atualizar usuário:", err);
+      console.error("❌ Erro ao atualizar perfil:", err);
       alert(err?.message || "Não foi possível salvar. Tente novamente.");
     }
   };
@@ -92,12 +190,12 @@ const EdicaoDeConta = () => {
               alt="Foto de perfil"
               style={styles.fotoPerfil}
               onError={(e) => {
-                console.log("Erro ao carregar imagem:", previewUrl);
+                console.log("❌ Erro ao carregar imagem:", previewUrl);
                 e.target.src = avatarPadrao;
               }}
             />
             <label htmlFor="fileInput" style={styles.uploadBtn} title="Alterar foto">
-              +
+              {uploadingPhoto ? '⏳' : '+'}
             </label>
             <input
               type="file"
@@ -105,9 +203,29 @@ const EdicaoDeConta = () => {
               accept="image/*"
               onChange={handleFileChange}
               style={{ display: "none" }}
+              disabled={uploadingPhoto}
             />
           </div>
         </div>
+
+        {/* ✅ NOVO: Feedback de upload */}
+        {uploadingPhoto && (
+          <p style={{ textAlign: 'center', color: '#fff', marginBottom: '10px' }}>
+            📤 Enviando foto...
+          </p>
+        )}
+        
+        {photoError && (
+          <p style={{ textAlign: 'center', color: '#ff6b6b', marginBottom: '10px' }}>
+            ❌ {photoError}
+          </p>
+        )}
+        
+        {selectedFile && !uploadingPhoto && (
+          <p style={{ textAlign: 'center', color: '#4ecdc4', marginBottom: '10px' }}>
+            ✅ Nova foto selecionada: {selectedFile.name}
+          </p>
+        )}
 
         <form onSubmit={handleSubmit}>
           <label style={styles.label}>Nome de usuário:</label>
@@ -133,7 +251,6 @@ const EdicaoDeConta = () => {
 
           <label style={styles.label}>Gêneros Musicais de Interesse:</label>
           <div style={styles.generoContainer}>
-            {/* select simples que altera o valor (poderia virar multi-select/checkbox no futuro) */}
             <select
               style={styles.generoSelect}
               value={generosMusicais}
@@ -179,8 +296,16 @@ const EdicaoDeConta = () => {
             </select>
           </div>
 
-          <button style={styles.salvarBtn} type="submit">
-            Salvar
+          <button 
+            style={{
+              ...styles.salvarBtn,
+              opacity: uploadingPhoto ? 0.6 : 1,
+              cursor: uploadingPhoto ? 'not-allowed' : 'pointer'
+            }} 
+            type="submit"
+            disabled={uploadingPhoto}
+          >
+            {uploadingPhoto ? '⏳ Enviando...' : 'Salvar'}
           </button>
         </form>
       </div>

@@ -116,17 +116,17 @@ const HeaderForYou = () => {
         .hf-left{ display:flex; align-items:center; }
         .hf-brand{ display:flex; align-items:center; gap:10px; text-decoration:none; }
         .hf-logo{ height:36px; width:auto; display:block; }
-        .hf-brandText{ color:var(--text); font-weight:800; letter-spacing:0.4px; font-size:1.05rem; }
+        .hf-brandText{ color:white; font-weight:800; letter-spacing:0.4px; font-size:1.05rem; }
 
         /* menu default (desktop) */
         .hf-menu{ display:flex; gap:12px; list-style:none; margin:0; padding:0; align-items:center; flex:1; }
         .hf-menu li{ display:flex; }
         .hf-link{ display:inline-flex; align-items:center; gap:8px; padding:8px 10px; color:var(--muted); text-decoration:none; border-radius:8px; font-weight:600; transition: background .12s ease, color .12s; }
-        .hf-link:hover, .hf-link:focus{ background: rgba(255,255,255,0.03); color:var(--text); outline:none; }
-        .hf-active{ color:var(--text); background: linear-gradient(90deg, rgba(106,90,224,0.12), rgba(140,127,242,0.08)); box-shadow: 0 6px 18px rgba(106,90,224,0.06); }
+        .hf-link:hover, .hf-link:focus{ background: rgba(255, 255, 255, 0.03); color:white; outline:none; }
+        .hf-active{ color:white; background: linear-gradient(90deg, rgba(106,90,224,0.12), rgba(140,127,242,0.08)); box-shadow: 0 6px 18px rgba(106,90,224,0.06); }
 
         .hf-right{ display:flex; align-items:center; gap:10px; }
-        .hf-profile{ display:inline-flex; align-items:center; gap:8px; text-decoration:none; color:var(--text); padding:6px 8px; border-radius:8px; }
+        .hf-profile{ display:inline-flex; align-items:center; gap:8px; text-decoration:none; color:white; padding:6px 8px; border-radius:8px; }
         .hf-avatar{ width:36px; height:36px; border-radius:50%; object-fit:cover; }
         .hf-avatarIcon{ font-size:36px; color:var(--text); }
         .hf-username{ font-weight:700; font-size:0.95rem; }

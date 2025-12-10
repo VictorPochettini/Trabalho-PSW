@@ -24,7 +24,7 @@ const usuarioSchema = new mongoose.Schema(
     followersCount: { type: Number, default: 0 },
     followingCount: { type: Number, default: 0 },
 
-    fotoPerfil: { type: String, default: "/images/avatarPadrao.png" }
+    fotoPerfil: { type: String, default: "http://localhost:5000/uploads/image/padrao.png" }
   },
   { timestamps: true }
 );

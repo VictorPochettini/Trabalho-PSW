@@ -89,11 +89,20 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(helmet());
-app.use(cors());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(passport.initialize());
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static('uploads'));
 
 // rate limiter básico para endpoints sensíveis
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
@@ -175,6 +184,46 @@ app.patch('/usuarios/:id', requireAuth, async (req, res) => {
     if (!usuario) return res.status(404).json({ error: 'Usuário não encontrado' });
     res.json(usuario);
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ADICIONAR depois da seção de usuários
+app.patch('/usuarios/:id/profile-photo', requireAuth, upload.single('profilePhoto'), async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const requestingUserId = req.user._id;
+    
+    if (String(userId) !== String(requestingUserId) && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nenhuma imagem foi enviada' });
+    }
+    
+    let normalizedPath = req.file.path.replace(/\\/g, '/');
+
+    normalizedPath = "http://localhost:5000/"+normalizedPath;
+    
+    const usuario = await Usuario.findByIdAndUpdate(
+      userId,
+      { fotoPerfil: normalizedPath },
+      { new: true }
+    ).select('-password -refreshTokens');
+    
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+    
+    res.json({
+      message: 'Foto de perfil atualizada com sucesso',
+      fotoPerfil: normalizedPath,
+      usuario
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro:', error);
     res.status(500).json({ error: error.message });
   }
 });

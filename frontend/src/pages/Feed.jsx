@@ -79,34 +79,56 @@ const Feed = () => {
 
   // --- Combinação de Posts (Inalterada) ---
   useEffect(() => {
-    if (!loadingPosts && !loadingUsuarios && usuarios.length >= 0) {
-      const combinados = (posts || []).map((post) => {
-        const usuario = usuarios.find((u) => {
-          const uid = u?._id ?? u?.id;
-          const postUserId = post.usuarioId ?? post.userId;
-          return String(uid) === String(postUserId);
-        });
-        
-        return {
-          ...post,
-          id: post._id ?? post.id,
-          content: post.titulo ?? post.content ?? "",
-          texto: post.conteudo ?? post.texto ?? "",
-          username: usuario ? (usuario.nome || usuario.username) : "@desconhecido",
-          usuarioId: String(post.usuarioId ?? post.userId),
-          mediaType:
-            post.tipo === "musica" ? "audio" : post.tipo === "visual" ? "image" : "text",
-          mediaSrc: (post.tipo === "musica" || post.tipo === "visual") ? `/media/${post.conteudo}` : null,
-          mediaAlt: post.tipo === "visual" ? post.titulo : null,
-          time: post.data ? new Date(post.data).toLocaleString() : (post.createdAt ? new Date(post.createdAt).toLocaleString() : "")
-        };
+  if (!loadingPosts && !loadingUsuarios && usuarios.length >= 0) {
+    // ✅ Definir URL da API
+    const API_URL = import.meta?.env?.VITE_API_URL ||
+  (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL) ||
+  'http://localhost:5000';
+    
+    const combinados = (posts || []).map((post) => {
+      const usuario = usuarios.find((u) => {
+        const uid = u?._id ?? u?.id;
+        const postUserId = post.usuarioId ?? post.userId;
+        return String(uid) === String(postUserId);
       });
+      
+      // ✅ CORREÇÃO: Construir mediaSrc corretamente
+      let mediaSrc = null;
+      if (post.tipo === "musica" || post.tipo === "visual") {
+        if (post.mediaPath) {
+          // Normalizar caminho (substituir \ por /)
+          const normalizedPath = post.mediaPath.replace(/\\/g, '/');
+          mediaSrc = `${API_URL}/${normalizedPath}`;
+        }
+      }
+      
+      return {
+        ...post,
+        id: post._id ?? post.id,
+        content: post.titulo ?? post.content ?? "",
+        texto: post.conteudo ?? post.texto ?? "",
+        username: usuario ? (usuario.nome || usuario.username) : "@desconhecido",
+        usuarioId: String(post.usuarioId ?? post.userId),
+        mediaType:
+          post.tipo === "musica" ? "audio" : post.tipo === "visual" ? "image" : "text",
+        mediaSrc: mediaSrc,  // ✅ CORRIGIDO
+        mediaAlt: post.tipo === "visual" ? post.titulo : null,
+        time: post.data ? new Date(post.data).toLocaleString() : 
+          (post.createdAt ? new Date(post.createdAt).toLocaleString() : "")
+      };
+    });
 
-      const getDate = (p) => p?.data ?? p?.createdAt ?? p?.time;
-      combinados.sort((a, b) => new Date(getDate(b)) - new Date(getDate(a)));
-      setPostsComUsuario(combinados);
-    }
-  }, [loadingPosts, loadingUsuarios, posts, usuarios]);
+    const getDate = (p) => p?.data ?? p?.createdAt ?? p?.time;
+    combinados.sort((a, b) => new Date(getDate(b)) - new Date(getDate(a)));
+    setPostsComUsuario(combinados);
+    
+    // 🐛 Debug: Verificar URLs
+    console.log('📊 Feed - Posts com mediaSrc:', combinados
+      .filter(p => p.mediaSrc)
+      .map(p => ({ id: p.id, titulo: p.content, mediaSrc: p.mediaSrc }))
+    );
+  }
+}, [loadingPosts, loadingUsuarios, posts, usuarios]);
 
   // --- Filtro de Feed (Inalterado) ---
   useEffect(() => {
