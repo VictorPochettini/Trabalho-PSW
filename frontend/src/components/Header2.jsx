@@ -3,23 +3,61 @@ import React, { useState, useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import logo from "../images/ArtBeat_Branco.png";
 import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../redux/usuariosSlice";
+import { logout, fetchUsuarios } from "../redux/usuariosSlice";
 
 const HeaderForYou = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
+  const [currentFoto, setCurrentFoto] = useState(null);
 
   // currentUserState = { user, token }
   const currentUserState = useSelector((s) => s.user?.currentUser);
   const user = currentUserState?.user ?? null;
+  const usuarios = useSelector((s) => s.user?.usuarios || []);
 
   useEffect(() => {
-    // bloqueia scroll quando drawer aberto
     document.body.style.overflow = open ? "hidden" : "";
     return () => (document.body.style.overflow = "");
   }, [open]);
+
+  // ✅ Carregar lista de usuários
+  useEffect(() => {
+    if (user && usuarios.length === 0) {
+      dispatch(fetchUsuarios());
+    }
+  }, [user, usuarios.length, dispatch]);
+
+  // ✅ Sincronizar foto
+  useEffect(() => {
+    if (!user) {
+      setCurrentFoto(null);
+      return;
+    }
+
+    if (user.fotoPerfil) {
+      setCurrentFoto(user.fotoPerfil);
+    }
+
+    if (usuarios.length > 0) {
+      const userId = String(user._id || user.id);
+      const usuarioAtualizado = usuarios.find(u => String(u._id || u.id) === userId);
+      
+      if (usuarioAtualizado?.fotoPerfil) {
+        setCurrentFoto(usuarioAtualizado.fotoPerfil);
+      }
+    }
+  }, [user, usuarios]);
+
+  // ✅ Polling para pegar foto nova
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      dispatch(fetchUsuarios());
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [user, dispatch]);
 
   const toggle = () => setOpen((v) => !v);
   const close = () => setOpen(false);
@@ -50,7 +88,6 @@ const HeaderForYou = () => {
             </Link>
           </div>
 
-          {/* hamburger - aparece só em telas pequenas */}
           <button
             className={`hf-hamb ${open ? "hf-open" : ""}`}
             aria-label={open ? "Fechar menu" : "Abrir menu"}
@@ -62,14 +99,12 @@ const HeaderForYou = () => {
             <span />
           </button>
 
-          {/* overlay (fecha ao clicar) */}
           <div
             className={`hf-overlay ${open ? "hf-show" : ""}`}
             onClick={close}
             aria-hidden={!open}
           />
 
-          {/* menu */}
           <ul className={`hf-menu ${open ? "hf-openMenu" : ""}`} role="menubar">
             <li><Link to="/feed" className={`hf-link ${isActive("feed") ? "hf-active" : ""}`} onClick={close}> <i className="fa-solid fa-house" /> <span>Feed</span></Link></li>
             <li><Link to="/populares" className={`hf-link ${isActive("populares") ? "hf-active" : ""}`} onClick={close}> <i className="fa-solid fa-fire" /> <span>Populares</span></Link></li>
@@ -84,8 +119,12 @@ const HeaderForYou = () => {
               onClick={close}
               title="Meu perfil"
             >
-              {user?.fotoPerfil ? (
-                <img src={user.fotoPerfil} alt={`${user.username} foto`} className="hf-avatar" />
+              {currentFoto ? (
+                <img 
+                  src={currentFoto} 
+                  alt={`${user?.username} foto`} 
+                  className="hf-avatar"
+                />
               ) : (
                 <i className="fa-solid fa-circle-user hf-avatarIcon" aria-hidden="true" />
               )}
@@ -100,7 +139,6 @@ const HeaderForYou = () => {
         </nav>
       </header>
 
-      {/* CSS inline simples e isolado (prefixo hf- para evitar conflitos) */}
       <style>{`
         :root{
           --accent1:#6a5ae0;
@@ -118,7 +156,6 @@ const HeaderForYou = () => {
         .hf-logo{ height:36px; width:auto; display:block; }
         .hf-brandText{ color:white; font-weight:800; letter-spacing:0.4px; font-size:1.05rem; }
 
-        /* menu default (desktop) */
         .hf-menu{ display:flex; gap:12px; list-style:none; margin:0; padding:0; align-items:center; flex:1; }
         .hf-menu li{ display:flex; }
         .hf-link{ display:inline-flex; align-items:center; gap:8px; padding:8px 10px; color:var(--muted); text-decoration:none; border-radius:8px; font-weight:600; transition: background .12s ease, color .12s; }
@@ -126,26 +163,36 @@ const HeaderForYou = () => {
         .hf-active{ color:white; background: linear-gradient(90deg, rgba(106,90,224,0.12), rgba(140,127,242,0.08)); box-shadow: 0 6px 18px rgba(106,90,224,0.06); }
 
         .hf-right{ display:flex; align-items:center; gap:10px; }
-        .hf-profile{ display:inline-flex; align-items:center; gap:8px; text-decoration:none; color:white; padding:6px 8px; border-radius:8px; }
-        .hf-avatar{ width:36px; height:36px; border-radius:50%; object-fit:cover; }
-        .hf-avatarIcon{ font-size:36px; color:var(--text); }
+        .hf-profile{ display:inline-flex; align-items:center; gap:8px; text-decoration:none; color:white; padding:6px 8px; border-radius:8px; transition: background .12s ease; }
+        .hf-profile:hover{ background: rgba(255,255,255,0.03); }
+        
+        .hf-avatar{ 
+          width:36px; 
+          height:36px; 
+          border-radius:50%; 
+          object-fit:cover; 
+          border: 2px solid rgba(255,255,255,0.2);
+        }
+        .hf-avatarIcon{ 
+          font-size:36px; 
+          color:var(--text);
+        }
+        
         .hf-username{ font-weight:700; font-size:0.95rem; }
 
-        .hf-logout{ display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fff; border:none; padding:8px 10px; border-radius:10px; cursor:pointer; font-weight:700; }
+        .hf-logout{ display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fff; border:none; padding:8px 10px; border-radius:10px; cursor:pointer; font-weight:700; transition: transform .12s ease, filter .15s ease; }
+        .hf-logout:hover{ transform: translateY(-1px); filter: brightness(1.05); }
         .hf-logoutText{ display:inline-block; }
 
-        /* hamburger - hidden desktop */
         .hf-hamb{ display:none; background:transparent; border:none; width:44px; height:40px; padding:6px; cursor:pointer; align-items:center; justify-content:center; }
         .hf-hamb span{ display:block; height:2px; background:var(--text); margin:5px 0; border-radius:2px; transition: transform .2s ease, opacity .18s ease; }
         .hf-hamb.hf-open span:nth-child(1){ transform: translateY(7px) rotate(45deg); }
         .hf-hamb.hf-open span:nth-child(2){ opacity:0; transform: scaleX(0); }
         .hf-hamb.hf-open span:nth-child(3){ transform: translateY(-7px) rotate(-45deg); }
 
-        /* overlay */
         .hf-overlay{ display:none; }
         .hf-overlay.hf-show{ display:block; position:fixed; inset:0; background: rgba(0,0,0,0.45); z-index:999; }
 
-        /* mobile drawer */
         @media (max-width: 820px){
           .hf-hamb{ display:flex; }
           .hf-menu{ position: fixed; top:0; right:0; height:100vh; width: min(92%, 320px); background: linear-gradient(180deg, rgba(8,8,12,0.96), rgba(14,14,20,0.98)); flex-direction:column; padding:72px 16px 20px; gap:12px; transform: translateX(110%); transition: transform .28s ease; z-index:1000; align-items:stretch; }
@@ -156,11 +203,9 @@ const HeaderForYou = () => {
           .hf-logoutText{ display:none; }
         }
 
-        /* small tweaks */
         .hf-link i{ width:18px; text-align:center; }
         .hf-link span{ line-height:1; }
 
-        /* focus styles */
         .hf-link:focus-visible, .hf-hamb:focus-visible, .hf-logout:focus-visible, .hf-profile:focus-visible{ outline: 3px solid rgba(138,120,242,0.14); outline-offset:2px; }
 
       `}</style>

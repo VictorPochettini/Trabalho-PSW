@@ -58,6 +58,7 @@ const UserProfile = () => {
   // ✅ ESTADO DE EDIÇÃO CORRIGIDO
   const [editingPost, setEditingPost] = useState(null);
   const [editText, setEditText] = useState('');
+  const [editTitle, setEditTitle] = useState('');
 
   const didInitRef = useRef(false);
   useEffect(() => {
@@ -142,6 +143,7 @@ const UserProfile = () => {
       mediaAlt: p.titulo || "Mídia do post",
       authorName: user?.nome || user?.username || "Usuário",
       authorUsername: user?.username || "",
+      authorPhoto: user?.fotoPerfil || null,
     };
 
     if (isTexto) {
@@ -234,11 +236,13 @@ const UserProfile = () => {
     const postId = post._id || post.id;
     setEditingPost(postId);
     
-    // ✅ BUSCA O TEXTO CORRETO DEPENDENDO DO TIPO DE POST
+    // ✅ BUSCA O TEXTO E TÍTULO CORRETO DEPENDENDO DO TIPO DE POST
     let textToEdit = '';
+    let titleToEdit = '';
     
     if (post.tipo === 'texto' || post.tipo === 'letra') {
-      // Para posts de texto, usa o campo 'texto' ou 'conteudo'
+      // Para posts de texto, usa o campo 'texto' ou 'conteudo' + título separado
+      titleToEdit = post.titulo || '';
       textToEdit = post.texto || post.conteudo || post.content || '';
     } else if (post.tipo === 'musica' || post.tipo === 'visual') {
       // Para posts de mídia, usa o 'titulo'
@@ -251,19 +255,16 @@ const UserProfile = () => {
     console.log('📝 Iniciando edição:', {
       postId,
       tipo: post.tipo,
+      tituloParaEditar: titleToEdit,
       textoParaEditar: textToEdit
     });
     
     setEditText(textToEdit);
+    setEditTitle(titleToEdit);
   };
 
   // ✅ FUNÇÃO CORRIGIDA - Salvar edição usando Redux
   const handleSaveEdit = async (postId) => {
-    if (!editText.trim()) {
-      alert('O texto não pode estar vazio!');
-      return;
-    }
-
     try {
       // Busca o post original
       const postToUpdate = posts.find(p => String(p._id || p.id) === String(postId));
@@ -274,14 +275,27 @@ const UserProfile = () => {
         return;
       }
 
+      // Validação específica para posts de texto
+      if (postToUpdate.tipo === 'texto' || postToUpdate.tipo === 'letra') {
+        if (!editTitle.trim() || !editText.trim()) {
+          alert('Título e letra não podem estar vazios!');
+          return;
+        }
+      } else {
+        if (!editText.trim()) {
+          alert('O texto não pode estar vazio!');
+          return;
+        }
+      }
+
       // ✅ PREPARA OS DADOS CORRETAMENTE BASEADO NO TIPO
       let updateData = {};
       
       if (postToUpdate.tipo === 'texto' || postToUpdate.tipo === 'letra') {
-        // Para posts de texto, atualiza 'conteudo' e 'titulo'
+        // Para posts de texto, atualiza 'conteudo' e 'titulo' separadamente
         updateData = {
+          titulo: editTitle.trim(),
           conteudo: editText.trim(),
-          titulo: editText.trim().substring(0, 100),
         };
       } else if (postToUpdate.tipo === 'musica' || postToUpdate.tipo === 'visual') {
         // Para posts de mídia, atualiza apenas o 'titulo' (descrição)
@@ -311,6 +325,7 @@ const UserProfile = () => {
       // ✅ LIMPA O ESTADO DE EDIÇÃO
       setEditingPost(null);
       setEditText('');
+      setEditTitle('');
 
       console.log('✅ Post editado com sucesso!');
       
@@ -324,6 +339,7 @@ const UserProfile = () => {
   const handleCancelEdit = () => {
     setEditingPost(null);
     setEditText('');
+    setEditTitle('');
   };
 
   return (
@@ -446,7 +462,9 @@ const UserProfile = () => {
                               onCancelEdit={handleCancelEdit}
                               isEditing={editingPost === postId}
                               editText={editText}
+                              editTitle={editTitle}
                               onEditTextChange={setEditText}
+                              onEditTitleChange={setEditTitle}
                               isOwnProfile={isOwnProfile}
                             />
                           </div>

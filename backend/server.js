@@ -233,8 +233,31 @@ app.patch('/usuarios/:id/profile-photo', requireAuth, upload.single('profilePhot
 app.get('/posts', async (req, res) => {
   try {
     const posts = await Post.find();
-    res.json(posts);
+    
+    // ✅ CORREÇÃO: Incluir ratingAvg e ratingCount para cada post
+    const postsWithRatings = await Promise.all(
+      posts.map(async (post) => {
+        const postObj = post.toObject();
+        
+        // Buscar avaliações do post
+        const avaliacoes = await Avaliacao.find({ postId: post._id });
+        
+        if (avaliacoes.length > 0) {
+          const sum = avaliacoes.reduce((acc, av) => acc + Number(av.estrelas || 0), 0);
+          postObj.ratingAvg = Number((sum / avaliacoes.length).toFixed(2));
+          postObj.ratingCount = avaliacoes.length;
+        } else {
+          postObj.ratingAvg = 0;
+          postObj.ratingCount = 0;
+        }
+        
+        return postObj;
+      })
+    );
+    
+    res.json(postsWithRatings);
   } catch (error) {
+    console.error('Erro ao buscar posts:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -243,7 +266,21 @@ app.get('/posts/:id', async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ error: 'Post não encontrado' });
-    res.json(post);
+    
+    // ✅ Incluir ratingAvg e ratingCount
+    const postObj = post.toObject();
+    const avaliacoes = await Avaliacao.find({ postId: post._id });
+    
+    if (avaliacoes.length > 0) {
+      const sum = avaliacoes.reduce((acc, av) => acc + Number(av.estrelas || 0), 0);
+      postObj.ratingAvg = Number((sum / avaliacoes.length).toFixed(2));
+      postObj.ratingCount = avaliacoes.length;
+    } else {
+      postObj.ratingAvg = 0;
+      postObj.ratingCount = 0;
+    }
+    
+    res.json(postObj);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -337,12 +374,96 @@ app.post('/desafios', requireAuth, async (req, res) => {
   }
 });
 
-app.patch('/desafios/:id', requireAuth, async (req, res) => {
+// server.js - PATCH para rota POST /desafios
+
+// Substituir a rota existente (linha ~367):
+/*
+app.post('/desafios', requireAuth, async (req, res) => {
   try {
-    const desafio = await Desafio.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!desafio) return res.status(404).json({ error: 'Desafio não encontrado' });
-    res.json(desafio);
+    const novo = new Desafio({ ...req.body, createdBy: req.user._id });
+    await novo.save();
+    res.status(201).json(novo);
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+*/
+
+// ✅ NOVA IMPLEMENTAÇÃO:
+app.post('/desafios', requireAuth, async (req, res) => {
+  try {
+    console.log('📥 Recebendo requisição para criar desafio');
+    console.log('📦 Body recebido:', req.body);
+    
+    // ✅ Normalizar tipoAceito e tiposPermitidos
+    let tipoAceito = req.body.tipoAceito || req.body.tiposPermitidos || [];
+    
+    // Garantir que é array
+    if (!Array.isArray(tipoAceito)) {
+      tipoAceito = [tipoAceito];
+    }
+    
+    // Filtrar valores vazios e normalizar para lowercase
+    tipoAceito = tipoAceito
+      .filter(t => t && typeof t === 'string')
+      .map(t => t.toLowerCase().trim());
+    
+    // Se array vazio, usar todos os tipos
+    if (tipoAceito.length === 0) {
+      tipoAceito = ['musica', 'visual', 'texto'];
+    }
+    
+    console.log('✅ tipoAceito normalizado:', tipoAceito);
+    
+    // Criar objeto do desafio
+    const desafioData = {
+      ...req.body,
+      tipoAceito,           // ✅ Campo principal
+      tiposPermitidos: tipoAceito, // ✅ Compatibilidade
+      createdBy: req.user._id
+    };
+    
+    console.log('💾 Criando desafio:', desafioData);
+    
+    const novo = new Desafio(desafioData);
+    await novo.save();
+    
+    console.log('✅ Desafio criado com sucesso:', novo._id);
+    console.log('   tipoAceito:', novo.tipoAceito);
+    console.log('   tiposPermitidos:', novo.tiposPermitidos);
+    
+    res.status(201).json(novo);
+  } catch (error) {
+    console.error('❌ Erro ao criar desafio:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /desafios/:id - Excluir desafio (apenas criador ou admin)
+app.delete('/desafios/:id', requireAuth, async (req, res) => {
+  try {
+    const desafio = await Desafio.findById(req.params.id);
+    if (!desafio) return res.status(404).json({ error: 'Desafio não encontrado' });
+    
+    // Verifica se o usuário é o criador ou admin
+    const userId = req.user._id || req.user.id;
+    const userRole = req.user.role || req.user.tipo;
+    const isCreator = String(desafio.criadorId) === String(userId);
+    const isAdmin = userRole === 'admin' || userRole === 'ADMIN';
+    
+    if (!isCreator && !isAdmin) {
+      return res.status(403).json({ error: 'Sem permissão para excluir este desafio' });
+    }
+    
+    // Remove o desafio
+    await Desafio.findByIdAndDelete(req.params.id);
+    
+    // Opcional: também remover participações relacionadas
+    await Participacao.deleteMany({ desafioId: req.params.id });
+    
+    res.json({ message: 'Desafio excluído com sucesso', id: req.params.id });
+  } catch (error) {
+    console.error('Erro ao excluir desafio:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -363,14 +484,59 @@ app.get('/participacoes', async (req, res) => {
 });
 
 // criar participação -> exige auth, associa usuario logado
+// PATCH PARA server.js - Seção de participações
+// Substitua a rota POST /participacoes no seu server.js (linha ~432)
+
+// criar participação -> exige auth, associa usuario logado
 app.post('/participacoes', requireAuth, async (req, res) => {
   try {
     const body = req.body || {};
-    if (!body.desafioId || !body.postId) return res.status(400).json({ error: 'desafioId e postId são obrigatórios' });
+    if (!body.desafioId || !body.postId) {
+      return res.status(400).json({ error: 'desafioId e postId são obrigatórios' });
+    }
+
+    // ✅ CORREÇÃO 4: Validar que o post foi criado DEPOIS da data de início do desafio
+    const desafio = await Desafio.findById(body.desafioId);
+    if (!desafio) {
+      return res.status(404).json({ error: 'Desafio não encontrado' });
+    }
+
+    const post = await Post.findById(body.postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post não encontrado' });
+    }
+
+    // Verificar se o post foi criado após a data de início do desafio
+    if (desafio.dataInicio) {
+      const dataInicioDesafio = new Date(desafio.dataInicio);
+      const dataPost = new Date(post.createdAt || post.dataPublicacao);
+
+      if (dataPost < dataInicioDesafio) {
+        return res.status(400).json({ 
+          error: 'Este post foi criado antes do início do desafio e não pode ser submetido',
+          dataPost: dataPost.toISOString(),
+          dataInicioDesafio: dataInicioDesafio.toISOString()
+        });
+      }
+    }
+
+    // Verificar se já existe uma participação com este post
+    const existente = await Participacao.findOne({ 
+      desafioId: body.desafioId, 
+      postId: body.postId 
+    });
+
+    if (existente) {
+      return res.status(409).json({ error: 'Este post já foi submetido a este desafio' });
+    }
+
     const novo = new Participacao({ ...body, usuarioId: req.user._id });
     await novo.save();
+    
+    console.log('✅ Participação criada:', novo);
     res.status(201).json(novo);
   } catch (error) {
+    console.error('❌ Erro ao criar participação:', error);
     res.status(500).json({ error: error.message });
   }
 });

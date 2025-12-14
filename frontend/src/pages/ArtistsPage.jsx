@@ -35,10 +35,15 @@ const ArtistPage = () => {
       const tipo = p?.tipo;
       if (!['musica', 'texto', 'visual'].includes(tipo)) continue;
 
-      const author = usuarios.find((u) => Number(u.id) === Number(p.usuarioId));
+      // ✅ CORREÇÃO: Usar _id ou id (MongoDB usa _id)
+      const author = usuarios.find((u) => {
+        const uid = String(u._id || u.id);
+        const puid = String(p.usuarioId || p.userId);
+        return uid === puid;
+      });
       if (!author) continue;
 
-      const key = Number(author.id);
+      const key = String(author._id || author.id);
       if (!map[tipo].has(key)) {
         map[tipo].set(key, { ...author, postCount: 1 });
       } else {
@@ -96,7 +101,7 @@ const ArtistPage = () => {
   const derivedBio = (u) => {
     if (!u) return '';
     const count = currentCategory
-      ? (artistsByCategory[currentCategory]?.find(a => Number(a.id) === Number(u.id))?.postCount || 0)
+      ? (artistsByCategory[currentCategory]?.find(a => String(a._id || a.id) === String(u._id || u.id))?.postCount || 0)
       : 0;
     return `Artista com ${count} publicação${count === 1 ? '' : 's'} recente${count === 1 ? '' : 's'}.`;
   };

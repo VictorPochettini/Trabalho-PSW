@@ -56,6 +56,19 @@ export const patchDesafio = createAsyncThunk(
   }
 );
 
+// ✅ NOVO: delete desafio
+export const deleteDesafio = createAsyncThunk(
+  "desafios/delete",
+  async (id, { rejectWithValue }) => {
+    try {
+      await api.delete(`${API_URL}/${id}`);
+      return id; // Retorna o ID do desafio excluído
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao excluir desafio");
+    }
+  }
+);
+
 const desafiosSlice = createSlice({
   name: "desafios",
   initialState: {
@@ -94,6 +107,21 @@ const desafiosSlice = createSlice({
         s.byId[d._id || d.id] = d;
         const idx = s.lista.findIndex(x => String(x._id || x.id) === String(d._id || d.id));
         if (idx !== -1) s.lista[idx] = d; else s.lista.push(d);
+      })
+
+      // ✅ NOVO: deleteDesafio
+      .addCase(deleteDesafio.pending, (s) => { s.loading = true; s.error = null; })
+      .addCase(deleteDesafio.fulfilled, (s, a) => {
+        s.loading = false;
+        const id = a.payload;
+        // Remove da lista
+        s.lista = s.lista.filter(d => String(d._id || d.id) !== String(id));
+        // Remove do byId
+        delete s.byId[id];
+      })
+      .addCase(deleteDesafio.rejected, (s, a) => { 
+        s.loading = false; 
+        s.error = a.payload || a.error?.message; 
       });
   },
 });

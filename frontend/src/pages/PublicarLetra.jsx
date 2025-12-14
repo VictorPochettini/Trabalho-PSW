@@ -94,7 +94,6 @@ const PublicarLetra = () => {
       <PublicarLayout>
         <div className="container-publicar">
           {/* Campo curto — título/trecho */}
-          <label style={{ fontWeight: 800, marginBottom: 8 }}>Título / Trecho curto</label>
           <DescricaoInput
             value={tituloCurto}
             onChange={(e) => setTituloCurto(e.target.value)}
@@ -103,7 +102,6 @@ const PublicarLetra = () => {
           />
 
           {/* Campo grande — letra completa */}
-          <label style={{ fontWeight: 800, marginTop: 12, marginBottom: 8 }}>Letra completa</label>
           <textarea
             value={letraCompleta}
             onChange={(e) => setLetraCompleta(e.target.value)}

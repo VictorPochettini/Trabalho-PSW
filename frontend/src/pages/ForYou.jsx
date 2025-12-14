@@ -51,7 +51,17 @@ const ForYou = () => {
     dispatch(fetchUsuarios());
   }, [dispatch]);
 
-  // 2. Sincroniza lista de "Quem eu sigo"
+  // 2. Atualização periódica para pegar novas avaliações (agora o backend retorna ratings)
+  useEffect(() => {
+    // Polling leve a cada 60 segundos
+    const interval = setInterval(() => {
+      dispatch(fetchPosts());
+    }, 60000); // 1 minuto
+
+    return () => clearInterval(interval);
+  }, [dispatch]);
+
+  // 3. Sincroniza lista de "Quem eu sigo"
   useEffect(() => {
     const fetchMyFollowing = async () => {
       if (!viewerId) return;
@@ -66,8 +76,7 @@ const ForYou = () => {
     fetchMyFollowing();
   }, [viewerId]);
 
-  // ✅ CORREÇÃO 2: Buscar contagens de seguidores para os usuários listados
-  // Sem isso, os números aparecem zerados até você visitar o perfil
+  // 4. Buscar contagens de seguidores para os usuários listados
   useEffect(() => {
     if (!usuarios.length) return;
 
@@ -84,7 +93,7 @@ const ForYou = () => {
     });
   }, [usuarios, followsCounts, dispatch]);
 
-  // 3. Processar Artistas e Montar Dados
+  // 5. Processar Artistas e Montar Dados
   useEffect(() => {
     // Não bloqueamos se loadingUsuarios for true, pois queremos atualizações progressivas
     

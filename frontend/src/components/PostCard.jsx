@@ -30,7 +30,9 @@ const PostCard = ({
   onCancelEdit,
   isEditing,
   editText,
+  editTitle,
   onEditTextChange,
+  onEditTitleChange,
   isOwnProfile = false
 }) => {
   const [submitting, setSubmitting] = useState(false);
@@ -229,14 +231,16 @@ const PostCard = ({
     }
   };
 
-  // ✅ CORREÇÃO: Gerenciar texto de edição localmente
+  // ✅ CORREÇÃO: Gerenciar texto de edição localmente + título separado
   const [localEditText, setLocalEditText] = useState('');
+  const [localEditTitle, setLocalEditTitle] = useState('');
 
   useEffect(() => {
     if (isEditing) {
-      setLocalEditText(editText);
+      setLocalEditText(editText || '');
+      setLocalEditTitle(editTitle || '');
     }
-  }, [isEditing, editText]);
+  }, [isEditing, editText, editTitle]);
 
   const handleLocalEditChange = (e) => {
     const newValue = e.target.value;
@@ -246,7 +250,30 @@ const PostCard = ({
     }
   };
 
+  const handleLocalTitleChange = (e) => {
+    const newValue = e.target.value;
+    setLocalEditTitle(newValue);
+    if (typeof onEditTitleChange === 'function') {
+      onEditTitleChange(newValue);
+    }
+  };
+
   const handleSaveClick = () => {
+    // Validação diferenciada para posts de texto
+    const isTextPost = post.tipo === 'texto' || post.tipo === 'letra';
+    
+    if (isTextPost) {
+      if (!localEditTitle.trim() || !localEditText.trim()) {
+        alert('Título e letra não podem estar vazios!');
+        return;
+      }
+    } else {
+      if (!localEditText.trim()) {
+        alert('O campo não pode estar vazio!');
+        return;
+      }
+    }
+    
     if (typeof onSaveEdit === 'function') {
       onSaveEdit(postId);
     }
@@ -536,13 +563,38 @@ const PostCard = ({
                 ) : (
                   /* Modo Edição */
                   <div className="edit-mode">
+                    {/* ✅ NOVO: Campo de Título para posts de texto */}
+                    {(post.tipo === 'texto' || post.tipo === 'letra') && (
+                      <>
+                        <label className="edit-label">Título</label>
+                        <input
+                          type="text"
+                          className="edit-input"
+                          value={localEditTitle}
+                          onChange={handleLocalTitleChange}
+                          placeholder="Digite o título..."
+                          maxLength={120}
+                          autoFocus
+                        />
+                        <div className="edit-char-count">
+                          {localEditTitle.length}/120 caracteres
+                        </div>
+                        
+                        <label className="edit-label" style={{ marginTop: '15px' }}>Letra completa</label>
+                      </>
+                    )}
+                    
                     <textarea
                       className="edit-textarea"
                       value={localEditText}
                       onChange={handleLocalEditChange}
-                      rows="4"
-                      placeholder="Edite seu post..."
-                      autoFocus
+                      rows={post.tipo === 'texto' || post.tipo === 'letra' ? "8" : "4"}
+                      placeholder={
+                        post.tipo === 'texto' || post.tipo === 'letra'
+                          ? "Escreva a letra completa..."
+                          : "Edite seu post..."
+                      }
+                      autoFocus={!(post.tipo === 'texto' || post.tipo === 'letra')}
                     />
                     <div className="edit-char-count">
                       {localEditText.length} caracteres
@@ -655,9 +707,9 @@ const PostCard = ({
         }
         
         .play-button-large {
-          width: 64px;
-          height: 64px;
-          min-width: 64px;
+          width: 48px;
+          height: 48px;
+          min-width: 48px;
           border-radius: 50%;
           background: linear-gradient(135deg, #5e17eb, #7b3ff2);
           border: none;
@@ -928,6 +980,32 @@ const PostCard = ({
 
         .edit-mode {
           margin: 15px 0;
+        }
+
+        .edit-label {
+          display: block;
+          color: rgba(255,255,255,0.9);
+          font-weight: 600;
+          margin-bottom: 8px;
+          font-size: 0.95rem;
+        }
+
+        .edit-input {
+          width: 100%;
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 8px;
+          color: white;
+          padding: 12px;
+          font-family: inherit;
+          font-size: inherit;
+          margin-bottom: 5px;
+        }
+
+        .edit-input:focus {
+          outline: none;
+          border-color: #5e17eb;
+          box-shadow: 0 0 0 2px rgba(94, 23, 235, 0.2);
         }
 
         .edit-textarea {

@@ -1,8 +1,7 @@
 // src/pages/Feed.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
-// 1. IMPORTAR updatePost AQUI
 import { fetchPosts, updatePost } from "../redux/postsSlice"; 
 import { fetchUsuarios } from "../redux/usuariosSlice";
 
@@ -36,11 +35,30 @@ const Feed = () => {
   const [showComments, setShowComments] = useState(false);
   const [currentPostIdForComments, setCurrentPostIdForComments] = useState(null);
 
-  // 2. ESTADOS DE EDIÇÃO (Faltavam aqui)
   const [editingPost, setEditingPost] = useState(null);
   const [editText, setEditText] = useState('');
+  const [editTitle, setEditTitle] = useState('');
 
-  // --- Funções de Seguir (Inalteradas) ---
+  // ✅ Estado para refresh manual
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // ✅ Função para atualizar manualmente o feed
+  const handleRefreshFeed = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        dispatch(fetchPosts()).unwrap(),
+        dispatch(fetchUsuarios()).unwrap()
+      ]);
+      console.log('✅ Feed atualizado manualmente');
+    } catch (error) {
+      console.error('❌ Erro ao atualizar feed:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [dispatch]);
+
+  // --- Funções de Seguir ---
   useEffect(() => {
     const fetchSeguindo = async () => {
       if (viewerId) {
@@ -70,67 +88,67 @@ const Feed = () => {
       }
     };
     fetchSeguindo();
-  }, [viewerId]);
+  }, [viewerId]); // ✅ Só executa quando viewerId muda
 
+  // ✅ OTIMIZADO: Carrega posts apenas uma vez na montagem
   useEffect(() => {
+    console.log('🔄 Feed - Carregando posts e usuários (apenas uma vez)');
     dispatch(fetchPosts());
     dispatch(fetchUsuarios());
-  }, [dispatch]);
+  }, []); // ✅ Array vazio = executa apenas na montagem do componente
 
-  // --- Combinação de Posts (Inalterada) ---
+  // --- Combinação de Posts com foto de perfil ---
   useEffect(() => {
-  if (!loadingPosts && !loadingUsuarios && usuarios.length >= 0) {
-    // ✅ Definir URL da API
-    const API_URL = import.meta?.env?.VITE_API_URL ||
-  (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL) ||
-  'http://localhost:5000';
-    
-    const combinados = (posts || []).map((post) => {
-      const usuario = usuarios.find((u) => {
-        const uid = u?._id ?? u?.id;
-        const postUserId = post.usuarioId ?? post.userId;
-        return String(uid) === String(postUserId);
-      });
+    if (!loadingPosts && !loadingUsuarios && usuarios.length >= 0) {
+      const API_URL = import.meta?.env?.VITE_API_URL ||
+        (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL) ||
+        'http://localhost:5000';
       
-      // ✅ CORREÇÃO: Construir mediaSrc corretamente
-      let mediaSrc = null;
-      if (post.tipo === "musica" || post.tipo === "visual") {
-        if (post.mediaPath) {
-          // Normalizar caminho (substituir \ por /)
-          const normalizedPath = post.mediaPath.replace(/\\/g, '/');
-          mediaSrc = `${API_URL}/${normalizedPath}`;
+      const combinados = (posts || []).map((post) => {
+        const usuario = usuarios.find((u) => {
+          const uid = u?._id ?? u?.id;
+          const postUserId = post.usuarioId ?? post.userId;
+          return String(uid) === String(postUserId);
+        });
+        
+        // ✅ CORREÇÃO: Construir mediaSrc corretamente
+        let mediaSrc = null;
+        if (post.tipo === "musica" || post.tipo === "visual") {
+          if (post.mediaPath) {
+            const normalizedPath = post.mediaPath.replace(/\\/g, '/');
+            mediaSrc = `${API_URL}/${normalizedPath}`;
+          }
         }
-      }
+        
+        return {
+          ...post,
+          id: post._id ?? post.id,
+          content: post.titulo ?? post.content ?? "",
+          texto: post.conteudo ?? post.texto ?? "",
+          username: usuario ? (usuario.nome || usuario.username) : "@desconhecido",
+          // ✅ ADICIONADO: Foto de perfil do autor
+          authorName: usuario ? (usuario.nome || usuario.username) : "@desconhecido",
+          authorUsername: usuario?.username || "",
+          authorPhoto: usuario?.fotoPerfil || null,
+          usuarioId: String(post.usuarioId ?? post.userId),
+          mediaType:
+            post.tipo === "musica" ? "audio" : post.tipo === "visual" ? "image" : "text",
+          mediaSrc: mediaSrc,
+          mediaAlt: post.tipo === "visual" ? post.titulo : null,
+          time: post.data ? new Date(post.data).toLocaleString() : 
+            (post.createdAt ? new Date(post.createdAt).toLocaleString() : "")
+        };
+      });
+
+      const getDate = (p) => p?.data ?? p?.createdAt ?? p?.time;
+      combinados.sort((a, b) => new Date(getDate(b)) - new Date(getDate(a)));
+      setPostsComUsuario(combinados);
       
-      return {
-        ...post,
-        id: post._id ?? post.id,
-        content: post.titulo ?? post.content ?? "",
-        texto: post.conteudo ?? post.texto ?? "",
-        username: usuario ? (usuario.nome || usuario.username) : "@desconhecido",
-        usuarioId: String(post.usuarioId ?? post.userId),
-        mediaType:
-          post.tipo === "musica" ? "audio" : post.tipo === "visual" ? "image" : "text",
-        mediaSrc: mediaSrc,  // ✅ CORRIGIDO
-        mediaAlt: post.tipo === "visual" ? post.titulo : null,
-        time: post.data ? new Date(post.data).toLocaleString() : 
-          (post.createdAt ? new Date(post.createdAt).toLocaleString() : "")
-      };
-    });
+      console.log('📊 Feed - Posts processados:', combinados.length);
+    }
+  }, [loadingPosts, loadingUsuarios, posts, usuarios]);
 
-    const getDate = (p) => p?.data ?? p?.createdAt ?? p?.time;
-    combinados.sort((a, b) => new Date(getDate(b)) - new Date(getDate(a)));
-    setPostsComUsuario(combinados);
-    
-    // 🐛 Debug: Verificar URLs
-    console.log('📊 Feed - Posts com mediaSrc:', combinados
-      .filter(p => p.mediaSrc)
-      .map(p => ({ id: p.id, titulo: p.content, mediaSrc: p.mediaSrc }))
-    );
-  }
-}, [loadingPosts, loadingUsuarios, posts, usuarios]);
-
-  // --- Filtro de Feed (Inalterado) ---
+  // --- Filtro de Feed ---
   useEffect(() => {
     if (postsComUsuario.length > 0) {
       const viewerIdString = String(viewerId);
@@ -141,6 +159,7 @@ const Feed = () => {
         return isSeguindo || isProprioPost;
       });
       setPostsDosSeguidos(filtrados);
+      console.log('📊 Feed - Posts filtrados:', filtrados.length, 'de', postsComUsuario.length);
     } else {
       setPostsDosSeguidos([]);
     }
@@ -170,48 +189,61 @@ const Feed = () => {
     document.body.style.overflow = "";
   };
 
-  // 3. IMPLEMENTAÇÃO DA LÓGICA DE EDIÇÃO (Copiada do UserProfile e adaptada)
   const handleEditClick = (post) => {
     const postId = post._id || post.id;
     setEditingPost(postId);
     
     let textToEdit = '';
+    let titleToEdit = '';
     
-    // Lógica para pegar o texto correto baseado no tipo
     if (post.tipo === 'texto' || post.tipo === 'letra') {
+      // Para posts de texto: pegar título e conteúdo separadamente
+      titleToEdit = post.titulo || '';
       textToEdit = post.texto || post.conteudo || post.content || '';
     } else if (post.tipo === 'musica' || post.tipo === 'visual') {
+      // Para posts de mídia: apenas o título
       textToEdit = post.titulo || post.content || '';
     } else {
+      // Fallback
       textToEdit = post.content || post.texto || post.titulo || '';
     }
     
     setEditText(textToEdit);
+    setEditTitle(titleToEdit);
   };
 
   const handleSaveEdit = async (postId) => {
-    if (!editText.trim()) {
-      alert('O texto não pode estar vazio!');
+    const postToUpdate = posts.find(p => String(p._id || p.id) === String(postId));
+    
+    if (!postToUpdate) {
+      alert('Post não encontrado');
       return;
     }
 
-    try {
-      // Procura no array geral de posts (do Redux) para garantir dados frescos
-      const postToUpdate = posts.find(p => String(p._id || p.id) === String(postId));
-      
-      if (!postToUpdate) {
-        alert('Post não encontrado');
+    // Validação específica para posts de texto
+    if (postToUpdate.tipo === 'texto' || postToUpdate.tipo === 'letra') {
+      if (!editTitle.trim() || !editText.trim()) {
+        alert('Título e letra não podem estar vazios!');
         return;
       }
+    } else {
+      if (!editText.trim()) {
+        alert('O texto não pode estar vazio!');
+        return;
+      }
+    }
 
+    try {
       let updateData = {};
       
       if (postToUpdate.tipo === 'texto' || postToUpdate.tipo === 'letra') {
+        // Para posts de texto: atualizar título e conteúdo separadamente
         updateData = {
+          titulo: editTitle.trim(),
           conteudo: editText.trim(),
-          titulo: editText.trim().substring(0, 100),
         };
       } else if (postToUpdate.tipo === 'musica' || postToUpdate.tipo === 'visual') {
+        // Para posts de mídia: apenas o título
         updateData = {
           titulo: editText.trim(),
         };
@@ -229,6 +261,9 @@ const Feed = () => {
 
       setEditingPost(null);
       setEditText('');
+      setEditTitle('');
+      
+      console.log('✅ Post editado com sucesso');
       
     } catch (error) {
       console.error('❌ Erro ao editar post:', error);
@@ -239,6 +274,7 @@ const Feed = () => {
   const handleCancelEdit = () => {
     setEditingPost(null);
     setEditText('');
+    setEditTitle('');
   };
 
 
@@ -257,35 +293,54 @@ const Feed = () => {
       <Header />
 
       <div className="feed-content-wrapper">
+        {/* ✅ NOVO: Botão de Refresh Manual */}
+        <div className="feed-header">
+          <button 
+            className="refresh-button"
+            onClick={handleRefreshFeed}
+            disabled={isRefreshing}
+            title="Atualizar feed"
+          >
+            <i className={`fas fa-sync-alt ${isRefreshing ? 'spinning' : ''}`}></i>
+            <span>{isRefreshing ? 'Atualizando...' : 'Atualizar'}</span>
+          </button>
+        </div>
+
         {postsDosSeguidos.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "40px", color: "rgba(255,255,255,0.7)" }}>
+          <div className="empty-feed-message">
+            <i className="fas fa-rss fa-3x"></i>
             <h3>Nenhuma publicação de pessoas que você segue</h3>
             <p>Comece a seguir alguns artistas para ver suas publicações aqui!</p>
-            <p style={{ fontSize: "0.9rem", marginTop: "10px", color: "rgba(255,255,255,0.5)" }}>
-              {currentUser ? `Você está seguindo ${seguindoIds.length} pessoas` : "Faça login para seguir pessoas"}
-            </p>
+            <div className="follow-stats">
+              <p>
+                {currentUser 
+                  ? `Você está seguindo ${seguindoIds.length} ${seguindoIds.length === 1 ? 'pessoa' : 'pessoas'}` 
+                  : "Faça login para seguir pessoas"}
+              </p>
+            </div>
           </div>
         ) : (
-          postsDosSeguidos.map((post) => {
-            const currentPostId = post._id || post.id;
-            return (
-              <PostCard
-                key={currentPostId}
-                post={post}
-                onMonetizeClick={handleMonetizeClick}
-                onCommentClick={handleCommentClick}
-                // 4. PASSAR AS PROPS DE EDIÇÃO PARA O POSTCARD
-                onEditClick={handleEditClick}
-                onSaveEdit={handleSaveEdit}
-                onCancelEdit={handleCancelEdit}
-                isEditing={editingPost === currentPostId}
-                editText={editText}
-                onEditTextChange={setEditText}
-                // O PostCard já calcula se pode editar checando os IDs, 
-                // mas podemos reforçar passando o ID correto se necessário
-              />
-            );
-          })
+          <div className="posts-container">
+            {postsDosSeguidos.map((post) => {
+              const currentPostId = post._id || post.id;
+              return (
+                <PostCard
+                  key={currentPostId}
+                  post={post}
+                  onMonetizeClick={handleMonetizeClick}
+                  onCommentClick={handleCommentClick}
+                  onEditClick={handleEditClick}
+                  onSaveEdit={handleSaveEdit}
+                  onCancelEdit={handleCancelEdit}
+                  isEditing={editingPost === currentPostId}
+                  editText={editText}
+                  editTitle={editTitle}
+                  onEditTextChange={setEditText}
+                  onEditTitleChange={setEditTitle}
+                />
+              );
+            })}
+          </div>
         )}
       </div>
 
@@ -307,31 +362,218 @@ const Feed = () => {
         .feed-content-wrapper {
           max-width: 1800px;
           margin: 0 auto;
-          padding: 20px;
+          padding: clamp(16px, 3vw, 20px);
         }
-        /* ... resto dos estilos iguais ... */
-        .no-login-message,
-        .no-posts-message {
+
+        /* ✅ Header do Feed com Botão de Refresh */
+        .feed-header {
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          margin-bottom: clamp(16px, 3vw, 24px);
+          padding: 0 clamp(8px, 2vw, 16px);
+        }
+
+        .refresh-button {
+          display: inline-flex;
+          align-items: center;
+          gap: clamp(6px, 1.5vw, 8px);
+          padding: clamp(8px, 1.8vw, 10px) clamp(14px, 2.5vw, 18px);
+          background: linear-gradient(135deg, rgba(94, 23, 235, 0.85), rgba(123, 63, 242, 0.85));
+          border: 1px solid rgba(255, 255, 255, 0.22);
+          border-radius: clamp(12px, 2.5vw, 14px);
+          color: white;
+          font-weight: 700;
+          font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: 0 8px 20px rgba(94, 23, 235, 0.3);
+          backdrop-filter: blur(10px);
+        }
+
+        .refresh-button:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 12px 26px rgba(94, 23, 235, 0.4);
+          border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .refresh-button:active:not(:disabled) {
+          transform: translateY(0);
+        }
+
+        .refresh-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .refresh-button i {
+          font-size: clamp(0.9rem, 2vw, 1rem);
+        }
+
+        .refresh-button i.spinning {
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        /* Posts Container */
+        .posts-container {
+          display: flex;
+          flex-direction: column;
+          gap: clamp(16px, 3vw, 20px);
+        }
+
+        /* Empty Feed Message */
+        .empty-feed-message {
           text-align: center;
-          padding: 60px 20px;
+          padding: clamp(40px, 8vw, 60px) clamp(16px, 3vw, 20px);
           color: rgba(255, 255, 255, 0.7);
-          max-width: 500px;
+          max-width: 600px;
           margin: 0 auto;
         }
-        .no-login-message h3,
-        .no-posts-message h3 {
-          margin-bottom: 15px;
+
+        .empty-feed-message i {
+          color: rgba(94, 23, 235, 0.5);
+          margin-bottom: clamp(16px, 3vw, 24px);
+        }
+
+        .empty-feed-message h3 {
+          margin-bottom: clamp(12px, 2.5vw, 16px);
           color: rgba(255, 255, 255, 0.9);
+          font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+          font-weight: 700;
         }
+
+        .empty-feed-message p {
+          font-size: clamp(0.9rem, 2vw, 1rem);
+          line-height: 1.5;
+          margin-bottom: clamp(16px, 3vw, 20px);
+        }
+
         .follow-stats {
-          margin-top: 20px;
-          padding: 15px;
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 10px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          margin-top: clamp(16px, 3vw, 20px);
+          padding: clamp(12px, 2.5vw, 16px);
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+          border-radius: clamp(10px, 2vw, 14px);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          backdrop-filter: blur(10px);
         }
-        .follow-stats p { margin: 0; color: rgba(255, 255, 255, 0.8); }
-        .follow-stats strong { color: #5e17eb; }
+
+        .follow-stats p { 
+          margin: 0; 
+          color: rgba(255, 255, 255, 0.85);
+          font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+          font-weight: 600;
+        }
+
+        .follow-stats strong { 
+          color: #7b3ff2;
+          font-weight: 800;
+        }
+
+        /* ===== RESPONSIVIDADE ===== */
+
+        /* Tablets */
+        @media (max-width: 768px) {
+          .feed-content-wrapper {
+            padding: 16px 12px;
+          }
+
+          .feed-header {
+            margin-bottom: 16px;
+          }
+        }
+
+        /* Mobile */
+        @media (max-width: 640px) {
+          .feed-content-wrapper {
+            padding: 14px 10px;
+          }
+
+          .feed-header {
+            margin-bottom: 14px;
+            padding: 0 8px;
+          }
+
+          .refresh-button {
+            padding: 8px 12px;
+            font-size: 0.8rem;
+          }
+
+          .refresh-button span {
+            display: none;
+          }
+
+          .refresh-button i {
+            font-size: 1rem;
+            margin: 0;
+          }
+
+          .posts-container {
+            gap: 14px;
+          }
+
+          .empty-feed-message {
+            padding: 40px 16px;
+          }
+
+          .empty-feed-message i {
+            font-size: 2rem !important;
+          }
+
+          .empty-feed-message h3 {
+            font-size: 1.1rem;
+          }
+
+          .empty-feed-message p {
+            font-size: 0.9rem;
+          }
+        }
+
+        /* Mobile 21:9 */
+        @media (max-width: 450px) and (min-aspect-ratio: 9/19) {
+          .feed-content-wrapper {
+            padding: 12px 8px;
+          }
+
+          .feed-header {
+            margin-bottom: 12px;
+          }
+
+          .refresh-button {
+            padding: 7px 10px;
+          }
+
+          .posts-container {
+            gap: 12px;
+          }
+
+          .empty-feed-message {
+            padding: 32px 12px;
+          }
+
+          .follow-stats {
+            padding: 10px;
+          }
+        }
+
+        /* Mobile 21:9 Muito Estreito */
+        @media (max-width: 360px) and (min-aspect-ratio: 9/19) {
+          .feed-content-wrapper {
+            padding: 10px 8px;
+          }
+
+          .refresh-button {
+            padding: 6px 9px;
+          }
+
+          .empty-feed-message {
+            padding: 28px 10px;
+          }
+        }
       `}</style>
     </>
   );

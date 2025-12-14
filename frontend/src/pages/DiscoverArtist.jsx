@@ -131,8 +131,27 @@ const DiscoverArtist = () => {
     if (currentArtist?.username) navigate(`/user/${currentArtist.username}`);
   };
 
-  // helper de avatar (fallback bonitinho)
-  const avatarUrl = () => {
+  // ✅ Helper para obter URL da foto de perfil do artista
+  const getArtistPhotoUrl = (artist) => {
+    if (!artist?.fotoPerfil) return null;
+    
+    const foto = artist.fotoPerfil;
+    
+    // Se já é uma URL completa, retorna direto
+    if (foto.startsWith('http://') || foto.startsWith('https://') || foto.startsWith('data:')) {
+      return foto;
+    }
+    
+    // Se é caminho relativo, adiciona base URL
+    const API_URL = import.meta?.env?.VITE_API_URL ||
+      (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL) ||
+      'http://localhost:5000';
+    
+    return `${API_URL}/${foto.replace(/^\//, '')}`;
+  };
+
+  // Fallback SVG bonitinho se não houver foto
+  const getFallbackAvatarSvg = () => {
     const svg = encodeURIComponent(`
       <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300">
         <defs>
@@ -141,9 +160,7 @@ const DiscoverArtist = () => {
             <stop offset="100%" stop-color="#8c7ff2"/>
           </linearGradient>
         </defs>
-        <!-- fundo redondo com degradê roxo (como no userprofile) -->
         <rect width="100%" height="100%" rx="150" ry="150" fill="url(#g)"/>
-        <!-- ícone de usuário branco -->
         <g fill="#ffffff">
           <circle cx="150" cy="120" r="60"/>
           <path d="M60 260c0-50 40-90 90-90s90 40 90 90" />
@@ -228,9 +245,13 @@ const DiscoverArtist = () => {
               <div className="artist-card mx-auto p-4">
                 <div className="artist-avatar-wrap" role="button" title="Ver perfil" onClick={goToProfile}>
                   <img
-                    src={avatarUrl(currentArtist)}
+                    src={getArtistPhotoUrl(currentArtist) || getFallbackAvatarSvg()}
                     alt={currentArtist.nome || currentArtist.username}
                     className="artist-img"
+                    onError={(e) => {
+                      // Se a foto falhar, usa o fallback SVG
+                      e.target.src = getFallbackAvatarSvg();
+                    }}
                   />
                 </div>
 
