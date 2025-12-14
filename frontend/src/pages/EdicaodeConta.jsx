@@ -5,25 +5,69 @@ import { updateUser } from "../redux/usuariosSlice";
 import { useNavigate } from "react-router-dom";
 import avatarPadrao from "../images/avatarPadrao.png";
 
+/**
+ * @typedef {object} Usuario
+ * @property {string} [_id] ID do MongoDB do usuário.
+ * @property {string} [id] ID alternativo do usuário.
+ * @property {string} [username] Nome de usuário.
+ * @property {string} [nome] Nome de exibição.
+ * @property {string} [bio] Biografia do usuário.
+ * @property {string | string[]} [generosMusicais] Gêneros musicais (pode ser string ou array).
+ * @property {string | string[]} [estilosArte] Estilos de arte (pode ser string ou array).
+ * @property {string} [fotoPerfil] Caminho/URL da foto de perfil.
+ */
+
+/**
+ * @typedef {object} CurrentUserState
+ * @property {Usuario | null} [user] O objeto do usuário logado.
+ * @property {string | null} [token] O token de autenticação JWT.
+ */
+
+/**
+ * @typedef {object} UpdateUserData
+ * @property {string} username Novo nome de usuário.
+ * @property {string} bio Nova biografia.
+ * @property {string} generosMusicais Novos gêneros musicais (string formatada).
+ * @property {string} estilosArte Novos estilos de arte (string formatada).
+ * @property {string} fotoPerfil Caminho da foto de perfil (recebido do upload ou o antigo).
+ */
+
+/**
+ * Componente da página de Edição de Conta.
+ *
+ * Permite a edição de metadados do perfil (username, bio, interesses) e
+ * a gestão da foto de perfil, incluindo upload real para o backend via PATCH.
+ *
+ * @returns {JSX.Element} O formulário de edição de conta.
+ */
 const EdicaoDeConta = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  /** @type {CurrentUserState | null} Estado completo do usuário logado no Redux. */
   const currentUserState = useSelector((state) => state.user?.currentUser ?? null);
+  /** @type {Usuario | null} Objeto do usuário. */
   const user = currentUserState?.user ?? null;
+  /** @type {string | null} Token de autenticação. */
   const token = currentUserState?.token;
 
+  // --- Estados do Formulário
   const [nomeUsuario, setNomeUsuario] = useState("");
   const [bio, setBio] = useState("");
   const [generosMusicais, setGenerosMusicais] = useState("");
   const [estilosArte, setEstilosArte] = useState("");
+  /** @type {string} URL para exibição da imagem (pode ser DataURL, URL completa ou caminho da API). */
   const [previewUrl, setPreviewUrl] = useState(avatarPadrao);
-  
-  // ✅ NOVOS ESTADOS para upload
+
+  // --- Estados de Upload de Foto
+  /** @type {File | null} O arquivo de imagem selecionado pelo usuário. */
   const [selectedFile, setSelectedFile] = useState(null);
+  /** @type {boolean} Indicador de que o upload da foto está em andamento. */
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  /** @type {string | null} Mensagem de erro do upload da foto. */
   const [photoError, setPhotoError] = useState(null);
 
+  /** @type {string} URL base da API (configurado externamente). */
   const API_URL = 'http://localhost:5000';
 
   useEffect(() => {
@@ -57,7 +101,13 @@ const EdicaoDeConta = () => {
     }
   }, [user, API_URL]);
 
-  // ✅ NOVO: handleFileChange com preview E armazenar arquivo
+  /**
+   * @private
+   * Manipula a seleção de arquivo de foto de perfil.
+   * Realiza validações de tipo e tamanho e gera um preview imediato.
+   * Armazena o arquivo em `selectedFile` para o upload posterior.
+   * @param {React.ChangeEvent<HTMLInputElement>} e Evento de mudança de input.
+   */
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     
@@ -88,7 +138,12 @@ const EdicaoDeConta = () => {
     console.log('📸 Arquivo selecionado:', file.name, 'Tamanho:', (file.size / 1024).toFixed(2) + 'KB');
   };
 
-  // ✅ NOVO: Função para fazer upload da foto
+  /**
+   * @private
+   * Envia o arquivo de foto de perfil para o endpoint de upload via PATCH multipart/form-data.
+   * @async
+   * @returns {Promise<string | null>} O caminho do arquivo salvo no servidor, ou null/erro.
+   */
   const uploadProfilePhoto = async () => {
     if (!selectedFile || !user || !token) return null;
     
@@ -130,7 +185,12 @@ const EdicaoDeConta = () => {
     }
   };
 
-  // ✅ ATUALIZADO: handleSubmit com upload de foto
+  /**
+   * @private
+   * Lida com o envio do formulário, orquestrando o upload da foto e a atualização dos dados do usuário.
+   * @async
+   * @param {React.FormEvent} e Evento de envio do formulário.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     

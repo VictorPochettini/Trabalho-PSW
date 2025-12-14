@@ -5,17 +5,60 @@ import { useNavigate } from "react-router-dom";
 import HeaderForYou from "../components/Header2";
 import { createDesafio } from "../redux/desafiosSlice";
 
+/**
+ * @typedef {object} Usuario
+ * @property {string} _id ID do MongoDB do usuário.
+ * @property {string} [id] ID alternativo do usuário.
+ * @property {('admin'|'ADMIN'|string)} [role] Papel/Tipo do usuário.
+ * @property {('admin'|'ADMIN'|string)} [tipo] Alias para o papel/tipo do usuário.
+ */
+
+/**
+ * @typedef {object} DesafioFormData
+ * @property {string} titulo Título do desafio.
+ * @property {string} descricao Descrição do desafio.
+ * @property {string} dataInicio Data de início (formato 'AAAA-MM-DD').
+ * @property {string} dataFim Data de fim (formato 'AAAA-MM-DD').
+ * @property {('musica'|'visual'|'texto')[]} tiposAceitos Tipos de conteúdo aceitos (array de strings).
+ * @property {('oficial'|'comunidade')} tipo Tipo de desafio (oficial ou comunidade).
+ */
+
+/**
+ * @typedef {object} DesafioPayload
+ * @property {string} titulo
+ * @property {string} descricao
+ * @property {string} dataInicio
+ * @property {string} dataFim
+ * @property {('musica'|'visual'|'texto')[]} tipoAceito Tipos de conteúdo aceitos (campo primário para API).
+ * @property {('musica'|'visual'|'texto')[]} tiposPermitidos Tipos de conteúdo permitidos (campo de compatibilidade).
+ * @property {('oficial'|'comunidade')} tipo
+ * @property {('rascunho'|'publicado')} status Status inicial do desafio (hardcoded como "publicado").
+ * @property {string} criadorId ID do usuário criador.
+ * @property {string} createdAt Timestamp de criação (ISO string).
+ */
+
+/**
+ * Página/Componente para criação de um novo desafio (Challenge).
+ *
+ * Permite que um usuário autenticado (especialmente administradores) preencha
+ * os detalhes de um novo desafio e submeta para a API através da ação Redux `createDesafio`.
+ *
+ * @returns {JSX.Element} O formulário de criação de desafio.
+ */
 export default function CreateChallengePage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
   const currentUserState = useSelector((s) => s.user?.currentUser);
+  /** @type {Usuario | null} */
   const currentUser = currentUserState?.user ?? null;
   const currentUserId = currentUser ? (currentUser._id || currentUser.id) : null;
   const currentUserRole = currentUser ? (currentUser.role ?? currentUser.tipo ?? null) : null;
   
+  /** @type {boolean} Indica se o usuário possui a permissão de administrador. */
   const isAdmin = currentUserRole === "admin" || currentUserRole === "ADMIN";
-
+  
+  /** @type {DesafioFormData} */
   const [formData, setFormData] = useState({
     titulo: "",
     descricao: "",
@@ -25,13 +68,25 @@ export default function CreateChallengePage() {
     tipo: "comunidade",
   });
 
+  /** @type {boolean} Controla o estado de submissão do formulário. */
   const [loading, setLoading] = useState(false);
 
+  /**
+   * @private
+   * Handler genérico para atualização de campos de texto e data do formulário.
+   * @param {React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>} e O evento de mudança.
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * @private
+   * Handler para alternar os tipos de conteúdo aceitos para o desafio.
+   * Adiciona ou remove o tipo do array `tiposAceitos`.
+   * @param {('musica'|'visual'|'texto')} tipo O tipo de conteúdo a ser alternado.
+   */
   const handleTipoToggle = (tipo) => {
     setFormData(prev => ({
       ...prev,
@@ -41,6 +96,18 @@ export default function CreateChallengePage() {
     }));
   };
 
+  /**
+   * Handler de submissão do formulário.
+   *
+   * Realiza validações básicas, constrói o payload e despacha a ação Redux
+   * para criar o desafio na API. Redireciona para a página de detalhes do
+   * desafio recém-criado em caso de sucesso.
+   *
+   * @async
+   * @private
+   * @param {React.FormEvent<HTMLFormElement>} e O evento de submissão.
+   * @returns {Promise<void>}
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -66,7 +133,7 @@ export default function CreateChallengePage() {
 
     setLoading(true);
 
-    // ✅ Criar payload com tipoAceito (e tiposPermitidos para compatibilidade)
+    /** @type {DesafioPayload} */
     const payload = {
       titulo: formData.titulo,
       descricao: formData.descricao,

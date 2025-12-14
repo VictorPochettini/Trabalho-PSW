@@ -14,37 +14,92 @@ import {
 
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * @typedef {object} Usuario
+ * @property {string} [_id] ID do MongoDB do usuário.
+ * @property {string} [id] ID alternativo do usuário.
+ * @property {string} [username] Nome de usuário.
+ * @property {string} [nome] Nome completo ou de exibição.
+ * @property {string} [fotoPerfil] Caminho/URL da foto de perfil.
+ */
+
+/**
+ * @typedef {object} Post
+ * @property {string} [_id] ID do Post.
+ * @property {('musica'|'texto'|'visual')} tipo O tipo de conteúdo do post.
+ * @property {string} [usuarioId] ID do autor do post.
+ * @property {string} [usuario_id] ID do autor do post (alias).
+ * @property {string} [userId] ID do autor do post (alias).
+ */
+
+/**
+ * @typedef {Usuario & { postCount: number }} ArtistData
+ * @description Dados de um artista com a contagem de posts na categoria.
+ */
+
+/**
+ * @typedef {object} ArtistsByCategory
+ * @property {ArtistData[]} musica Lista de artistas com posts de música.
+ * @property {ArtistData[]} texto Lista de artistas com posts de texto.
+ * @property {ArtistData[]} visual Lista de artistas com posts visuais.
+ */
+
+/**
+ * Componente da página de Descoberta de Artistas (Roulette).
+ *
+ * Permite que o usuário sorteie um artista aleatório baseado na categoria de
+ * conteúdo (música, texto, visual) e interaja com ele (ver perfil, seguir).
+ *
+ * @returns {JSX.Element} A interface de descoberta de artistas.
+ */
 const DiscoverArtist = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Redux state: novo formato currentUser = { user, token }
+  /** @type {Usuario[]} Lista de todos os usuários. */
   const usuarios = useSelector((s) => s.user?.usuarios ?? []);
+  /** @type {{ user: Usuario | null, token: string | null }} Estado do usuário logado. */
   const currentUserState = useSelector((s) => s.user?.currentUser ?? null);
+  /** @type {Post[]} Lista de todos os posts. */
   const posts = useSelector((s) => s.posts?.lista ?? []);
   const loadingPosts = useSelector((s) => s.posts?.loading ?? false);
 
-  // extrai objeto user real (ou null)
+  /** @type {Usuario | null} Objeto do usuário logado. */
   const currentUser = currentUserState?.user ?? null;
 
-  // Página local
+  // --- Estados Locais
+  /** @type {ArtistData | null} O artista sorteado atualmente em exibição. */
   const [currentArtist, setCurrentArtist] = useState(null);
+  /** @type {boolean} Controla a animação de "roleta" enquanto o artista é sorteado. */
   const [isRouletteSpinning, setIsRouletteSpinning] = useState(false);
+  /** @type {('musica'|'texto'|'visual') | null} A categoria utilizada para o último sorteio. */
   const [currentCategory, setCurrentCategory] = useState(null);
 
-  // Carregar base se necessário
+  /**
+   * Efeito para buscar todos os usuários e posts se eles ainda não estiverem no Redux.
+   */
   useEffect(() => {
     if (!Array.isArray(usuarios) || usuarios.length === 0) dispatch(fetchUsuarios());
     if (!Array.isArray(posts) || posts.length === 0) dispatch(fetchPosts());
   }, [dispatch, usuarios.length, posts.length]);
 
-  // função utilitária para obter id canônico (string) do usuário/post
+  /**
+   * @private
+   * Função utilitária para obter um ID canônico (string) de um objeto (usuário ou post).
+   * Prioriza 'id' ou '_id'.
+   * @param {Usuario|Post|null} obj Objeto para extrair o ID.
+   * @returns {string | null} O ID canônico como string ou null.
+   */
   const canonicalId = (obj) => {
     if (!obj) return null;
     return String(obj.id ?? obj._id ?? '');
   };
 
-  // Agrupa artistas por categoria (tipo de post)
+  /**
+   * Processa posts e usuários para agrupar artistas por categoria de posts.
+   * Usado para popular a roleta e calcular a contagem de posts.
+   * @type {ArtistsByCategory}
+   */
   const artistsByCategory = useMemo(() => {
     // pega autores que têm posts em cada tipo
     const map = { musica: new Map(), texto: new Map(), visual: new Map() };
@@ -81,12 +136,25 @@ const DiscoverArtist = () => {
     };
   }, [posts, usuarios]);
 
+  /**
+   * @private
+   * Seleciona um item aleatório de um array.
+   * @param {Array<T>} arr O array de onde selecionar.
+   * @returns {T | null} O item escolhido ou null.
+   * @template T
+   */
   const pickRandom = (arr) => {
     if (!arr || arr.length === 0) return null;
     const i = Math.floor(Math.random() * arr.length);
     return arr[i];
   };
 
+  /**
+   * Inicia o processo de "roleta": define a categoria, inicia o estado de
+   * `isRouletteSpinning`, aguarda 900ms e então sorteia e exibe o artista.
+   * @private
+   * @param {('musica'|'texto'|'visual')} category A categoria a ser sorteada.
+   */
   const getRandomArtist = (category) => {
     setCurrentCategory(category);
     setIsRouletteSpinning(true);
@@ -114,6 +182,11 @@ const DiscoverArtist = () => {
     dispatch(fetchIsFollowing({ followerId: viewerId, followingId: targetId }));
   }, [dispatch, viewerId, targetId]);
 
+  /**
+   * @private
+   * Alterna o estado de seguimento (follow/unfollow) do `currentArtist`.
+   * @async
+   */
   const toggleFollow = async () => {
     if (!viewerId || !targetId || viewerId === targetId) return;
     try {
@@ -127,11 +200,20 @@ const DiscoverArtist = () => {
     }
   };
 
+  /**
+   * @private
+   * Redireciona para a página de perfil do artista sorteado.
+   */
   const goToProfile = () => {
     if (currentArtist?.username) navigate(`/user/${currentArtist.username}`);
   };
 
-  // ✅ Helper para obter URL da foto de perfil do artista
+  /**
+   * @private
+   * Constrói a URL completa para a foto de perfil do artista, lidando com caminhos relativos.
+   * @param {Usuario} artist Objeto do artista.
+   * @returns {string | null} URL completa da foto ou null.
+   */
   const getArtistPhotoUrl = (artist) => {
     if (!artist?.fotoPerfil) return null;
     
@@ -150,7 +232,11 @@ const DiscoverArtist = () => {
     return `${API_URL}/${foto.replace(/^\//, '')}`;
   };
 
-  // Fallback SVG bonitinho se não houver foto
+  /**
+   * @private
+   * Gera um SVG fallback embutido para ser usado como foto de perfil padrão.
+   * @returns {string} URL de dados do SVG.
+   */
   const getFallbackAvatarSvg = () => {
     const svg = encodeURIComponent(`
       <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300">
@@ -170,7 +256,12 @@ const DiscoverArtist = () => {
     return `data:image/svg+xml;utf8,${svg}`;
   };
 
-  // bio simples derivada (se quiser, pode trocar p/ campo real no futuro)
+  /**
+   * @private
+   * Gera uma biografia simples baseada na categoria atual e na contagem de posts.
+   * @param {Usuario} u O objeto do artista.
+   * @returns {string} A string da biografia gerada.
+   */
   const derivedBio = (u) => {
     if (!u) return '';
     const count = currentCategory

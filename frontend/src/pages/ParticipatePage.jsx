@@ -7,20 +7,66 @@ import { fetchDesafioById, selectDesafioById } from "../redux/desafiosSlice";
 import { fetchPostsByUser } from "../redux/postsSlice";
 import { createParticipacao } from "../redux/participacoesSlice";
 
+/**
+ * @typedef {object} Desafio
+ * @property {string} id ID único do desafio (parâmetro de rota).
+ * @property {string} [_id] ID único do desafio (alternativo).
+ * @property {string} titulo Título do desafio.
+ * @property {string} descricao Descrição breve.
+ * @property {string | object} [dataInicio] Data de início do desafio (pode vir em vários formatos).
+ * @property {('musica' | 'visual' | 'texto')[]} [tipoAceito] Tipos de posts permitidos (prioritário).
+ * @property {('musica' | 'visual' | 'texto')[]} [tiposPermitidos] Tipos de posts permitidos (fallback).
+ */
+
+/**
+ * @typedef {object} Post
+ * @property {string} [_id] ID do MongoDB do post.
+ * @property {string} [id] ID alternativo do post.
+ * @property {string} [titulo] Título do post.
+ * @property {('musica' | 'visual' | 'texto')} [tipo] Tipo de conteúdo do post.
+ * @property {string | object} [data] Data de criação do post.
+ * @property {string | object} [createdAt] Data de criação do post (fallback).
+ * @property {number} [ratingAvg] Média de avaliação.
+ * @property {number} [ratingCount] Contagem de avaliações.
+ * @property {number} [commentCount] Contagem de comentários.
+ */
+
+/**
+ * @typedef {object} ParticipacaoPayload
+ * @property {string} desafioId O ID do desafio.
+ * @property {string} postId O ID do post selecionado.
+ * @property {string} usuarioId O ID do usuário participante.
+ */
+
+/**
+ * Componente da página de participação em desafios.
+ * Permite ao usuário logado selecionar um de seus posts elegíveis para submissão
+ * em um desafio específico.
+ *
+ * @returns {JSX.Element} A interface de seleção e submissão de posts.
+ */
 function ParticipatePage() {
-  const { id } = useParams();
+  const { id } = useParams(); // ID do desafio da URL
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const currentUserState = useSelector((s) => s.user?.currentUser);
-  const currentUser = currentUserState?.user ?? null;
+  // --- Redux State ---
+  /** @type {CurrentUser | null} Objeto do usuário logado. */
+  const currentUser = useSelector((s) => s.user?.currentUser?.user) ?? null;
+  /** @type {string | null} ID do usuário logado. */
   const currentUserId = currentUser ? (currentUser._id || currentUser.id) : null;
 
+  /** @type {Desafio | undefined} O objeto desafio carregado. */
   const desafio = useSelector(selectDesafioById(id));
+  /** @type {Post[]} Posts do usuário logado. */
   const userPosts = useSelector((s) => s.posts?.byUser?.[currentUserId] || []);
+  /** @type {boolean} Status de carregamento da submissão de participação. */
   const loading = useSelector((s) => s.participacoes?.loading);
 
+  // --- Local State ---
+  /** @type {[string, React.Dispatch<React.SetStateAction<string>>]} O ID do post selecionado para participação. */
   const [selectedPostId, setSelectedPostId] = useState("");
+  /** @type {[string, React.Dispatch<React.SetStateAction<string>>]} Mensagem de erro para a interface. */
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -38,7 +84,12 @@ function ParticipatePage() {
     console.log('🔍 DEBUG - Posts do usuário:', userPosts);
   }, [desafio, userPosts]);
 
-  // ✅ CORREÇÃO: Obter tipos aceitos pelo desafio
+  /**
+   * @private
+   * Normaliza os tipos de posts aceitos pelo desafio, priorizando `tipoAceito` e
+   * usando `tiposPermitidos` como fallback.
+   * @returns {string[]} Lista de tipos aceitos em minúsculas (ex: ['musica', 'visual']).
+   */
   const getTiposAceitos = () => {
     if (!desafio) {
       console.log('⚠️ Desafio não carregado ainda');
@@ -62,7 +113,13 @@ function ParticipatePage() {
     return ['musica', 'visual', 'texto'];
   };
 
-  // ✅ CORREÇÃO: Função para converter timestamp do MongoDB para Date
+  /**
+   * @private
+   * Função robusta para converter dados de data que podem vir em múltiplos formatos
+   * (string ISO, timestamp numérico, objeto do MongoDB: {$date: ...}) para um objeto Date nativo.
+   * @param {any} dataObj A data em seu formato raw.
+   * @returns {Date | null} O objeto Date ou null se a conversão falhar.
+   */
   const parseDataMongoDB = (dataObj) => {
     if (!dataObj) {
       console.log('⚠️ Data não fornecida');
@@ -127,7 +184,13 @@ function ParticipatePage() {
     }
   };
 
-  // Filtrar posts elegíveis
+  /**
+   * @private
+   * A lista final de posts do usuário que são considerados elegíveis para o desafio,
+   * aplicando filtros de tipo e data de criação.
+   *
+   * @type {Post[]}
+   */
   const postsElegiveis = userPosts.filter((post) => {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🔍 Verificando post:', post.titulo || post._id);
@@ -186,6 +249,12 @@ function ParticipatePage() {
 
   console.log(`\n📊 RESULTADO: ${postsElegiveis.length} posts elegíveis de ${userPosts.length} totais\n`);
 
+  /**
+   * @private
+   * Manipulador de submissão do formulário.
+   * Despacha a criação de uma nova participação no Redux.
+   * @param {React.FormEvent} e O evento de submissão.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -254,7 +323,12 @@ function ParticipatePage() {
     ? tiposAceitos.map((t) => t.charAt(0).toUpperCase() + t.slice(1)).join(", ")
     : "Todos os tipos (Música, Visual, Texto)";
 
-  // ✅ Formatar data de forma segura
+  /**
+   * @private
+   * Formata um objeto de data raw para string no formato pt-BR.
+   * @param {any} dataObj O objeto de data a ser formatado.
+   * @returns {string} A data formatada ou 'Data não definida'.
+   */
   const formatarData = (dataObj) => {
     const data = parseDataMongoDB(dataObj);
     return data ? data.toLocaleDateString('pt-BR') : 'Data não definida';

@@ -4,41 +4,118 @@ import { fetchDesafios } from "../redux/desafiosSlice";
 import { useNavigate } from "react-router-dom";
 import HeaderForYou from "../components/Header2";
 
+/**
+ * @typedef {object} Desafio
+ * @property {string} id ID único do desafio.
+ * @property {string} [_id] ID único do desafio (alternativo).
+ * @property {('oficial' | 'comunidade')} tipo Tipo do desafio.
+ * @property {('rascunho' | 'aberto' | 'encerrado')} status Status no servidor.
+ * @property {string} titulo Título do desafio.
+ * @property {string} descricao Descrição breve.
+ * @property {string} [thumbUrl] URL da imagem de miniatura.
+ * @property {string} [dataInicio] Data de início (ISO 8601).
+ * @property {string} [dataFim] Data de encerramento (ISO 8601).
+ * @property {string} [criadorId] ID do usuário que criou o desafio (para tipo 'comunidade').
+ */
+
+/**
+ * @typedef {object} CurrentUser Objeto do usuário autenticado.
+ * @property {string} [_id] ID do MongoDB do usuário logado.
+ * @property {string} [id] ID alternativo do usuário logado.
+ * // ... outras propriedades
+ */
+
+/**
+ * Componente ChallengesPage.
+ *
+ * Exibe uma lista de desafios da plataforma, permitindo ao usuário:
+ * 1. Filtrar por tipo (Oficiais, Comunidade, Meus Desafios).
+ * 2. Ordenar por data (Recentes, Próximos de Encerrar, Encerrados).
+ * 3. Buscar por texto no título ou descrição.
+ * 4. Navegar para a visualização ou criação de um desafio.
+ *
+ * @returns {JSX.Element} A interface da página de Desafios.
+ */
 export default function ChallengesPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // --- Redux State ---
+  /** @type {Desafio[]} Lista de todos os desafios carregados via Redux. */
   const desafios = useSelector((s) => s.desafios.lista || []);
+  /** @type {boolean} Status de carregamento dos desafios. */
   const loadingDesafios = useSelector((s) => s.desafios.loading);
 
-  // novo formato: currentUserState = { user, token }
+  /** @type {{user: CurrentUser | null, token: string | null} | null} Estado do usuário logado. */
   const currentUserState = useSelector((s) => s.user?.currentUser);
+  /** @type {CurrentUser | null} Objeto do usuário logado. */
   const currentUser = currentUserState?.user ?? null;
+  /** @type {string | null} ID do usuário logado. */
   const currentUserId = currentUser ? (currentUser._id || currentUser.id) : null;
 
+  // --- Estado Local ---
+  /** @type {('oficiais' | 'comunidade' | 'meus')} A aba de filtro ativa. */
   const [activeTab, setActiveTab] = useState("oficiais");
+  /** @type {('recentes' | 'proximos' | 'encerrados')} O critério de ordenação ativo. */
   const [sortBy, setSortBy] = useState("recentes");
+  /** @type {string} O termo de pesquisa atual. */
   const [searchTerm, setSearchTerm] = useState("");
+  /** @type {boolean} Indica se a busca por texto está ativa. */
   const [isSearching, setIsSearching] = useState(false);
 
+  // Efeito 1: Carrega os desafios ao montar o componente
   useEffect(() => { dispatch(fetchDesafios()); }, [dispatch]);
 
+  /**
+   * @private
+   * Filtra um desafio com base na aba ativa (`activeTab`).
+   * Desafios com status "rascunho" são excluídos, exceto na aba "Meus".
+   *
+   * @param {Desafio} d O objeto desafio a ser verificado.
+   * @returns {boolean} `true` se o desafio deve ser exibido na aba ativa.
+   */
   const matchesTab = (d) => {
     if (activeTab === "oficiais") return d.tipo === "oficial" && d.status !== "rascunho";
     if (activeTab === "comunidade") return d.tipo === "comunidade" && d.status !== "rascunho";
-    // ✅ CORRIGIDO: Aba "Meus" mostra TODOS os desafios do usuário, incluindo rascunhos
+    // Aba "Meus" mostra desafios da comunidade criados pelo usuário logado.
     if (activeTab === "meus") return d.tipo === "comunidade" && String(d.criadorId) === String(currentUserId);
     return true;
   };
 
+  /**
+   * @private
+   * Atualiza o termo de busca e o estado `isSearching`.
+   * @param {string} term O novo termo de pesquisa.
+   */
   const handleSearch = (term) => {
     setSearchTerm(term);
     setIsSearching(!!term.trim());
   };
 
   // ===== Helpers para status derivado "finalizado" quando dataFim já passou =====
+  
+  /**
+   * @private
+   * Converte uma string de data para um timestamp.
+   * @param {string | undefined} v String de data.
+   * @returns {number} Timestamp ou 0.
+   */
   const toTime = (v) => (v ? new Date(v).getTime() : 0);
+  
+  /**
+   * @private
+   * Verifica se o desafio já expirou com base em `dataFim`.
+   * @param {Desafio} d O objeto desafio.
+   * @returns {boolean} `true` se a data de fim já passou.
+   */
   const isExpired = (d) => (d?.dataFim ? toTime(d.dataFim) < Date.now() : false);
+  
+  /**
+   * @private
+   * Obtém o status final para exibição, considerando a expiração da data.
+   * @param {Desafio} d O objeto desafio.
+   * @returns {('rascunho' | 'aberto' | 'encerrado' | 'finalizado')} O status final.
+   */
   const getDerivedStatus = (d) => (isExpired(d) ? "finalizado" : (d.status || "aberto"));
 
   const filteredAndSorted = useMemo(() => {

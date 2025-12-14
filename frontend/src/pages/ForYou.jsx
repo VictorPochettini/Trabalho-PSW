@@ -14,35 +14,90 @@ import {
   fetchFollowCounts
 } from "../redux/followsSlice";
 
+/**
+ * @typedef {object} Usuario
+ * @property {string} [_id] ID do MongoDB do usuário.
+ * @property {string} [id] ID alternativo do usuário.
+ * @property {string} [username] Nome de usuário.
+ * @property {string} [nome] Nome de exibição.
+ * @property {string} [fotoPerfil] Caminho/URL da foto de perfil.
+ * @property {number} [ratingAvgRecebida] Avaliação média recebida (do servidor).
+ * @property {number} [followersCount] Contagem de seguidores (do servidor).
+ */
+
+/**
+ * @typedef {object} Post
+ * @property {string} [usuarioId] ID do autor do post.
+ * @property {string} [userId] ID do autor do post (alternativo).
+ * @property {('texto' | 'musica' | 'visual' | 'letra' | 'arte')} tipo Tipo do post.
+ * @property {number} [ratingAvg] Avaliação média do post.
+ */
+
+/**
+ * @typedef {object} ArtistData Dados processados de um artista para exibição no feed ForYou.
+ * @property {string} id ID padronizado do artista.
+ * @property {string} name Nome de exibição.
+ * @property {string} username Nome de usuário.
+ * @property {string | null} fotoPerfil Caminho/URL da foto de perfil.
+ * @property {('musica' | 'visual' | 'texto' | 'outros')} categoryKey Chave da categoria principal.
+ * @property {string} category Nome de exibição da categoria principal.
+ * @property {number} followers Número de seguidores (pode ser o valor local otimista).
+ * @property {number} works Número de obras publicadas.
+ * @property {number} rating Avaliação média calculada.
+ */
+
+/**
+ * @typedef {object} FollowCounts
+ * @property {number} followersCount Número de seguidores.
+ * @property {number} followingCount Número de seguidos.
+ */
+
+/**
+ * Componente ForYou (Recomendado para Você).
+ * Exibe uma grade de artistas, permitindo busca, filtragem por categoria
+ * e ordenação por rating, seguidores ou obras. Gerencia as interações
+ * de follow/unfollow com atualização otimista da UI.
+ *
+ * @returns {JSX.Element} A interface completa do ForYou.
+ */
 const ForYou = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   // --- Redux State ---
+  /** @type {Post[]} Lista de todos os posts carregados. */
   const posts = useSelector((s) => s.posts.lista || []);
+  /** @type {Usuario[]} Lista de todos os usuários carregados. */
   const usuarios = useSelector((s) => s.user.usuarios || []);
   const loadingUsuarios = useSelector((s) => s.user.loading);
   const currentUserState = useSelector((s) => s.user.currentUser);
+  /** @type {Usuario | null} Objeto do usuário logado. */
   const currentUser = currentUserState?.user ?? null;
+  /** @type {string | null} ID do usuário logado. */
   const viewerId = currentUser?._id ?? currentUser?.id ?? null;
-
-  // Contagens vindas do Redux (Fonte da Verdade do Servidor)
+  /** @type {Object.<string, FollowCounts>} Contagens de seguidores/seguindo do Redux. */
   const followsCounts = useSelector((s) => s.follows?.counts || {});
 
-  // Estado Local
+  // --- Estado Local
+  /** @type {Set<string>} IDs dos usuários que o viewerId está seguindo. */
   const [myFollowingIds, setMyFollowingIds] = useState(new Set());
+  /** @type {Object.<string, number>} Contagens de seguidores temporárias/otimistas. */
   const [localFollowerCounts, setLocalFollowerCounts] = useState({});
+  /** @type {ArtistData[]} Lista processada de artistas para exibição. */
   const [artistsData, setArtistsData] = useState([]);
   
-  // UI State
+  // --- UI State
   const [showMonetization, setShowMonetization] = useState(false);
   const [monetizationUsername, setMonetizationUsername] = useState("");
+  /** @type {('all' | 'musica' | 'texto' | 'visual')} Filtro ativo. */
   const [activeFilter, setActiveFilter] = useState("all");
+  /** @type {('rating' | 'followers' | 'works')} Critério de ordenação. */
   const [sortBy, setSortBy] = useState("rating");
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
-  // ✅ CORREÇÃO 1: Ref para evitar requisições duplicadas para o mesmo ID
+  // ✅ Ref para evitar requisições duplicadas de contagem de seguidores.
+  /** @type {React.MutableRefObject<Set<string>>} */
   const countsRequested = useRef(new Set());
 
   // 1. Carregar Dados Iniciais (Posts, Usuários)
@@ -159,6 +214,16 @@ const ForYou = () => {
 
   // --- Handlers ---
 
+  /**
+   * @private
+   * Gerencia a ação de seguir/deixar de seguir um artista.
+   * Implementa uma atualização otimista na UI (`myFollowingIds`, `localFollowerCounts`)
+   * e tenta a operação no servidor, revertendo a UI em caso de falha.
+   * * @async
+   * @param {string} targetId ID do usuário a ser seguido/deixado de seguir.
+   * @param {number} currentCount Contagem atual de seguidores (passada do `ArtistData`).
+   * @param {React.MouseEvent} e Evento do clique para parar a propagação.
+   */
   const handleFollowClick = async (targetId, currentCount, e) => {
     e.stopPropagation();
     if (!viewerId) return alert("Faça login para seguir.");
@@ -208,11 +273,23 @@ const ForYou = () => {
     }
   };
 
+  /**
+   * @private
+   * Renderiza os ícones de estrela para a avaliação.
+   * @param {number} rating O valor da avaliação (0 a 5).
+   * @returns {JSX.Element} Span com estrelas sólidas, meias estrelas e vazias.
+   */
   const renderStars = (rating) => {
     const r = Math.max(0, Math.min(5, Number(rating) || 0));
     return <span style={{color: '#f5c542'}}>{"★".repeat(Math.floor(r))}{r % 1 >= 0.5 ? "½" : ""}{"☆".repeat(5 - Math.ceil(r))}</span>;
   };
 
+  /**
+   * Lista filtrada e ordenada de artistas.
+   * Utiliza `useMemo` para evitar recálculos desnecessários a cada render.
+   *
+   * @returns {ArtistData[]} Lista final para renderização.
+   */
   const filteredList = useMemo(() => {
     let list = isSearching ? artistsData : artistsData.filter(a => a.rating >= 0);
     

@@ -8,26 +8,71 @@ import { useNavigate } from 'react-router-dom';
 import FooterAL from '../components/FooterAL';
 import '../css/InitialPage.css';
 
+/**
+ * @typedef {object} Usuario
+ * @property {string} _id ID do MongoDB do usuário.
+ * @property {string} [id] ID alternativo.
+ * @property {string} username Nome de usuário.
+ * @property {string} [nome] Nome de exibição.
+ * @property {string} [bio] Biografia.
+ * @property {string} [fotoUrl] URL da foto de perfil.
+ */
+
+/**
+ * @typedef {object} Post
+ * @property {string} _id ID do MongoDB do post.
+ * @property {string} [tipo] Categoria do post ('musica', 'texto', 'visual').
+ * @property {string} [usuarioId] ID do autor (usuário) do post.
+ * @property {string} [userId] ID alternativo do autor.
+ * // ... outras propriedades de post
+ */
+
+/**
+ * @typedef {object} ArtistWithCount
+ * @property {number} postCount Número de posts recentes do artista na categoria.
+ * @augments Usuario
+ */
+
+/**
+ * Página pública para descoberta aleatória de artistas por categoria.
+ *
+ * O componente carrega a lista de usuários e posts (através do Redux) e,
+ * em seguida, permite que o usuário gire uma "roleta" para encontrar um
+ * artista aleatório em uma das categorias de conteúdo (Música, Texto, Visual).
+ * Como é uma página pública, as interações de "Seguir" redirecionam para o login.
+ *
+ * @returns {JSX.Element} A página de descoberta de artistas.
+ */
+
 const ArtistPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Redux
+  // Redux State Selectors
+  /** @type {Usuario[]} */
   const { usuarios = [] } = useSelector((s) => s.user) || {};
+  /** @type {{lista: Post[], loading: boolean}} */
   const { lista: posts = [], loading: loadingPosts } = useSelector((s) => s.posts) || {};
 
-  // Estado local
+  // Estado local para a roleta
+  /** @type {[ArtistWithCount | null, React.Dispatch<React.SetStateAction<ArtistWithCount | null>>]} */
   const [currentArtist, setCurrentArtist] = useState(null);
   const [isRouletteSpinning, setIsRouletteSpinning] = useState(false);
+  /** @type {['musica'|'texto'|'visual'|null, React.Dispatch<React.SetStateAction<'musica'|'texto'|'visual'|null>>]} */
   const [currentCategory, setCurrentCategory] = useState(null);
 
-  // Carrega base
+  // Carrega base: Busca usuários e posts se o Redux estiver vazio.
   useEffect(() => {
     if (!Array.isArray(usuarios) || usuarios.length === 0) dispatch(fetchUsuarios());
     if (!Array.isArray(posts) || posts.length === 0) dispatch(fetchPosts());
   }, [dispatch]);
 
   // Agrupa artistas por categoria
+  /**
+   * Agrupa e conta posts de artistas por categoria.
+   * A computação é memorizada (useMemo) e re-executada apenas quando 'posts' ou 'usuarios' mudam.
+   * @type {{musica: ArtistWithCount[], texto: ArtistWithCount[], visual: ArtistWithCount[]}}
+   */
   const artistsByCategory = useMemo(() => {
     const map = { musica: new Map(), texto: new Map(), visual: new Map() };
 
@@ -59,8 +104,20 @@ const ArtistPage = () => {
     };
   }, [posts, usuarios]);
 
+  /**
+   * @private
+   * Seleciona um elemento aleatório de um array.
+   * @param {Array<any>} arr O array de entrada.
+   * @returns {any | null} Um elemento aleatório ou null se o array estiver vazio.
+   */
   const pickRandom = (arr) => (!arr || arr.length === 0) ? null : arr[Math.floor(Math.random() * arr.length)];
 
+  /**
+   * Inicia o processo de "roleta" para escolher um artista aleatório na categoria.
+   * Atualiza o estado para mostrar o spinner e, após um timeout (900ms), revela o artista escolhido.
+   * @param {'musica'|'texto'|'visual'} category A categoria a ser sorteada.
+   * @returns {void}
+   */
   const getRandomArtist = (category) => {
     setCurrentCategory(category);
     setIsRouletteSpinning(true);
@@ -73,11 +130,20 @@ const ArtistPage = () => {
     }, 900);
   };
 
+  /**
+   * Navega para a página de perfil do artista atualmente selecionado.
+   * @private
+   * @returns {void}
+   */
   const goToProfile = () => {
     if (currentArtist?.username) navigate(`/user/${currentArtist.username}`);
   };
 
-  // avatar fallback SVG (mesmo look do seu app)
+  /**
+   * Gera um fallback SVG para a imagem do perfil do artista.
+   * @private
+   * @returns {string} URL de dados do SVG codificado.
+   */
   const avatarUrl = () => {
     const svg = encodeURIComponent(`
       <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300">
@@ -97,7 +163,12 @@ const ArtistPage = () => {
     return `data:image/svg+xml;utf8,${svg}`;
   };
 
-  // bio derivada
+  /**
+   * Gera uma biografia simplificada e derivada do artista, baseada na contagem de posts na categoria atual.
+   * @private
+   * @param {Usuario | ArtistWithCount | null} u O objeto usuário.
+   * @returns {string} A string da biografia.
+   */
   const derivedBio = (u) => {
     if (!u) return '';
     const count = currentCategory
@@ -112,7 +183,12 @@ const ArtistPage = () => {
       !artistsByCategory.texto.length &&
       !artistsByCategory.visual.length);
 
-  // 👉 Versão deslogada: seguir redireciona para /login
+  /**
+   * Handler de clique no botão "Seguir" (para a versão deslogada).
+   * Redireciona o usuário para a página de login.
+   * @private
+   * @returns {void}
+   */
   const handleFollowClick = () => navigate('/login');
 
   return (

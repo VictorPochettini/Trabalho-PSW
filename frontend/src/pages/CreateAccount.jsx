@@ -8,34 +8,67 @@ import olhoAberto from "../images/olhoAbertoRoxo.png";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 
-// Componente BackButton
+/**
+ * Componente simples para renderizar o botão de voltar/link para a página inicial.
+ * @returns {JSX.Element} O link do botão de voltar.
+ */
 const BackButton = () => (
   <Link to="/" className={styles.backButton} aria-label="Voltar para início">
     <img src={botaoVolta} alt="Voltar" />
   </Link>
 );
 
+/**
+ * Página/Componente para Criação de Nova Conta de Usuário (Registro).
+ *
+ * Este componente gerencia os campos de entrada (nome, username, email, senha),
+ * a lógica de visibilidade da senha, a validação de que as senhas coincidem e
+ * a aceitação dos termos de uso. Ele interage com o endpoint de registro
+ * da API (`/api/auth/register`) para criar um novo usuário.
+ *
+ * @returns {JSX.Element} O formulário de criação de conta renderizado.
+ */
 export default function CriacaoConta() {
   const [nome, setNome] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confSenha, setConfSenha] = useState("");
-  const admin = false;
+  /** @type {boolean} Controla a visibilidade dos campos de senha. */
   const [senhaVisivel, setSenhaVisivel] = useState(false);
+  /** @type {string} Mensagem de erro a ser exibida para o usuário. */
   const [erro, setErro] = useState("");
+  /** @type {boolean} Indica se o usuário marcou a caixa de aceitação dos termos. */
   const [aceitouTermos, setAceitouTermos] = useState(false);
+  /** @type {boolean} Indica se o formulário está atualmente submetendo dados (para desabilitar o botão). */
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  /** @type {boolean} Indica se a Senha e a Confirmação de Senha são iguais e não vazias. */
   const senhasCoincidem = senha !== "" && senha === confSenha;
+  /** @type {boolean} Condição final para permitir a submissão do formulário. */
   const podeCriarConta = senhasCoincidem && aceitouTermos;
 
+  /**
+   * @private
+   * Alterna a visibilidade dos campos de senha (troca entre "text" e "password").
+   * @returns {void}
+   */
   const toggleSenha = () => setSenhaVisivel((prev) => !prev);
 
-  // Removido fetch de /usuarios — duplicidade deve ser checada no backend (opção B)
-  // useEffect(() => { ... }, []);
-
+  /**
+   * Handler de submissão do formulário.
+   *
+   * Realiza a validação final (senhas e termos), desabilita o formulário,
+   * envia os dados para a API de registro e, em caso de sucesso, redireciona
+   * para a página de login. Trata erros de validação do servidor (409/400) ou
+   * erros gerais.
+   *
+   * @async
+   * @private
+   * @param {React.FormEvent<HTMLFormElement>} e Evento de submissão do formulário.
+   * @returns {Promise<void>}
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErro("");

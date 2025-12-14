@@ -11,38 +11,118 @@ import MonetizationPopup from "../components/MonetizationPopup";
 import CommentsPopup from "../components/CommentsPopup";
 import FloatingActionButton from "../components/FloatingActionButton";
 
+/**
+ * @typedef {object} Usuario
+ * @property {string} [_id] ID do MongoDB do usuário.
+ * @property {string} [id] ID alternativo do usuário.
+ * @property {string} [username] Nome de usuário.
+ * @property {string} [nome] Nome de exibição.
+ * @property {string} [fotoPerfil] Caminho/URL da foto de perfil.
+ */
+
+/**
+ * @typedef {object} CurrentUserState
+ * @property {Usuario | null} [user] O objeto do usuário logado.
+ * @property {string | null} [token] O token de autenticação JWT.
+ */
+
+/**
+ * @typedef {object} Post
+ * @property {string} [_id] ID do MongoDB do post.
+ * @property {string} [id] ID alternativo do post.
+ * @property {string} [usuarioId] ID do autor do post.
+ * @property {string} [userId] ID do autor do post (alternativo).
+ * @property {('texto' | 'musica' | 'visual' | 'letra')} tipo Tipo do post.
+ * @property {string} [titulo] Título do post.
+ * @property {string} [conteudo] Conteúdo principal (texto ou letra).
+ * @property {string} [texto] Conteúdo principal (alternativo).
+ * @property {string} [content] Conteúdo principal (alternativo).
+ * @property {string} [mediaPath] Caminho do arquivo de mídia no servidor.
+ * @property {string} [data] Data de criação.
+ * @property {string} [createdAt] Data de criação (alternativo).
+ */
+
+/**
+ * @typedef {object} CombinedPost Extensão de Post com dados do autor processados para exibição.
+ * @augments Post
+ * @property {string} id ID principal do post.
+ * @property {string} content Conteúdo do post (prioritário).
+ * @property {string} texto Conteúdo do post (alternativo).
+ * @property {string} usuarioId ID do autor (padronizado para string).
+ * @property {string} authorName Nome de exibição do autor.
+ * @property {string} authorUsername Username do autor.
+ * @property {string | null} authorPhoto Caminho/URL da foto de perfil do autor.
+ * @property {('audio' | 'image' | 'text')} mediaType Tipo de mídia padronizado.
+ * @property {string | null} mediaSrc URL completa da mídia.
+ * @property {string | null} mediaAlt Texto alternativo para mídia visual.
+ * @property {string} time Data/hora formatada.
+ */
+
+/**
+ * @typedef {object} UpdatePostPayload
+ * @property {string} id ID do post a ser atualizado.
+ * @property {object} data Os campos do post a serem modificados (ex: { titulo: string, conteudo: string }).
+ */
+
+
+/**
+ * Componente principal da página Feed.
+ * * Exibe um feed personalizado contendo posts dos usuários seguidos
+ * e posts do próprio usuário logado. Gerencia o carregamento de dados,
+ * filtros, e as interações de edição, comentários e monetização.
+ *
+ * @returns {JSX.Element} A interface completa do Feed.
+ */
 const Feed = () => {
   const dispatch = useDispatch();
 
+  /** @type {Post[]} Lista de todos os posts carregados. */
   const posts = useSelector((state) => state.posts.lista || []);
   const loadingPosts = useSelector((state) => state.posts.loading);
   const errorPosts = useSelector((state) => state.posts.error);
 
+  /** @type {CurrentUserState | undefined} Estado completo do usuário logado no Redux. */
   const currentUserState = useSelector((state) => state.user?.currentUser);
+  /** @type {Usuario | null} Objeto do usuário logado. */
   const currentUser = currentUserState?.user ?? null;
+  /** @type {string | null} ID do usuário logado. */
   const viewerId = currentUser?._id ?? currentUser?.id ?? null;
 
+  /** @type {Usuario[]} Lista de todos os usuários carregados. */
   const usuarios = useSelector((state) => state.user.usuarios || []);
   const loadingUsuarios = useSelector((state) => state.user.loading);
 
+  // --- Estados Derivados
+  /** @type {CombinedPost[]} Posts combinados com dados de autor. */
   const [postsComUsuario, setPostsComUsuario] = useState([]);
+  /** @type {CombinedPost[]} Posts filtrados: apenas de usuários seguidos ou próprios. */
   const [postsDosSeguidos, setPostsDosSeguidos] = useState([]);
+  /** @type {string[]} IDs dos usuários que o usuário logado está seguindo. */
   const [seguindoIds, setSeguindoIds] = useState([]); 
   const [loadingSeguindo, setLoadingSeguindo] = useState(true);
 
+  // --- Estados de Pop-up
   const [showMonetization, setShowMonetization] = useState(false);
   const [monetizationUsername, setMonetizationUsername] = useState("");
   const [showComments, setShowComments] = useState(false);
   const [currentPostIdForComments, setCurrentPostIdForComments] = useState(null);
 
+  // --- Estados de Edição de Post
+  /** @type {string | null} ID do post atualmente em modo de edição. */
   const [editingPost, setEditingPost] = useState(null);
+  /** @type {string} Conteúdo/texto sendo editado. */
   const [editText, setEditText] = useState('');
+  /** @type {string} Título sendo editado (para posts de texto). */
   const [editTitle, setEditTitle] = useState('');
 
-  // ✅ Estado para refresh manual
+  /** @type {boolean} Estado para refresh manual em andamento. */
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // ✅ Função para atualizar manualmente o feed
+  /**
+   * @private
+   * Função para acionar a recarga manual do feed (posts e usuários).
+   * @type {() => Promise<void>}
+   */
   const handleRefreshFeed = useCallback(async () => {
     setIsRefreshing(true);
     try {
@@ -165,30 +245,47 @@ const Feed = () => {
     }
   }, [postsComUsuario, seguindoIds, viewerId]);
 
-  // --- Handlers de UI ---
+  /**
+   * @private
+   * Abre o pop-up de monetização para um usuário específico.
+   * @param {string} username O nome de usuário para quem a monetização é solicitada.
+   */
   const handleMonetizeClick = (username) => {
     setMonetizationUsername(username);
     setShowMonetization(true);
     document.body.style.overflow = "hidden";
   };
 
+  /** @private Fecha o pop-up de monetização. */
   const handleCloseMonetization = () => {
     setShowMonetization(false);
     document.body.style.overflow = "";
   };
 
+    /**
+   * @private
+   * Abre o pop-up de comentários para um post específico.
+   * @param {string} postId O ID do post.
+   */
   const handleCommentClick = (postId) => {
     setCurrentPostIdForComments(postId);
     setShowComments(true);
     document.body.style.overflow = "hidden";
   };
 
+  /** @private Fecha o pop-up de comentários. */
   const handleCloseComments = () => {
     setShowComments(false);
     setCurrentPostIdForComments(null);
     document.body.style.overflow = "";
   };
 
+  /**
+   * @private
+   * Inicia o modo de edição para um post.
+   * Preenche os estados `editText` e `editTitle` com o conteúdo atual do post.
+   * @param {CombinedPost} post O objeto de post a ser editado.
+   */
   const handleEditClick = (post) => {
     const postId = post._id || post.id;
     setEditingPost(postId);
@@ -212,6 +309,12 @@ const Feed = () => {
     setEditTitle(titleToEdit);
   };
 
+  /**
+   * @private
+   * Salva a edição de um post específico enviando os dados atualizados para o Redux/API.
+   * @async
+   * @param {string} postId O ID do post a ser salvo.
+   */
   const handleSaveEdit = async (postId) => {
     const postToUpdate = posts.find(p => String(p._id || p.id) === String(postId));
     

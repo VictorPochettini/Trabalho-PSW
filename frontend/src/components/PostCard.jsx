@@ -20,6 +20,46 @@ import {
 
 import { deletePost } from '../redux/postsSlice';
 
+/**
+ * @typedef {object} Post
+ * @property {string} _id O ID único do post (preferencialmente do MongoDB).
+ * @property {string} [id] ID alternativo para o post.
+ * @property {string} [authorName] Nome de exibição do autor.
+ * @property {string} [authorUsername] Nome de usuário (@username) do autor.
+ * @property {string} [usuarioId] O ID do usuário autor do post.
+ * @property {string} [userId] ID de usuário alternativo.
+ * @property {string} [authorPhoto] URL ou caminho da foto de perfil do autor.
+ * @property {string} [time] Timestamp do post formatado.
+ * @property {string} [createdAt] Timestamp de criação (ISO string).
+ * @property {string} content Conteúdo principal do post (ex: citação).
+ * @property {('text'|'texto'|'audio'|'image')} mediaType Tipo de mídia do post.
+ * @property {string} [mediaSrc] URL da fonte da mídia (áudio ou imagem).
+ * @property {string} [mediaAlt] Texto alternativo para a mídia.
+ * @property {string} [texto] Conteúdo adicional, como letra completa para posts de texto/música.
+ * @property {('texto'|'letra'|'audio'|'image')} [tipo] Tipo de post (usado na lógica de edição).
+ */
+
+/**
+ * Componente de cartão (Card) para exibição e interação com posts.
+ * Ele gerencia a avaliação do usuário, o seguimento do autor e as interações de edição/exclusão.
+ *
+ * @param {object} props As propriedades do componente.
+ * @param {Post} props.post O objeto de dados do post a ser exibido.
+ * @param {function(string): void} [props.onMonetizeClick] Callback chamado ao clicar no botão "Apoiar". Recebe o username/name do autor.
+ * @param {function(string): void} [props.onCommentClick] Callback chamado ao clicar no botão "Comentar". Recebe o postId.
+ * @param {function(string): Promise<void>} [props.onDeleteClick] Callback chamado ao excluir o post. Se fornecido, ele é usado no lugar da ação Redux `deletePost`.
+ * @param {function(Post): void} [props.onEditClick] Callback chamado ao clicar no botão "Editar". Recebe o objeto Post.
+ * @param {function(string): void} [props.onSaveEdit] Callback chamado ao salvar a edição. Recebe o postId.
+ * @param {function(): void} [props.onCancelEdit] Callback chamado ao cancelar a edição.
+ * @param {boolean} [props.isEditing=false] Indica se o post está atualmente no modo de edição.
+ * @param {string} [props.editText] O texto atual (corpo) da edição.
+ * @param {string} [props.editTitle] O título atual da edição (para posts de texto/letra).
+ * @param {function(string): void} [props.onEditTextChange] Handler para a mudança do texto do corpo da edição.
+ * @param {function(string): void} [props.onEditTitleChange] Handler para a mudança do texto do título da edição.
+ * @param {boolean} [props.isOwnProfile=false] Indica se o cartão está sendo exibido no perfil do próprio usuário logado (usado para esconder Follow/Support).
+ * @returns {JSX.Element} O cartão do post renderizado.
+ */
+
 const PostCard = ({
   post,
   onMonetizeClick,
@@ -38,7 +78,7 @@ const PostCard = ({
   const [submitting, setSubmitting] = useState(false);
   const [lastStarClickTime, setLastStarClickTime] = useState(0);
 
-  // 🎵 player custom
+  // player custom
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -60,7 +100,7 @@ const PostCard = ({
   const authorName = post?.authorName || post?.username || 'Usuário';
   const authorUsername = post?.authorUsername || post?.username?.replace('@', '') || '';
 
-  // ✅ NOVO: Pegar foto de perfil do autor
+  // NOVO: Pegar foto de perfil do autor
   const authorPhoto = post?.authorPhoto || post?.fotoPerfil || null;
   const API_URL = 'http://localhost:5000';
   
@@ -114,12 +154,12 @@ const PostCard = ({
     const isDoubleClick = currentTime - lastStarClickTime < 300;
 
     if (isDoubleClick && ratingState?.myStars > 0) {
-      // 🔥 REMOVER AVALIAÇÃO (duplo clique)
+      // REMOVER AVALIAÇÃO (duplo clique)
       try {
         setSubmitting(true);
         await dispatch(removeRating({ postId, usuarioId: currentUserId })).unwrap();
         
-        // ✅ CRÍTICO: Recarregar dados após remover
+        // CRÍTICO: Recarregar dados após remover
         await dispatch(fetchMyRatingForPost({ postId, usuarioId: currentUserId })).unwrap();
         
         console.log('✅ [PostCard] Avaliação removida e recarregada');
@@ -130,13 +170,13 @@ const PostCard = ({
         setSubmitting(false);
       }
     } else {
-      // 🔥 ADICIONAR/ATUALIZAR AVALIAÇÃO (clique simples)
+      // ADICIONAR/ATUALIZAR AVALIAÇÃO (clique simples)
       const estrelas = Math.min(5, Math.max(1, Number(value)));
       try {
         setSubmitting(true);
         await dispatch(upsertRating({ postId, usuarioId: currentUserId, estrelas })).unwrap();
         
-        // ✅ CRÍTICO: Recarregar dados após avaliar
+        // CRÍTICO: Recarregar dados após avaliar
         await dispatch(fetchMyRatingForPost({ postId, usuarioId: currentUserId })).unwrap();
         
         console.log('✅ [PostCard] Avaliação salva e recarregada');
@@ -231,7 +271,7 @@ const PostCard = ({
     }
   };
 
-  // ✅ CORREÇÃO: Gerenciar texto de edição localmente + título separado
+  // CORREÇÃO: Gerenciar texto de edição localmente + título separado
   const [localEditText, setLocalEditText] = useState('');
   const [localEditTitle, setLocalEditTitle] = useState('');
 
@@ -280,7 +320,7 @@ const PostCard = ({
   };
 
   const handleCancelClick = () => {
-    setLocalEditText(''); // ✅ Limpa o estado local
+    setLocalEditText(''); // Limpa o estado local
     if (typeof onCancelEdit === 'function') {
       onCancelEdit();
     }
@@ -316,7 +356,7 @@ const PostCard = ({
                         role="button"
                         aria-label={`Abrir perfil de ${authorName}`}
                       >
-                        {/* ✅ MUDANÇA: Usar foto de perfil do autor */}
+                        {/* MUDANÇA: Usar foto de perfil do autor */}
                         {getAuthorPhotoUrl() ? (
                           <img 
                             src={getAuthorPhotoUrl()} 
@@ -403,7 +443,7 @@ const PostCard = ({
                       </div>
                     )}
 
-                    {/* ✅ Botões de Salvar/Cancelar durante edição */}
+                    {/* Botões de Salvar/Cancelar durante edição */}
                     {isEditing && (
                       <div className="edit-actions">
                         <button
@@ -428,7 +468,7 @@ const PostCard = ({
                   </div>
                 </div>
 
-                {/* ✅ Conteúdo Único */}
+                {/* Conteúdo Único */}
                 {!isEditing ? (
                   <>
                     {/* Modo Normal */}
@@ -438,7 +478,7 @@ const PostCard = ({
                       <span className="quote-end">"</span>
                     </div>
 
-                    {/* ✅ PLAYER DE ÁUDIO REDESENHADO */}
+                    {/* PLAYER DE ÁUDIO REDESENHADO */}
                     {mediaType === 'audio' && mediaSrc && (
                       <div className="audio-player-container">
                         <audio
@@ -563,7 +603,7 @@ const PostCard = ({
                 ) : (
                   /* Modo Edição */
                   <div className="edit-mode">
-                    {/* ✅ NOVO: Campo de Título para posts de texto */}
+                    {/* NOVO: Campo de Título para posts de texto */}
                     {(post.tipo === 'texto' || post.tipo === 'letra') && (
                       <>
                         <label className="edit-label">Título</label>

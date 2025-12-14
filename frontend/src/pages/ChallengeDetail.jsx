@@ -15,34 +15,104 @@ import { makeSelectRankingByStars } from "../redux/selectorsDesafios";
 import { fetchPosts } from "../redux/postsSlice";
 import { fetchUsuarios } from "../redux/usuariosSlice";
 
-// Placeholder até ligar no ratingsSlice
+/**
+ * @typedef {object} Usuario
+ * @property {string} _id ID do MongoDB do usuário.
+ * @property {string} [id] ID alternativo do usuário.
+ * @property {string} [username] Nome de usuário.
+ * @property {('admin'|'ADMIN'|string)} [role] Papel/Tipo do usuário (usado para permissões).
+ */
+
+/**
+ * @typedef {object} Desafio
+ * @property {string} _id ID do MongoDB do desafio.
+ * @property {string} titulo Título do desafio.
+ * @property {string} descricao Descrição completa do desafio.
+ * @property {string} criadorId ID do usuário que criou o desafio.
+ * @property {('rascunho'|'publicado'|'encerrado')} [status] Status atual do desafio no sistema (sem levar em conta o tempo).
+ * @property {('oficial'|'comunidade')} [tipo] Indica se o desafio é oficial ou da comunidade.
+ * @property {string} [dataInicio] Data de início (ISO string).
+ * @property {string} [dataFim] Data de encerramento (ISO string).
+ */
+
+/**
+ * @typedef {object} Post
+ * @property {string} _id ID do MongoDB do post.
+ * @property {string} [id] ID alternativo.
+ * @property {string} [usuarioId] ID do autor do post.
+ * @property {string} [userId] ID alternativo do autor.
+ * // ... outras propriedades de post
+ */
+
+/**
+ * @typedef {object} RankingItem
+ * @property {string} postId ID do post participante.
+ * @property {string} participacaoId ID da participação.
+ * @property {number} ratingAvg Média de estrelas recebidas pelo post.
+ * @property {number} ratingCount Número total de votos (estrelas) recebidos.
+ * @property {string} [titulo] Título do post.
+ * @property {string} [tipo] Tipo de post (ex: 'musica', 'texto').
+ */
+
+
+
+/**
+ * Placeholder para o componente de avaliação por estrelas.
+ * @param {object} props
+ * @param {string} props.postId ID do post a ser avaliado.
+ * @returns {null | JSX.Element}
+ */
 function StarRater() { return null; }
 
+/**
+ * Componente de página para exibir os detalhes de um desafio específico.
+ *
+ * Responsável por:
+ * 1. Buscar os dados do desafio, participações, posts e usuários.
+ * 2. Exibir informações do desafio, status e criador.
+ * 3. Calcular e exibir o ranking das participações.
+ * 4. Fornecer ações de gerenciamento (Publicar, Excluir) para o criador/administrador.
+ *
+ * @returns {JSX.Element} O componente de detalhe do desafio.
+ */
 export default function ChallengeDetail() {
+  /** @type {{id: string}} */
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // novo formato: currentUserState = { user, token }
+  // Redux Selectors
   const currentUserState = useSelector((s) => s.user?.currentUser);
+  /** @type {Usuario | null} */
   const currentUser = currentUserState?.user ?? null;
 
+  /** @type {Usuario[]} */
   const usuarios = useSelector((s) => s.user?.usuarios || []);
+  /** @type {Post[]} */
   const posts = useSelector((s) => s.posts?.lista || []);
 
+  /** @type {Desafio | null} */
   const desafio = useSelector(selectDesafioById(id));
   const selectRanking = makeSelectRankingByStars(id);
+  /** @type {RankingItem[]} */
   const ranking = useSelector(selectRanking) || [];
 
-  // Normaliza id do currentUser (aceita _id ou id)
+  // Permissões
   const currentUserId = currentUser ? (currentUser._id ?? currentUser.id ?? null) : null;
   const currentUserRole = currentUser ? (currentUser.role ?? currentUser.tipo ?? null) : null;
-
-  // verificadores de permissão: comparar com cuidado _id / id e permitir admin via role
+  /** @type {boolean} */
   const isCreator = !!(currentUser && desafio && String(desafio.criadorId) === String(currentUserId));
+  /** @type {boolean} */
   const isAdmin = currentUserRole === "admin" || currentUserRole === "ADMIN";
+  /**
+   * Indica se o usuário logado tem permissão para gerenciar (editar/excluir/publicar) o desafio.
+   * @type {boolean}
+   */
   const canManage = isCreator || isAdmin;
 
+  /**
+   * Hook de efeito para carregar todos os dados necessários (desafio, participações, posts, usuários).
+   */
   useEffect(() => {
     dispatch(fetchDesafioById(id));
     dispatch(fetchParticipacoesByDesafio(id));
@@ -51,16 +121,43 @@ export default function ChallengeDetail() {
   }, [dispatch, id]);
 
   // ===== Helpers de status derivado (finalizado quando dataFim passou) =====
+
+  /**
+   * @private
+   * Converte uma string de data para um timestamp (milisegundos).
+   * @param {string | Date | number} v Valor da data.
+   * @returns {number} Timestamp em milisegundos ou 0.
+   */
   const toTime = (v) => (v ? new Date(v).getTime() : 0);
+
+  /**
+   * @private
+   * Verifica se o desafio expirou baseado na `dataFim`.
+   * @param {Desafio} d O objeto desafio.
+   * @returns {boolean}
+   */
   const isExpired = (d) => (d?.dataFim ? toTime(d.dataFim) < Date.now() : false);
+
+  /**
+   * Status final derivado: se o tempo acabou, é 'finalizado', caso contrário, usa o `desafio.status`.
+   * @type {('finalizado'|'aberto'|'rascunho'|'publicado'|'encerrado')}
+   */
   const derivedStatus = desafio
     ? (isExpired(desafio) ? "finalizado" : (desafio.status || "aberto"))
     : "aberto";
 
+  /**
+   * Handler para publicar um desafio que está no status "rascunho".
+   * Requer permissão de gerenciamento (`canManage`).
+   * Faz uma chamada PATCH à API para mudar o status para "publicado".
+   * @async
+   * @private
+   * @returns {Promise<void>}
+   */
   const handlePublish = async () => {
     if (!canManage || desafio?.status !== "rascunho") return;
     if (!confirm("Publicar este desafio agora?")) return;
-    
+
     const token = currentUserState?.token;
     if (!token) {
       alert("Você precisa estar autenticado para publicar desafios.");
@@ -69,7 +166,7 @@ export default function ChallengeDetail() {
 
     try {
       await axios.patch(
-        `http://localhost:5000/desafios/${id}`, 
+        `http://localhost:5000/desafios/${id}`,
         {
           status: "publicado",
           updatedAt: new Date().toISOString(),
@@ -88,10 +185,18 @@ export default function ChallengeDetail() {
     }
   };
 
+  /**
+   * Handler para excluir um desafio.
+   * Requer permissão de gerenciamento (`canManage`).
+   * Faz uma chamada DELETE à API e, em caso de sucesso, navega para a lista de desafios.
+   * @async
+   * @private
+   * @returns {Promise<void>}
+   */
   const handleDelete = async () => {
     if (!canManage) return;
     if (!confirm("Tem certeza que deseja excluir este desafio? Esta ação não pode ser desfeita.")) return;
-    
+
     const token = currentUserState?.token;
     if (!token) {
       alert("Você precisa estar autenticado para excluir desafios.");
@@ -113,10 +218,22 @@ export default function ChallengeDetail() {
     }
   };
 
-  // busca usuário/post por id levando em conta _id / id e formatos numéricos/strings
+  /**
+   * @private
+   * Busca um objeto Usuário por ID, tentando várias chaves (`_id`, `id`, `usuarioId`, `idStr`)
+   * e normalizando o formato (string/número).
+   * @param {string | number} uid O ID do usuário a ser buscado.
+   * @returns {Usuario | undefined} O objeto usuário ou undefined.
+   */
   const findUserById = (uid) =>
     usuarios.find((u) => String(u._id ?? u.id ?? u.usuarioId ?? u.idStr ?? "") === String(uid));
 
+  /**
+   * @private
+   * Busca um objeto Post por ID, tentando várias chaves (`_id`, `id`, `postId`).
+   * @param {string | number} pid O ID do post a ser buscado.
+   * @returns {Post | undefined} O objeto post ou undefined.
+   */
   const findPostById = (pid) =>
     posts.find((p) => String(p._id ?? p.id ?? p.postId ?? "") === String(pid));
 

@@ -9,15 +9,46 @@ import logo from "../images/ArtBeat_Branco.png";
 import olhoFechado from "../images/olhoFechadoRoxo.png";
 import olhoAberto from "../images/olhoAbertoRoxo.png";
 
+/**
+ * @typedef {object} UserSliceState
+ * @property {object | null} currentUser Objeto contendo os dados do usuário logado e token (se houver).
+ * @property {string | null} error Mensagem de erro de login vinda do Redux.
+ * @property {boolean} loading Indica se a requisição de login está em andamento.
+ */
+
+/**
+ * @typedef {object} LoginPayload
+ * @property {string} username Nome de usuário.
+ * @property {string} password Senha.
+ */
+
+/**
+ * Componente de interface de Login.
+ *
+ * Gerencia a autenticação do usuário, permitindo a inserção de credenciais
+ * (usuário e senha) e despachando a ação de login para o Redux.
+ * Redireciona para '/feed' em caso de sucesso.
+ *
+ * @returns {JSX.Element} O formulário de login e interface associada.
+ */
 export default function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // --- Redux State ---
+  /** @type {object | null} Objeto do usuário logado do Redux. */
   const currentUser = useSelector((state) => state.user.currentUser);
+  /** @type {string | null} Mensagem de erro de login do Redux. */
   const error = useSelector((state) => state.user.error);
+  /** @type {boolean} Status de carregamento do Redux. */
   const loading = useSelector((state) => state.user.loading);
 
+  // --- Local State ---
+  /** @type {[string, React.Dispatch<React.SetStateAction<string>>]} Nome de usuário digitado. */
   const [username, setUsername] = useState("");
+  /** @type {[string, React.Dispatch<React.SetStateAction<string>>]} Senha digitada. */
   const [password, setPassword] = useState("");
+  /** @type {[boolean, React.Dispatch<React.SetStateAction<boolean>>]} Estado para alternar a visibilidade da senha. */
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
   // Redireciona para /feed assim que o usuário loga
@@ -32,12 +63,27 @@ export default function Login() {
     return () => document.body.classList.remove(styles.loginBody);
   }, []);
 
+  /**
+   * @private
+   * Alterna o estado de visibilidade da senha.
+   */
   const alternarSenha = () => setMostrarSenha((s) => !s);
+
+  /**
+   * @private
+   * Função para retornar à página anterior (não utilizada no JSX atual, mas definida).
+   */
   const voltarPagina = () => window.history.back();
 
+  /**
+   * @private
+   * Função de manipulação do envio do formulário de login.
+   * Despacha a ação de login (`login`) com o nome de usuário (tratado) e senha.
+   * @param {React.FormEvent} e O evento de submissão do formulário.
+   */
   const handleLogin = (e) => {
     e.preventDefault();
-    // trim simples
+    /** @type {LoginPayload} */
     const payload = { username: username.trim(), password };
     dispatch(login(payload));
   };
