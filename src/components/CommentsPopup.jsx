@@ -44,7 +44,7 @@ const CommentsPopup = ({ show, onClose, postId }) => {
 
   const usuarios = Array.isArray(usuariosState) ? usuariosState : [];
 
-  const commentsState = useSelector(selectCommentsState(postId));
+  const comments = useSelector(selectCommentsState(postId));
   const ratingState = useSelector(selectRatingState(postId));
 
   const [newCommentText, setNewCommentText] = useState("");
@@ -143,8 +143,7 @@ const CommentsPopup = ({ show, onClose, postId }) => {
 
     try {
       if (typeof deleteComment === "function") {
-        await dispatch(deleteComment({ id: comment.id, postId })).unwrap?.();
-      } else {
+        await dispatch(deleteComment(comment.id));      } else {
         dispatch({ type: "comments/deleteRequested", payload: { id: comment.id, postId } });
       }
     } catch (e) {
@@ -209,14 +208,12 @@ const CommentsPopup = ({ show, onClose, postId }) => {
         <div className="comments-content">
           {/* Lista de comentários */}
           <div className="comment-list">
-            {commentsState.loading ? (
-              <p className="text-center text-muted mt-3">Carregando…</p>
-            ) : commentsState.items.length === 0 ? (
+            {comments.length === 0 ? (
               <p className="text-center text-muted mt-3">
                 Nenhum comentário ainda. Seja o primeiro!
               </p>
             ) : (
-              commentsState.items.map((c) => (
+              comments.items.map((c) => (
                 <div key={c.id} className="comment-item">
                   <div className="comment-top">
                     <div className="comment-author">

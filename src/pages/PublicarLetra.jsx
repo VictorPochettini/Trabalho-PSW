@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { addPost } from "../redux/postsSlice";
+import { addPost  } from "../redux/postsSlice";
 import PublicarLayout from "../components/layout/PublicarLayout";
 import DescricaoInput from "../components/publicar/DescricaoInput";
 import GeneroSelect from "../components/publicar/GeneroSelect";

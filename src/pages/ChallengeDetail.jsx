@@ -42,6 +42,13 @@ export default function ChallengeDetail() {
     dispatch(fetchUsuarios());
   }, [dispatch, id]);
 
+  // ===== Helpers de status derivado (finalizado quando dataFim passou) =====
+  const toTime = (v) => (v ? new Date(v).getTime() : 0);
+  const isExpired = (d) => (d?.dataFim ? toTime(d.dataFim) < Date.now() : false);
+  const derivedStatus = desafio
+    ? (isExpired(desafio) ? "finalizado" : (desafio.status || "aberto"))
+    : "aberto";
+
   const handlePublish = async () => {
     if (!canManage || desafio?.status !== "rascunho") return;
     if (!confirm("Publicar este desafio agora?")) return;
@@ -88,16 +95,23 @@ export default function ChallengeDetail() {
     );
   }
 
+  // "finalizado" herda o visual de "encerrado"
   const statusClass =
-    desafio.status === "encerrado"
+    derivedStatus === "finalizado" || derivedStatus === "encerrado"
       ? "encerrado"
-      : desafio.status === "rascunho"
+      : derivedStatus === "rascunho"
       ? "rascunho"
       : "aberto";
 
   const criador = findUserById(desafio.criadorId);
   const criadorNome =
     (criador?.nome && criador?.nome.trim()) ? criador.nome : (criador?.username || `@user${desafio.criadorId}`);
+
+  // botão "Participar" só aparece se NÃO estiver finalizado/encerrado e não for rascunho
+  const canParticipate =
+    derivedStatus !== "finalizado" &&
+    derivedStatus !== "encerrado" &&
+    derivedStatus !== "rascunho";
 
   return (
     <>
@@ -111,7 +125,8 @@ export default function ChallengeDetail() {
               <span className={`badge tipo ${desafio.tipo === "oficial" ? "oficial" : "comunidade"}`}>
                 {desafio.tipo}
               </span>
-              <span className={`badge status ${statusClass}`}>{desafio.status}</span>
+              {/* usa o status derivado no texto e na classe */}
+              <span className={`badge status ${statusClass}`}>{derivedStatus}</span>
             </div>
 
             <h1 className="chd-title">{desafio.titulo}</h1>
@@ -139,9 +154,16 @@ export default function ChallengeDetail() {
             </div>
 
             <div className="head-actions">
-              <Link className="btn-primary-like" to={`/desafios/${id}/participar`}>
-                Participar
-              </Link>
+              {canParticipate ? (
+                <Link className="btn-primary-like" to={`/desafios/${id}/participar`}>
+                  Participar
+                </Link>
+              ) : (
+                // botão desabilitado para sinalizar que não aceita mais
+                <button className="btn-primary-like" disabled title="Este desafio não aceita mais participações">
+                  {derivedStatus === "rascunho" ? "Indisponível" : "Participações encerradas"}
+                </button>
+              )}
 
               {desafio.status === "rascunho" && canManage && (
                 <button className="btn-primary-like alt" onClick={handlePublish} title="Publicar desafio">
@@ -263,7 +285,7 @@ const styles = `
   text-transform:capitalize; letter-spacing:.2px;
 }
 .badge.tipo.oficial{ background:linear-gradient(135deg, rgba(99,102,241,.30), rgba(59,130,246,.26)); border-color:rgba(147,197,253,.45); }
-.badge.tipo.comunidade{ background:linear-gradient(135deg, rgba(168,85,247,.30), rgba(236,72,153,.24)); border-color:rgba(232,121,249,.42); }
+.badge.tipo.comunidade{ background:linear-gradient(135deg, rgba(168,85,247。.30), rgba(236,72,153,.24)); border-color:rgba(232,121,249,.42); }
 .badge.status.aberto{ background:rgba(34,197,94,.24); border-color:rgba(134,239,172,.45); }
 .badge.status.encerrado{ background:rgba(148,163,184,.24); border-color:rgba(148,163,184,.45); }
 .badge.status.rascunho{ background:rgba(255,214,102,.24); border-color:rgba(255,214,102,.45); }
@@ -283,6 +305,7 @@ const styles = `
   box-shadow: 0 12px 26px rgba(94,23,235,.30);
   transition: transform .12s ease, filter .2s ease, box-shadow .25s ease, border-color .2s ease;
 }
+.btn-primary-like[disabled]{ opacity:.55; cursor:not-allowed; }
 .btn-primary-like:hover{ transform: translateY(-1px); filter: brightness(1.05); border-color: var(--surface-hover-border); box-shadow: 0 16px 32px rgba(94,23,235,.36); }
 .btn-primary-like.alt{ background: linear-gradient(135deg, #7aebc6, #3cc7a8); box-shadow: 0 12px 26px rgba(60,199,168,.28); }
 .btn-primary-like.alt:hover{ box-shadow: 0 16px 32px rgba(60,199,168,.36); }

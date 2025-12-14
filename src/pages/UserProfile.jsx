@@ -133,22 +133,33 @@ const UserProfile = () => {
       const isMusica = p.tipo === "musica";
       const isImagem = p.tipo === "visual";
 
-      const content = p.titulo
-        ? isTexto && p.conteudo
-          ? `${p.conteudo}`
-          : p.titulo
-        : isTexto
-        ? p.conteudo || ""
-        : "";
-
-      return {
+      const base = {
         ...p,
         time: new Date(p.data).toLocaleString("pt-BR"),
-        content,
         mediaType: isMusica ? "audio" : isImagem ? "image" : isTexto ? "text" : undefined,
-        mediaSrc: isMusica || isImagem ? `/media/${p.conteudo}` : undefined,
+        mediaSrc: (isMusica || isImagem) ? `/media/${p.conteudo}` : undefined,
         mediaAlt: p.titulo || "Mídia do post",
-        texto: isTexto ? (p.texto ?? p.conteudo ?? "") : undefined,
+      };
+
+      if (isTexto) {
+        // ✅ Para posts de texto/letra: usar APENAS `texto` como corpo e (opcionalmente) `content` só para título
+        return {
+          ...base,
+          content: p.titulo || "",
+          texto: p.texto ?? p.conteudo ?? "",
+        };
+      }
+
+      // Para música/visual, manter `content` (ex.: título/legenda) e não enviar `texto`
+      const content = p.titulo
+        ? p.titulo
+        : (isMusica || isImagem)
+          ? (p.conteudo || "")
+          : "";
+
+      return {
+        ...base,
+        content,
       };
     })
     // 👇 ÚNICA ADIÇÃO: ordenar do mais recente para o mais antigo (usa p.data / createdAt / time)
@@ -351,6 +362,48 @@ const UserProfile = () => {
                         <div className="stat-label">Seguindo</div>
                       </div>
                     </div>
+
+                    {/* ====== SOBRE O PERFIL: bio + interesses ====== */}
+                    {(user?.bio || user?.generosMusicais || user?.estilosArte) && (
+                      <div className="about-wrap banner-narrow">
+                        {user?.bio && (
+                          <div className="about-card fade-in-up" style={{ animationDelay: '0ms' }}>
+                            <div className="about-icon"><i className="fas fa-quote-left" /></div>
+                            <div className="about-content">
+                              <div className="about-title">Bio</div>
+                              <div className="about-text">{user.bio}</div>
+                            </div>
+                          </div>
+                        )}
+                        {user?.generosMusicais && (
+                          <div className="about-card fade-in-up" style={{ animationDelay: '80ms' }}>
+                            <div className="about-icon"><i className="fas fa-music" /></div>
+                            <div className="about-content">
+                              <div className="about-title">Gêneros de interesse</div>
+                              <div className="about-chips">
+                                {String(user.generosMusicais).split(/[;,/|]+|\s*,\s*/).filter(Boolean).map((g, i) => (
+                                  <span key={i} className="chip">{g.trim()}</span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {user?.estilosArte && (
+                          <div className="about-card fade-in-up" style={{ animationDelay: '160ms' }}>
+                            <div className="about-icon"><i className="fas fa-palette" /></div>
+                            <div className="about-content">
+                              <div className="about-title">Estilos de arte</div>
+                              <div className="about-chips">
+                                {String(user.estilosArte).split(/[;,/|]+|\s*,\s*/).filter(Boolean).map((e, i) => (
+                                  <span key={i} className="chip">{e.trim()}</span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {/* ====== FIM SOBRE O PERFIL ====== */}
                   </div>
 
                   {/* Feed de posts com PostCard real */}
@@ -504,6 +557,30 @@ const UserProfile = () => {
           background: none;
           padding-left: 16px;
         }
+        @media (max-width: 768px) {
+          .lapis {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            left: auto;
+            padding-left: 0;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+          }
+
+          .lapis:hover {
+            transform: scale(1.1);
+          }
+
+          .lapis i {
+            font-size: 18px !important;
+          }
+        }
         .banner-narrow {
           max-width: clamp(640px, 88vw, 840px);
           width: 100%;
@@ -563,6 +640,7 @@ const UserProfile = () => {
           border: 1px solid rgba(255,255,255,.14);
           border-radius: 16px;
           backdrop-filter: blur(6px);
+          margin-top: 10px;
         }
 
         .clickable-stat {
@@ -576,6 +654,59 @@ const UserProfile = () => {
           background: rgba(255, 255, 255, 0.1);
           transform: translateY(-2px);
         }
+
+        /* ===== SOBRE O PERFIL ===== */
+        .about-wrap{
+          display: grid;
+          gap: 12px;
+          margin-top: 14px;
+        }
+        .about-card{
+          display: grid; grid-template-columns: 44px 1fr; gap: 12px;
+          background: rgba(255,255,255,.07);
+          border: 1px solid rgba(255,255,255,.14);
+          border-radius: 14px;
+          padding: 12px;
+          box-shadow: 0 8px 20px rgba(0,0,0,.18);
+          backdrop-filter: blur(8px);
+          transform: translateY(8px);
+          opacity: 0;
+        }
+        .fade-in-up{
+          animation: fadeInUp .5s ease forwards;
+        }
+        @keyframes fadeInUp{
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .about-icon{
+          width: 44px; height: 44px; border-radius: 12px;
+          display: grid; place-items: center;
+          background: linear-gradient(135deg, rgba(106,90,224,.6), rgba(140,127,242,.45));
+          color: #fff; font-size: 18px;
+          box-shadow: 0 6px 16px rgba(106,90,224,.35);
+        }
+        .about-content{}
+        .about-title{
+          font-size: 13px; letter-spacing: .3px; text-transform: uppercase;
+          color: rgba(255,255,255,.85); margin-bottom: 4px;
+        }
+        .about-text{
+          color: #fff; line-height: 1.35;
+        }
+        .about-chips{
+          display: flex; flex-wrap: wrap; gap: 8px;
+        }
+        .chip{
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 6px 10px; border-radius: 999px;
+          background: rgba(106,90,224,.25);
+          border: 1px solid rgba(106,90,224,.45);
+          color: #fff; font-size: 12px; font-weight: 600;
+          box-shadow: 0 6px 16px rgba(106,90,224,.18);
+          transition: transform .15s ease;
+        }
+        .chip:hover{ transform: translateY(-1px); }
+        /* ===== FIM SOBRE O PERFIL ===== */
 
         /* Estilos para os popups customizados */
         .custom-popup-overlay {

@@ -1,3 +1,4 @@
+// src/redux/ratingsSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 const BASE = "http://localhost:5000";
@@ -364,3 +365,159 @@ export const selectRatingState = (postId) => (state) =>
     postAvg: 0,
     postCount: 0,
   };
+
+{/*import api from "../api/axios";
+
+// 🔹 Buscar avaliação do usuário + média do post
+export const fetchMyRatingForPost = createAsyncThunk(
+  "ratings/fetchMyForPost",
+  async ({ postId, usuarioId }, { rejectWithValue }) => {
+    try {
+      const [myRes, avgRes] = await Promise.all([
+        api.get(`/ratings/user/${usuarioId}/post/${postId}`),
+        api.get(`/ratings/post/${postId}`)
+      ]);
+
+      return {
+        postId,
+        usuarioId,
+        estrelas: myRes.data?.estrelas || 0,
+        postRating: avgRes.data || { avg: 0, count: 0 }
+      };
+    } catch (err) {
+      return rejectWithValue("Erro ao buscar avaliação");
+    }
+  }
+);
+
+// 🔹 Buscar média geral do post
+export const fetchPostRating = createAsyncThunk(
+  "ratings/fetchPostRating",
+  async (postId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/ratings/post/${postId}`);
+      return { postId, postRating: res.data || { avg: 0, count: 0 } };
+    } catch (err) {
+      return rejectWithValue("Erro ao buscar média do post");
+    }
+  }
+);
+
+// 🔹 Criar ou atualizar avaliação
+export const upsertRating = createAsyncThunk(
+  "ratings/upsert",
+  async ({ postId, usuarioId, estrelas }, { rejectWithValue }) => {
+    try {
+      const res = await api.post("/ratings", { postId, usuarioId, estrelas });
+      return {
+        postId,
+        usuarioId,
+        estrelas,
+        postRating: res.data?.postRating || { avg: 0, count: 0 }
+      };
+    } catch (err) {
+      return rejectWithValue("Erro ao registrar avaliação");
+    }
+  }
+);
+
+// 🔹 Remover avaliação
+export const removeRating = createAsyncThunk(
+  "ratings/remove",
+  async ({ postId, usuarioId }, { rejectWithValue }) => {
+    try {
+      await api.delete(`/ratings/${postId}-${usuarioId}`);
+      const res = await api.get(`/ratings/post/${postId}`);
+      return {
+        postId,
+        usuarioId,
+        estrelas: 0,
+        postRating: res.data || { avg: 0, count: 0 }
+      };
+    } catch (err) {
+      return rejectWithValue("Erro ao remover avaliação");
+    }
+  }
+);
+
+const ratingsSlice = createSlice({
+  name: "ratings",
+  initialState: {
+    byPostId: {}, // [postId]: { myStars, postAvg, postCount, saving, error }
+  },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      // Buscar média + avaliação do usuário
+      .addCase(fetchMyRatingForPost.fulfilled, (state, action) => {
+        const { postId, estrelas, postRating } = action.payload;
+        state.byPostId[postId] = {
+          myStars: estrelas || 0,
+          postAvg: postRating.avg || 0,
+          postCount: postRating.count || 0,
+          saving: false,
+          error: null
+        };
+      })
+      // Buscar média apenas
+      .addCase(fetchPostRating.fulfilled, (state, action) => {
+        const { postId, postRating } = action.payload;
+        state.byPostId[postId] = {
+          ...(state.byPostId[postId] || {}),
+          postAvg: postRating.avg || 0,
+          postCount: postRating.count || 0
+        };
+      })
+      // Upsert
+      .addCase(upsertRating.pending, (state, action) => {
+        const { postId } = action.meta.arg;
+        if (!state.byPostId[postId])
+          state.byPostId[postId] = { myStars: 0, postAvg: 0, postCount: 0 };
+        state.byPostId[postId].saving = true;
+      })
+      .addCase(upsertRating.fulfilled, (state, action) => {
+        const { postId, estrelas, postRating } = action.payload;
+        state.byPostId[postId] = {
+          myStars: estrelas,
+          postAvg: postRating.avg || 0,
+          postCount: postRating.count || 0,
+          saving: false,
+          error: null
+        };
+      })
+      .addCase(upsertRating.rejected, (state, action) => {
+        const { postId } = action.meta.arg;
+        state.byPostId[postId].saving = false;
+        state.byPostId[postId].error = action.payload;
+      })
+      // Remover avaliação
+      .addCase(removeRating.fulfilled, (state, action) => {
+        const { postId, postRating } = action.payload;
+        state.byPostId[postId] = {
+          myStars: 0,
+          postAvg: postRating.avg || 0,
+          postCount: postRating.count || 0,
+          saving: false,
+          error: null
+        };
+      })
+      .addCase(removeRating.rejected, (state, action) => {
+        const { postId } = action.meta.arg;
+        state.byPostId[postId].saving = false;
+        state.byPostId[postId].error = action.payload;
+      });
+  },
+});
+
+export default ratingsSlice.reducer;
+
+// 🔹 Selectors
+export const selectRatingState = (postId) => (state) =>
+  state.ratings.byPostId[postId] || {
+    myStars: 0,
+    saving: false,
+    error: null,
+    postAvg: 0,
+    postCount: 0
+  };
+*/}

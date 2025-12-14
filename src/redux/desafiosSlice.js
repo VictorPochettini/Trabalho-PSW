@@ -92,3 +92,139 @@ export const selectDesafioById = (id) => (state) =>
   state.desafios.byId[id] ||
   state.desafios.lista.find((d) => String(d.id) === String(id)) ||
   null;
+  
+{/*import api from "../api/axios";
+
+// 🔹 Buscar todos os desafios
+export const fetchDesafios = createAsyncThunk(
+  "desafios/fetchAll",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get("/challenges");
+      return res.data;
+    } catch (err) {
+      return rejectWithValue("Erro ao buscar desafios");
+    }
+  }
+);
+
+// 🔹 Buscar detalhes de um desafio
+export const fetchDesafioById = createAsyncThunk(
+  "desafios/fetchById",
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/challenges/${id}`);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue("Erro ao buscar desafio");
+    }
+  }
+);
+
+// 🔹 Criar novo desafio
+export const createDesafio = createAsyncThunk(
+  "desafios/create",
+  async (novoDesafio, { rejectWithValue }) => {
+    try {
+      const res = await api.post("/challenges", novoDesafio);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue("Erro ao criar desafio");
+    }
+  }
+);
+
+// 🔹 Participar de um desafio
+export const participarDesafio = createAsyncThunk(
+  "desafios/participar",
+  async ({ desafioId, postId }, { rejectWithValue }) => {
+    try {
+      const res = await api.post(`/challenges/${desafioId}/participacoes`, {
+        postId,
+      });
+      return { desafioId, participacao: res.data };
+    } catch (err) {
+      return rejectWithValue("Erro ao participar do desafio");
+    }
+  }
+);
+
+// 🔹 Sair de um desafio (remover participação)
+export const sairDesafio = createAsyncThunk(
+  "desafios/sair",
+  async ({ desafioId, participacaoId }, { rejectWithValue }) => {
+    try {
+      await api.delete(
+        `/challenges/${desafioId}/participacoes/${participacaoId}`
+      );
+      return { desafioId, participacaoId };
+    } catch (err) {
+      return rejectWithValue("Erro ao sair do desafio");
+    }
+  }
+);
+
+const desafiosSlice = createSlice({
+  name: "desafios",
+  initialState: {
+    lista: [],
+    selecionado: null,
+    participacoes: {}, // { [desafioId]: [participações] }
+    loading: false,
+    error: null,
+  },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      // Buscar todos
+      .addCase(fetchDesafios.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchDesafios.fulfilled, (state, action) => {
+        state.lista = action.payload;
+        state.loading = false;
+      })
+      .addCase(fetchDesafios.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Buscar único
+      .addCase(fetchDesafioById.fulfilled, (state, action) => {
+        state.selecionado = action.payload;
+      })
+      // Criar
+      .addCase(createDesafio.fulfilled, (state, action) => {
+        state.lista.push(action.payload);
+      })
+      // Participar
+      .addCase(participarDesafio.fulfilled, (state, action) => {
+        const { desafioId, participacao } = action.payload;
+        if (!state.participacoes[desafioId]) {
+          state.participacoes[desafioId] = [];
+        }
+        state.participacoes[desafioId].push(participacao);
+      })
+      // Sair
+      .addCase(sairDesafio.fulfilled, (state, action) => {
+        const { desafioId, participacaoId } = action.payload;
+        if (state.participacoes[desafioId]) {
+          state.participacoes[desafioId] = state.participacoes[
+            desafioId
+          ].filter((p) => p.id !== participacaoId);
+        }
+      });
+  },
+});
+
+export default desafiosSlice.reducer;
+
+// 🔹 Selectors
+export const selectDesafioById = (id) => (state) =>
+  state.desafios.lista?.find((d) => Number(d.id) === Number(id)) || null;
+export const selectDesafios = (state) => state.desafios.lista || [];
+export const selectDesafioSelecionado = (state) => state.desafios.selecionado;
+export const selectParticipacoesDesafio = (desafioId) => (state) =>
+  state.desafios.participacoes[desafioId] || [];
+
+*/}

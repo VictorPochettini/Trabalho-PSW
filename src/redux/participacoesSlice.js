@@ -89,3 +89,97 @@ export const selectParticipacoesByDesafio = (desafioId) => (s) =>
 
 export const selectParticipacoesByUsuario = (usuarioId) => (s) =>
   s.participacoes.byUsuarioId[usuarioId] || [];
+{/*import api from "../api/axios";
+
+// 🔹 Buscar participações de um desafio
+export const fetchParticipacoes = createAsyncThunk(
+  "participacoes/fetchByDesafio",
+  async (desafioId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/challenges/${desafioId}/participacoes`);
+      return { desafioId, participacoes: res.data };
+    } catch (err) {
+      return rejectWithValue("Erro ao carregar participações");
+    }
+  }
+);
+
+// 🔹 Criar nova participação (enviar post para desafio)
+export const addParticipacao = createAsyncThunk(
+  "participacoes/add",
+  async ({ desafioId, postId }, { rejectWithValue }) => {
+    try {
+      const res = await api.post(`/challenges/${desafioId}/participacoes`, {
+        postId,
+      });
+      return { desafioId, participacao: res.data };
+    } catch (err) {
+      return rejectWithValue("Erro ao adicionar participação");
+    }
+  }
+);
+
+// 🔹 Remover participação
+export const removeParticipacao = createAsyncThunk(
+  "participacoes/remove",
+  async ({ desafioId, participacaoId }, { rejectWithValue }) => {
+    try {
+      await api.delete(`/challenges/${desafioId}/participacoes/${participacaoId}`);
+      return { desafioId, participacaoId };
+    } catch (err) {
+      return rejectWithValue("Erro ao remover participação");
+    }
+  }
+);
+
+const participacoesSlice = createSlice({
+  name: "participacoes",
+  initialState: {
+    byDesafio: {}, // { [desafioId]: [participações] }
+    loading: false,
+    error: null,
+  },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      // Buscar participações
+      .addCase(fetchParticipacoes.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchParticipacoes.fulfilled, (state, action) => {
+        const { desafioId, participacoes } = action.payload;
+        state.byDesafio[desafioId] = participacoes;
+        state.loading = false;
+      })
+      .addCase(fetchParticipacoes.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Adicionar participação
+      .addCase(addParticipacao.fulfilled, (state, action) => {
+        const { desafioId, participacao } = action.payload;
+        if (!state.byDesafio[desafioId]) state.byDesafio[desafioId] = [];
+        state.byDesafio[desafioId].push(participacao);
+      })
+      // Remover participação
+      .addCase(removeParticipacao.fulfilled, (state, action) => {
+        const { desafioId, participacaoId } = action.payload;
+        if (state.byDesafio[desafioId]) {
+          state.byDesafio[desafioId] = state.byDesafio[desafioId].filter(
+            (p) => p.id !== participacaoId
+          );
+        }
+      });
+  },
+});
+
+export default participacoesSlice.reducer;
+
+// 🔹 Selectors
+export const selectParticipacoesByDesafio = (desafioId) => (state) =>
+  state.participacoes.byDesafio[desafioId] || [];
+
+export const fetchParticipacoesByDesafio = fetchParticipacoes;
+export const createParticipacao = addParticipacao;
+*/}

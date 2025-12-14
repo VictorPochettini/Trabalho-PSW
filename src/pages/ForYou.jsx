@@ -38,6 +38,9 @@ const ForYou = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
+  // ===== NEW: guarda para evitar fetchFollowCounts duplicado =====
+  const countsRequestedRef = useRef(new Set());
+
   // Busca otimizada de usuários (como no Feed)
   useEffect(() => {
     dispatch(fetchPosts());
@@ -47,6 +50,24 @@ const ForYou = () => {
       .catch(err => console.error(err))
       .finally(() => setLoadingUsuarios(false));
   }, [dispatch]);
+
+  // ===== NEW: busca as contagens de seguidores para todos os usuários carregados =====
+  useEffect(() => {
+    if (loadingUsuarios || !usuarios.length) return;
+
+    usuarios.forEach((u) => {
+      const id = Number(u?.id);
+      if (!id) return;
+
+      const alreadyLoaded = followsCounts[id]?.followersCount != null;
+      const alreadyRequested = countsRequestedRef.current.has(id);
+
+      if (!alreadyLoaded && !alreadyRequested) {
+        countsRequestedRef.current.add(id);
+        dispatch(fetchFollowCounts({ userId: id }));
+      }
+    });
+  }, [loadingUsuarios, usuarios, dispatch, followsCounts]);
 
   // Combinação de dados (inspirado no Feed)
   useEffect(() => {
@@ -61,8 +82,8 @@ const ForYou = () => {
           name: usuario.nome || usuario.username,
           username: usuario.username,
           category: catKey === "musica" ? "Música" : 
-                   catKey === "letra" ? "Letra" : 
-                   catKey === "arte" ? "Arte" : "Outros",
+                   catKey === "texto" ? "Texto/Letra" : 
+                   catKey === "arte" ? "Imagem/Arte" : "Outros",
           categoryKey: catKey,
           followers: followerCountFromRedux(usuario.id),
           works: userPosts.length,
@@ -75,18 +96,33 @@ const ForYou = () => {
     }
   }, [loadingUsuarios, usuarios, posts, loadingPosts, followsCounts]);
 
-  // Helpers (mantidos do original)
+  // ---- Normalização e helpers ----
+  const normalizeCategoryKey = (k) => {
+    const t = String(k || "").toLowerCase();
+    if (t === "letra" || t === "texto") return "texto";
+    if (t === "visual" || t === "arte") return "arte";
+    if (t === "musica") return "musica";
+    return "outros";
+  };
+
   const inferCategoria = (userId) => {
     const myPosts = posts.filter((p) => Number(p.usuarioId) === Number(userId));
     if (myPosts.length === 0) return "outros";
 
-    const counts = { musica: 0, letra: 0, texto: 0, visual: 0 };
+    // conta bruto nas chaves originais
+    const rawCounts = { musica: 0, letra: 0, texto: 0, visual: 0 };
     myPosts.forEach((p) => {
       const t = String(p.tipo || "").toLowerCase();
-      if (t in counts) counts[t] += 1;
+      if (t in rawCounts) rawCounts[t] += 1;
     });
 
-    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    // agrega por chave normalizada
+    const agg = { musica: 0, texto: 0, arte: 0, outros: 0 };
+    Object.entries(rawCounts).forEach(([k, v]) => {
+      agg[normalizeCategoryKey(k)] += v;
+    });
+
+    const entries = Object.entries(agg).sort((a, b) => b[1] - a[1]);
     return entries[0]?.[0] || "outros";
   };
 
@@ -256,22 +292,22 @@ const ForYou = () => {
               Música
             </button>
             <button
-              className={`fy-filter-btn ${activeFilter === "letra" ? "active" : ""}`}
+              className={`fy-filter-btn ${activeFilter === "texto" ? "active" : ""}`}
               onClick={() => {
-                setActiveFilter("letra");
+                setActiveFilter("texto"); // unifica texto + letra
                 if (isSearching) handleSearch("");
               }}
             >
-              Letra
+              Texto
             </button>
             <button
               className={`fy-filter-btn ${activeFilter === "arte" ? "active" : ""}`}
               onClick={() => {
-                setActiveFilter("arte");
+                setActiveFilter("arte"); // unifica visual + arte
                 if (isSearching) handleSearch("");
               }}
             >
-              Arte
+              Imagem
             </button>
           </div>
 

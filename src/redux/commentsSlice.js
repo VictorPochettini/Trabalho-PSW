@@ -123,3 +123,103 @@ export const selectCommentsState = (postId) => (state) =>
     loading: false,
     error: null,
   };
+
+{/*import api from "../api/axios";
+
+// 🔹 Buscar comentários de um post
+export const fetchCommentsByPost = createAsyncThunk(
+  "comments/fetchByPost",
+  async (postId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/comments?postId=${postId}`);
+      return { postId, comments: res.data };
+    } catch (err) {
+      return rejectWithValue("Erro ao buscar comentários");
+    }
+  }
+);
+
+// 🔹 Adicionar novo comentário
+export const addComment = createAsyncThunk(
+  "comments/add",
+  async ({ postId, usuarioId, texto }, { rejectWithValue }) => {
+    try {
+      const res = await api.post("/comments", { postId, usuarioId, texto });
+      return res.data;
+    } catch (err) {
+      return rejectWithValue("Erro ao adicionar comentário");
+    }
+  }
+);
+
+// 🔹 Remover comentário
+export const removeComment = createAsyncThunk(
+  "comments/remove",
+  async (commentId, { rejectWithValue }) => {
+    try {
+      await api.delete(`/comments/${commentId}`);
+      return commentId;
+    } catch (err) {
+      return rejectWithValue("Erro ao remover comentário");
+    }
+  }
+);
+
+const commentsSlice = createSlice({
+  name: "comments",
+  initialState: {
+    byPost: {}, // { [postId]: [comentários] }
+    loading: false,
+    error: null,
+  },
+  reducers: {
+    clearCommentsOfPost: (state, action) => {
+      const postId = action.payload;
+      delete state.byPost[postId];
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // Buscar
+      .addCase(fetchCommentsByPost.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCommentsByPost.fulfilled, (state, action) => {
+        const { postId, comments } = action.payload;
+        state.byPost[postId] = comments;
+        state.loading = false;
+      })
+      .addCase(fetchCommentsByPost.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Adicionar
+      .addCase(addComment.fulfilled, (state, action) => {
+        const comment = action.payload;
+        if (!state.byPost[comment.postId]) {
+          state.byPost[comment.postId] = [];
+        }
+        state.byPost[comment.postId].push(comment);
+      })
+      // Remover
+      .addCase(removeComment.fulfilled, (state, action) => {
+        const id = action.payload;
+        for (const postId in state.byPost) {
+          state.byPost[postId] = state.byPost[postId].filter(
+            (c) => c.id !== id
+          );
+        }
+      });
+  },
+});
+
+export default commentsSlice.reducer;
+
+// 🔹 Selectors
+export const selectCommentsByPost = (postId) => (state) =>
+  state.comments.byPost[postId] || [];
+
+export const { clearCommentsOfPost } = commentsSlice.actions;
+
+*/}

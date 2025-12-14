@@ -7,13 +7,14 @@
       "senha": "123456",
       "email": "juan@email.com",
       "admin": true,
-      "bio": "aaaa",
-      "generosMusicais": [],
-      "estilosArte": [],
+      "bio": "Artista independente! Meu foco é música, mas gosto de todo tipo de arte!",
+      "generosMusicais": "punk",
+      "estilosArte": "surrealismo",
       "ratingAvgRecebida": 0,
       "ratingCountRecebida": 0,
-      "followersCount": 4,
-      "followingCount": 3
+      "followersCount": 3,
+      "followingCount": 1,
+      "fotoPerfil": "/src/images/avatarPadrao.png"
     },
     {
       "id": "2",
@@ -22,7 +23,14 @@
       "senha": "654321",
       "email": "victor@email.com",
       "admin": false,
-      "followersCount": 2
+      "followersCount": 3,
+      "ratingAvgRecebida": 0,
+      "ratingCountRecebida": 0,
+      "followingCount": 2,
+      "bio": "Escrevo histórias, crio mundos!",
+      "generosMusicais": "rock",
+      "estilosArte": "ilustracao-manual",
+      "fotoPerfil": "/src/images/avatarPadrao.png"
     },
     {
       "id": "3",
@@ -32,7 +40,13 @@
       "senha": "789987",
       "admin": false,
       "followersCount": 3,
-      "followingCount": 2
+      "followingCount": 1,
+      "bio": "Artista digital, trabalho fazendo capas de album! #OpenForComissions",
+      "generosMusicais": "hiphop",
+      "estilosArte": "ilustracao-digital",
+      "fotoPerfil": "/src/images/avatarPadrao.png",
+      "ratingAvgRecebida": 0,
+      "ratingCountRecebida": 0
     },
     {
       "id": "4",
@@ -44,7 +58,7 @@
       "bio": "Oi gente",
       "generosMusicais": "blues",
       "estilosArte": "arte-grafica",
-      "followingCount": 4,
+      "followingCount": 2,
       "ratingAvgRecebida": 0,
       "ratingCountRecebida": 0,
       "followersCount": 3
@@ -61,118 +75,119 @@
     },
     {
       "id": "6",
-      "nome": "Teste",
+      "nome": "teste",
       "username": "teste",
-      "email": "teste@teste.com",
+      "email": "teste@gmail.com",
       "senha": "teste",
-      "admin": false
-    },
-    {
-      "id": "7",
-      "nome": "teste2",
-      "username": "Teste2",
-      "email": "teste@teste.com.br",
-      "senha": "Teste",
-      "admin": false
-    },
-    {
-      "id": "8",
-      "nome": "Teste3",
-      "username": "ttt",
-      "email": "ttt@tt.com",
-      "senha": "ttt",
-      "admin": false
-    },
-    {
-      "id": "9",
-      "nome": "Paulo Melotti",
-      "username": "pmm",
-      "email": "pmm@email.com",
-      "senha": "123",
       "admin": false,
-      "bio": "123",
-      "generosMusicais": "new-age",
-      "estilosArte": "pop-art"
+      "generosMusicais": [],
+      "estilosArte": [],
+      "fotoPerfil": "blob:http://localhost:5173/741ba43f-62f0-454f-8e01-ca07a20a5de6"
     }
   ],
   "posts": [
     {
-      "id": "1",
-      "usuarioId": 1,
-      "titulo": "Primeiro post!",
-      "conteudo": "Texto introdutório sobre o projeto.",
-      "tipo": "texto",
-      "genero": "informativo",
-      "data": "2025-10-13T10:00:00Z",
-      "ratingAvg": 4.44,
-      "ratingCount": 9
+      "id": "2",
+      "usuarioId": "1",
+      "titulo": "Demo de \"Miragem\" música nova da minha banda",
+      "conteudo": "Miragem Demo1.mp3",
+      "tipo": "musica",
+      "genero": "rock",
+      "data": "2025-10-28T16:15:41.972Z",
+      "ratingAvg": 5,
+      "ratingCount": 2
     },
     {
       "id": "3",
-      "usuarioId": 1,
-      "titulo": "Desenho experimental",
-      "conteudo": "capa.png",
-      "tipo": "visual",
-      "genero": "abstrato",
-      "data": "2025-10-13T12:00:00Z",
-      "ratingAvg": 4.25,
-      "ratingCount": 8
+      "usuarioId": "1",
+      "titulo": "Fiz esse cover na guitarra pro Natal de 2024\nNão tinha como ser outra músicakkkkk",
+      "conteudo": "Natal FInal Mix.wav",
+      "tipo": "musica",
+      "genero": "pop",
+      "data": "2025-10-28T16:17:20.549Z",
+      "ratingAvg": 4.67,
+      "ratingCount": 3
     },
     {
       "id": "5",
-      "usuarioId": 1,
-      "titulo": "Capa do album novo",
-      "conteudo": "Vermelho.jpg",
+      "usuarioId": "3",
+      "titulo": "\"Falsos\"🐍🐍\nAcesse @_goncalveslz para mais informações sobre o som",
+      "conteudo": "malu1.png",
       "tipo": "visual",
       "genero": "ilustracao-digital",
+<<<<<<< HEAD
       "data": "2025-10-13T20:03:15.182Z",
       "ratingAvg": 3.86,
       "ratingCount": 7
+=======
+      "data": "2025-10-28T16:27:43.790Z",
+      "ratingAvg": 5,
+      "ratingCount": 2
+>>>>>>> 64c070e78b98a86a9495c920919ffa80b30154ae
     },
     {
-      "conteudo": "Poeminho do Contra\nTodos esses que aí estão\nAtravancando meu caminho,\nEles passarão...\nEu passarinho!!!",
-      "titulo": "Poeminho do Contra\nTodos esses que aí estão\nAtravancando meu caminho,\nEles passarão...\nEu passarinho",
-      "id": "6"
+      "id": "6",
+      "usuarioId": "3",
+      "titulo": "\"Concluindo a missão\"✅️\nAcesse @_goncalveslz para mais informações sobre o som",
+      "conteudo": "malu2.png",
+      "tipo": "visual",
+      "genero": "ilustracao-digital",
+      "data": "2025-10-28T16:28:56.068Z",
+      "ratingAvg": 5,
+      "ratingCount": 2
     },
     {
       "id": "7",
-      "usuarioId": 1,
-      "titulo": "Minha música nova, espero que gostem",
-      "conteudo": "Minha música nova, espero que gostem",
-      "tipo": "musica",
-      "genero": "funk",
-      "data": "2025-10-21T00:37:12.876Z",
-      "ratingAvg": 3.86,
-      "ratingCount": 7
+      "usuarioId": "3",
+      "titulo": "\"Correria=dinheiro\"🏃‍♂️\nAcesse @kevao_uk para mais informações sobre o som",
+      "conteudo": "malu3.png",
+      "tipo": "visual",
+      "genero": "ilustracao-digital",
+      "data": "2025-10-28T16:29:40.581Z",
+      "ratingAvg": 5,
+      "ratingCount": 3
     },
     {
       "id": "8",
-      "usuarioId": 1,
-      "titulo": "Essa tava em produção há um tempinho... :)",
-      "conteudo": "Essa tava em produção há um tempinho... :)",
-      "tipo": "musica",
-      "genero": "rock",
-      "data": "2025-10-21T00:39:10.200Z",
-      "ratingAvg": 4,
-      "ratingCount": 7
+      "usuarioId": "2",
+      "titulo": "Conto novo em breve...",
+      "conteudo": "A faca serrando pelas costas de Maria trazia consigo uma dor gritante. Vinha outra, outra e outra, com a força do corpo minguando a cada perfurada. As pernas fraquejavam e perdiam equilíbrio. O vigor esvaía-se. Todos os gritos que havia lançado haviam sido em vão. Não saíam de sua casa. Caiu ao chão e os golpes continuaram, um atrás do outro. Mas não era nas costas que estava a maior dor. Não estava nos furos, nos cortes e nem nos órgãos dilacerados. A maior dor estava no coração. A dor da lâmina era potente, mas não se equiparava a dor da traição. A traição de ser esfaqueada pelas mãos do próprio marido.",
+      "tipo": "texto",
+      "genero": "historia",
+      "data": "2025-10-28T19:33:56.570Z",
+      "ratingAvg": 5,
+      "ratingCount": 3
     },
     {
       "id": "9",
-      "usuarioId": "5",
-      "titulo": "Cheguei",
-      "conteudo": "Cheguei",
+      "usuarioId": "2",
+      "titulo": "Spoiler do capítulo novo👀",
+      "conteudo": "Ilic sentava-se no chão, em um castro, à frente de uma aconchegante lareira perante aquela fria noite de inverno após uma sangrenta vitória no campo de batalha. Obrigado, Deuses do Leste, pelo Caminho que me deram, agradeceu enquanto lembrava-se de seus tempos de pedinte. Na época, tinha de pedir abrigo de casa em casa, sendo negado a cada súplica. Por um tempo tentou chorar de porta em porta, mas nada mudava. Trabalhou como escravo em outros lugares, e agora era escravo do rei que, com persistência e dificuldade, aturava.",
       "tipo": "texto",
       "genero": "historia",
-      "data": "2025-10-27T20:08:44.314Z"
+      "data": "2025-10-28T19:36:01.754Z",
+      "ratingAvg": 4.67,
+      "ratingCount": 3
     },
     {
       "id": "10",
-      "usuarioId": "5",
-      "titulo": "OI",
-      "conteudo": "OIIIIIIIIIIIIIIIIIIIII",
-      "tipo": "texto",
-      "genero": "historia",
-      "data": "2025-10-27T21:55:07.230Z"
+      "usuarioId": "1",
+      "titulo": "\"Miragem\" Finalizada!! Sigam @erosaofluvial",
+      "conteudo": "MIRAGEM FINAL.mp3",
+      "tipo": "musica",
+      "genero": "rock",
+      "data": "2025-11-03T13:41:08.375Z",
+      "ratingAvg": 4.75,
+      "ratingCount": 4
+    },
+    {
+      "id": "11",
+      "usuarioId": "6",
+      "titulo": "o",
+      "conteudo": "arte dn.png",
+      "tipo": "visual",
+      "genero": "ilustracao-digital",
+      "data": "2025-11-16T23:59:25.114Z"
     }
   ],
   "desafios": [
@@ -226,7 +241,7 @@
     },
     {
       "id": "3",
-      "titulo": "Desafio da Comunidade - Beats LoFi",
+      "titulo": "Beats LoFi",
       "descricao": "Crie o melhor beat LoFi e compartilhe.",
       "tipo": "comunidade",
       "criadorId": 1,
@@ -235,486 +250,189 @@
       },
       "dataInicio": "2025-10-05",
       "dataFim": "2025-10-12"
-    },
-    {
-      "id": "5ab1",
-      "tipo": "comunidade",
-      "status": "publicado",
-      "criadorId": 9,
-      "titulo": "Batalha de Beats",
-      "descricao": "Duelo entre beats de trap!",
-      "thumbUrl": null,
-      "dataInicio": "2025-10-27",
-      "dataFim": "2025-11-20",
-      "createdAt": "2025-10-27T17:55:13.021Z",
-      "updatedAt": "2025-10-27T18:34:10.230Z"
-    },
-    {
-      "id": "eb4f",
-      "tipo": "comunidade",
-      "status": "publicado",
-      "criadorId": 9,
-      "titulo": "Batalha de Beats",
-      "descricao": "Batalha entre beats de Trap!",
-      "thumbUrl": null,
-      "dataInicio": "2025-10-27",
-      "dataFim": "2025-11-27",
-      "createdAt": "2025-10-27T17:57:06.833Z",
-      "updatedAt": "2025-10-27T17:57:06.833Z"
-    },
-    {
-      "id": "0cc0",
-      "tipo": "comunidade",
-      "status": "publicado",
-      "criadorId": 9,
-      "titulo": "Arte Digital",
-      "descricao": "Melhor pintura digital ganha!",
-      "dataInicio": "2025-10-27",
-      "dataFim": "2025-10-28",
-      "createdAt": "2025-10-27T18:40:48.559Z",
-      "updatedAt": "2025-10-27T18:40:48.559Z"
     }
   ],
   "comentarios": [
     {
-      "id": "5bda",
-      "postId": 1,
+      "id": "1386",
+      "postId": 3,
       "usuarioId": 3,
-      "texto": "teste",
+      "texto": "Essa é clássicakkkkk",
       "parentId": null,
-      "createdAt": "2025-10-20T17:16:33.849Z",
-      "updatedAt": "2025-10-20T17:16:33.849Z",
+      "createdAt": "2025-10-28T16:31:36.103Z",
+      "updatedAt": "2025-10-28T16:31:36.103Z",
       "deletedAt": null,
       "likes": 0
     },
     {
-      "id": "f133",
-      "postId": 1,
-      "usuarioId": 3,
-      "texto": "teste",
+      "id": "4528",
+      "postId": 9,
+      "usuarioId": 4,
+      "texto": "amei",
       "parentId": null,
-      "createdAt": "2025-10-20T17:16:35.785Z",
-      "updatedAt": "2025-10-20T17:16:35.785Z",
+      "createdAt": "2025-11-11T22:34:19.121Z",
+      "updatedAt": "2025-11-11T22:34:19.121Z",
       "deletedAt": null,
       "likes": 0
     },
     {
-      "id": "aaa4",
-      "postId": 1,
-      "usuarioId": 3,
-      "texto": "eee",
-      "parentId": null,
-      "createdAt": "2025-10-20T17:16:38.578Z",
-      "updatedAt": "2025-10-20T17:16:38.578Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "60c6",
-      "postId": 1,
-      "usuarioId": 3,
-      "texto": "aaa",
-      "parentId": null,
-      "createdAt": "2025-10-20T17:17:25.715Z",
-      "updatedAt": "2025-10-20T17:17:25.715Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "5bc2",
-      "postId": 1,
-      "usuarioId": 2,
-      "texto": "aaa",
-      "parentId": null,
-      "createdAt": "2025-10-20T17:33:49.790Z",
-      "updatedAt": "2025-10-20T17:33:49.790Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "6a2c",
-      "postId": 1,
-      "usuarioId": 1,
-      "texto": "asdsdas",
-      "parentId": null,
-      "createdAt": "2025-10-20T19:29:47.629Z",
-      "updatedAt": "2025-10-20T19:29:47.629Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "2b91",
-      "postId": 2,
-      "usuarioId": 1,
-      "texto": "sdsdds",
-      "parentId": null,
-      "createdAt": "2025-10-20T19:30:17.076Z",
-      "updatedAt": "2025-10-20T19:30:17.076Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "6b46",
-      "postId": 2,
-      "usuarioId": 2,
-      "texto": "teste",
-      "parentId": null,
-      "createdAt": "2025-10-20T19:44:33.529Z",
-      "updatedAt": "2025-10-20T19:44:33.529Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "e8d4",
-      "postId": 8,
+      "id": "93b3",
+      "postId": 7,
       "usuarioId": 6,
       "texto": "teste",
       "parentId": null,
-      "createdAt": "2025-10-21T00:59:44.197Z",
-      "updatedAt": "2025-10-21T00:59:44.197Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "e2f8",
-      "postId": 7,
-      "usuarioId": 3,
-      "texto": "teste",
-      "parentId": null,
-      "createdAt": "2025-10-21T01:04:17.045Z",
-      "updatedAt": "2025-10-21T01:04:17.045Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "ff40",
-      "postId": 1,
-      "usuarioId": 4,
-      "texto": "arrasou",
-      "parentId": null,
-      "createdAt": "2025-10-25T20:49:20.778Z",
-      "updatedAt": "2025-10-25T20:49:20.778Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "6b5d",
-      "postId": 5,
-      "usuarioId": 4,
-      "texto": "teste",
-      "parentId": null,
-      "createdAt": "2025-10-25T20:49:42.140Z",
-      "updatedAt": "2025-10-25T20:49:42.140Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "9c21",
-      "postId": 7,
-      "usuarioId": 4,
-      "texto": "Adorei",
-      "parentId": null,
-      "createdAt": "2025-10-26T20:52:16.190Z",
-      "updatedAt": "2025-10-26T20:52:16.190Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "26df",
-      "postId": 5,
-      "usuarioId": 9,
-      "texto": "oi",
-      "parentId": null,
-      "createdAt": "2025-10-27T13:59:34.180Z",
-      "updatedAt": "2025-10-27T13:59:34.180Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "4d68",
-      "postId": null,
-      "usuarioId": 9,
-      "texto": "oi",
-      "parentId": null,
-      "createdAt": "2025-10-27T14:09:28.900Z",
-      "updatedAt": "2025-10-27T14:09:28.900Z",
-      "deletedAt": null,
-      "likes": 0
-    },
-    {
-      "id": "4054",
-      "postId": null,
-      "usuarioId": 9,
-      "texto": "teste",
-      "parentId": null,
-      "createdAt": "2025-10-27T14:09:45.587Z",
-      "updatedAt": "2025-10-27T14:09:45.587Z",
+      "createdAt": "2025-11-16T23:51:54.862Z",
+      "updatedAt": "2025-11-16T23:51:54.862Z",
       "deletedAt": null,
       "likes": 0
     }
   ],
   "avaliacoes": [
     {
-      "id": "1-3",
-      "postId": 1,
-      "usuarioId": 3,
-      "estrelas": 4,
-      "createdAt": "2025-10-20T17:23:54.473Z",
-      "updatedAt": "2025-10-20T19:45:01.376Z"
-    },
-    {
-      "id": "1-1",
-      "postId": 1,
-      "usuarioId": 1,
-      "estrelas": 4,
-      "createdAt": "2025-10-20T17:25:14.278Z",
-      "updatedAt": "2025-10-20T20:00:30.637Z"
-    },
-    {
-      "id": "1-2",
-      "postId": 1,
-      "usuarioId": 2,
-      "estrelas": 5,
-      "createdAt": "2025-10-20T17:25:44.681Z",
-      "updatedAt": "2025-10-20T19:44:17.051Z"
-    },
-    {
-      "id": "3-2",
-      "postId": 3,
-      "usuarioId": 2,
-      "estrelas": 5,
-      "createdAt": "2025-10-20T17:31:46.153Z",
-      "updatedAt": "2025-10-20T17:33:11.708Z"
-    },
-    {
-      "id": "4-3",
-      "postId": 4,
-      "usuarioId": 3,
-      "estrelas": 4,
-      "createdAt": "2025-10-20T18:18:44.959Z",
-      "updatedAt": "2025-10-20T18:18:44.959Z"
-    },
-    {
       "id": "2-1",
       "postId": 2,
       "usuarioId": 1,
-      "estrelas": 4,
-      "createdAt": "2025-10-20T19:30:18.371Z",
-      "updatedAt": "2025-10-20T19:30:18.371Z"
-    },
-    {
-      "id": "7-3",
-      "postId": 7,
-      "usuarioId": 3,
-      "estrelas": 3,
-      "createdAt": "2025-10-20T19:30:39.282Z",
-      "updatedAt": "2025-10-20T19:49:56.973Z"
+      "estrelas": 5,
+      "createdAt": "2025-10-28T16:18:09.343Z",
+      "updatedAt": "2025-10-28T16:18:09.343Z"
     },
     {
       "id": "3-1",
       "postId": 3,
       "usuarioId": 1,
-      "estrelas": 3,
-      "createdAt": "2025-10-20T19:41:13.157Z",
-      "updatedAt": "2025-10-20T19:41:13.157Z"
+      "estrelas": 5,
+      "createdAt": "2025-10-28T16:18:11.508Z",
+      "updatedAt": "2025-10-28T16:18:11.508Z"
     },
     {
-      "id": "5-1",
+      "id": "7-3",
+      "postId": 7,
+      "usuarioId": 3,
+      "estrelas": 5,
+      "createdAt": "2025-10-28T16:30:10.597Z",
+      "updatedAt": "2025-10-28T16:30:10.597Z"
+    },
+    {
+      "id": "6-3",
+      "postId": 6,
+      "usuarioId": 3,
+      "estrelas": 5,
+      "createdAt": "2025-10-28T16:30:12.765Z",
+      "updatedAt": "2025-10-28T16:30:12.765Z"
+    },
+    {
+<<<<<<< HEAD
+=======
+      "id": "5-3",
       "postId": 5,
+      "usuarioId": 3,
+      "estrelas": 5,
+      "createdAt": "2025-10-28T16:30:30.117Z",
+      "updatedAt": "2025-10-28T16:30:39.092Z"
+    },
+    {
+>>>>>>> 64c070e78b98a86a9495c920919ffa80b30154ae
+      "id": "3-3",
+      "postId": 3,
+      "usuarioId": 3,
+      "estrelas": 5,
+      "createdAt": "2025-10-28T16:31:14.764Z",
+      "updatedAt": "2025-10-28T16:31:14.764Z"
+    },
+    {
+      "id": "2-3",
+      "postId": 2,
+      "usuarioId": 3,
+      "estrelas": 5,
+      "createdAt": "2025-10-28T16:31:16.117Z",
+      "updatedAt": "2025-10-28T16:31:16.117Z"
+    },
+    {
+      "id": "7-1",
+      "postId": 7,
       "usuarioId": 1,
-      "estrelas": 2,
-      "createdAt": "2025-10-20T19:41:16.676Z",
-      "updatedAt": "2025-10-20T19:41:16.676Z"
+      "estrelas": 5,
+      "createdAt": "2025-10-28T16:37:21.045Z",
+      "updatedAt": "2025-10-28T16:37:21.045Z"
     },
     {
       "id": "6-1",
       "postId": 6,
       "usuarioId": 1,
-      "estrelas": 4,
-      "createdAt": "2025-10-20T19:41:18.404Z",
-      "updatedAt": "2025-10-20T19:41:19.181Z"
+      "estrelas": 5,
+      "createdAt": "2025-10-28T16:37:22.397Z",
+      "updatedAt": "2025-10-28T16:37:22.397Z"
     },
     {
-      "id": "2-2",
-      "postId": 2,
-      "usuarioId": 2,
-      "estrelas": 2,
-      "createdAt": "2025-10-20T19:44:18.244Z",
-      "updatedAt": "2025-10-20T19:44:36.111Z"
+      "id": "5-1",
+      "postId": 5,
+      "usuarioId": 1,
+      "estrelas": 5,
+      "createdAt": "2025-10-28T16:37:24.636Z",
+      "updatedAt": "2025-10-28T16:37:24.636Z"
     },
     {
-      "id": "8-3",
+      "id": "8-2",
       "postId": 8,
-      "usuarioId": 3,
-      "estrelas": 4,
-      "createdAt": "2025-10-20T19:50:11.243Z",
-      "updatedAt": "2025-10-20T19:52:17.486Z"
+      "usuarioId": 2,
+      "estrelas": 5,
+      "createdAt": "2025-10-28T19:34:04.793Z",
+      "updatedAt": "2025-10-28T19:34:04.793Z"
+    },
+    {
+      "id": "9-2",
+      "postId": 9,
+      "usuarioId": 2,
+      "estrelas": 5,
+      "createdAt": "2025-10-28T19:36:20.376Z",
+      "updatedAt": "2025-10-28T19:36:20.376Z"
+    },
+    {
+      "id": "10-1",
+      "postId": 10,
+      "usuarioId": 1,
+      "estrelas": 5,
+      "createdAt": "2025-11-03T13:41:30.327Z",
+      "updatedAt": "2025-11-03T13:41:30.327Z"
     },
     {
       "id": "9-3",
       "postId": 9,
       "usuarioId": 3,
       "estrelas": 5,
-      "createdAt": "2025-10-20T19:53:02.039Z",
-      "updatedAt": "2025-10-20T20:04:44.695Z"
+      "createdAt": "2025-11-03T13:50:14.767Z",
+      "updatedAt": "2025-11-03T13:50:14.767Z"
     },
     {
-      "id": "9-1",
-      "postId": 9,
-      "usuarioId": 1,
-      "estrelas": 3,
-      "createdAt": "2025-10-20T20:00:52.383Z",
-      "updatedAt": "2025-10-20T21:23:56.134Z"
-    },
-    {
-      "id": "8-1",
+      "id": "8-3",
       "postId": 8,
-      "usuarioId": 1,
-      "estrelas": 5,
-      "createdAt": "2025-10-20T20:00:54.722Z",
-      "updatedAt": "2025-10-20T20:00:54.722Z"
-    },
-    {
-      "id": "7-1",
-      "postId": 7,
-      "usuarioId": 1,
-      "estrelas": 4,
-      "createdAt": "2025-10-20T21:26:42.094Z",
-      "updatedAt": "2025-10-20T21:26:42.094Z"
-    },
-    {
-      "id": "1-4",
-      "postId": 1,
-      "usuarioId": 4,
-      "estrelas": 5,
-      "createdAt": "2025-10-21T00:51:34.713Z",
-      "updatedAt": "2025-10-21T00:51:34.713Z"
-    },
-    {
-      "id": "5-4",
-      "postId": 5,
-      "usuarioId": 4,
-      "estrelas": 3,
-      "createdAt": "2025-10-21T00:51:36.425Z",
-      "updatedAt": "2025-10-21T00:51:36.425Z"
-    },
-    {
-      "id": "7-5",
-      "postId": 7,
-      "usuarioId": 5,
-      "estrelas": 4,
-      "createdAt": "2025-10-21T00:54:46.339Z",
-      "updatedAt": "2025-10-27T21:40:14.465Z"
-    },
-    {
-      "id": "6-5",
-      "postId": 6,
-      "usuarioId": 5,
-      "estrelas": 5,
-      "createdAt": "2025-10-21T00:54:47.842Z",
-      "updatedAt": "2025-10-21T00:54:47.842Z"
-    },
-    {
-      "id": "3-3",
-      "postId": 3,
       "usuarioId": 3,
       "estrelas": 5,
-      "createdAt": "2025-10-21T01:01:40.356Z",
-      "updatedAt": "2025-10-21T01:01:41.046Z"
+      "createdAt": "2025-11-03T13:50:16.112Z",
+      "updatedAt": "2025-11-03T13:50:16.112Z"
     },
     {
-      "id": "8-4",
-      "postId": 8,
-      "usuarioId": 4,
-      "estrelas": 4,
-      "createdAt": "2025-10-24T23:55:13.555Z",
-      "updatedAt": "2025-10-25T21:35:45.616Z"
-    },
-    {
-      "id": "6-4",
-      "postId": 6,
-      "usuarioId": 4,
+      "id": "10-2",
+      "postId": 10,
+      "usuarioId": 2,
       "estrelas": 5,
-      "createdAt": "2025-10-25T00:32:43.847Z",
-      "updatedAt": "2025-10-25T00:32:43.847Z"
+      "createdAt": "2025-11-03T14:35:06.432Z",
+      "updatedAt": "2025-11-03T14:35:06.432Z"
     },
     {
-      "id": "NaN-4",
-      "postId": null,
-      "usuarioId": 4,
-      "estrelas": 4,
-      "createdAt": "2025-10-25T20:25:59.026Z",
-      "updatedAt": "2025-10-26T20:48:42.620Z"
-    },
-    {
-      "id": "7-4",
+      "id": "7-2",
       "postId": 7,
+      "usuarioId": 2,
+      "estrelas": 5,
+      "createdAt": "2025-11-03T14:35:08.911Z",
+      "updatedAt": "2025-11-03T14:35:09.839Z"
+    },
+    {
+      "id": "10-4",
+      "postId": 10,
       "usuarioId": 4,
       "estrelas": 4,
-      "createdAt": "2025-10-25T20:36:14.365Z",
-      "updatedAt": "2025-10-25T20:36:54.764Z"
-    },
-    {
-      "id": "NaN-3",
-      "postId": null,
-      "usuarioId": 3,
-      "estrelas": 5,
-      "createdAt": "2025-10-26T21:40:52.785Z",
-      "updatedAt": "2025-10-26T21:40:52.785Z"
-    },
-    {
-      "id": "8-9",
-      "postId": 8,
-      "usuarioId": 9,
-      "estrelas": 3,
-      "createdAt": "2025-10-27T13:59:19.700Z",
-      "updatedAt": "2025-10-27T13:59:24.187Z"
-    },
-    {
-      "id": "3-9",
-      "postId": 3,
-      "usuarioId": 9,
-      "estrelas": 5,
-      "createdAt": "2025-10-27T13:59:45.956Z",
-      "updatedAt": "2025-10-27T14:20:58.114Z"
-    },
-    {
-      "id": "NaN-9",
-      "postId": null,
-      "usuarioId": 9,
-      "estrelas": 3,
-      "createdAt": "2025-10-27T14:08:53.283Z",
-      "updatedAt": "2025-10-27T14:09:42.508Z"
-    },
-    {
-      "id": "1-9",
-      "postId": 1,
-      "usuarioId": 9,
-      "estrelas": 5,
-      "createdAt": "2025-10-27T14:20:37.973Z",
-      "updatedAt": "2025-10-27T14:20:39.668Z"
-    },
-    {
-      "id": "5-9",
-      "postId": 5,
-      "usuarioId": 9,
-      "estrelas": 5,
-      "createdAt": "2025-10-27T14:20:53.043Z",
-      "updatedAt": "2025-10-27T14:20:53.043Z"
-    },
-    {
-      "id": "1-5",
-      "postId": 1,
-      "usuarioId": 5,
-      "estrelas": 5,
-      "createdAt": "2025-10-27T20:31:22.282Z",
-      "updatedAt": "2025-10-27T20:31:23.206Z"
-    },
-    {
-      "id": "3-5",
-      "postId": 3,
-      "usuarioId": 5,
-      "estrelas": 4,
+<<<<<<< HEAD
       "createdAt": "2025-10-27T20:33:18.127Z",
       "updatedAt": "2025-10-27T20:33:18.127Z"
     },
@@ -725,95 +443,107 @@
       "estrelas": 5,
       "createdAt": "2025-10-27T22:05:58.778Z",
       "updatedAt": "2025-10-27T22:05:58.778Z"
+=======
+      "createdAt": "2025-11-11T22:08:41.161Z",
+      "updatedAt": "2025-11-11T22:08:41.161Z"
+    },
+    {
+      "id": "9-4",
+      "postId": 9,
+      "usuarioId": 4,
+      "estrelas": 4,
+      "createdAt": "2025-11-11T22:34:30.200Z",
+      "updatedAt": "2025-11-11T22:34:30.200Z"
+    },
+    {
+      "id": "10-6",
+      "postId": 10,
+      "usuarioId": 6,
+      "estrelas": 5,
+      "createdAt": "2025-11-16T23:59:45.875Z",
+      "updatedAt": "2025-11-16T23:59:45.875Z"
+    },
+    {
+      "id": "3-6",
+      "postId": 3,
+      "usuarioId": 6,
+      "estrelas": 4,
+      "createdAt": "2025-11-16T23:59:47.634Z",
+      "updatedAt": "2025-11-16T23:59:47.634Z"
+    },
+    {
+      "id": "8-6",
+      "postId": 8,
+      "usuarioId": 6,
+      "estrelas": 5,
+      "createdAt": "2025-11-17T00:00:13.691Z",
+      "updatedAt": "2025-11-17T00:00:13.691Z"
+>>>>>>> 64c070e78b98a86a9495c920919ffa80b30154ae
     }
   ],
   "seguidores": [
     {
-      "id": "3-1",
-      "followerId": 3,
-      "followingId": 1,
-      "createdAt": "2025-10-20T18:18:35.935Z"
-    },
-    {
-      "id": "1-2",
-      "followerId": 1,
-      "followingId": 2,
-      "createdAt": "2025-10-20T20:44:31.898Z"
-    },
-    {
       "id": "1-3",
       "followerId": 1,
       "followingId": 3,
-      "createdAt": "2025-10-20T21:18:55.267Z"
+      "createdAt": "2025-10-28T16:37:11.716Z"
     },
     {
-      "id": "4-3",
-      "followerId": 4,
+      "id": "2-3",
+      "followerId": 2,
       "followingId": 3,
-      "createdAt": "2025-10-25T20:00:33.719Z"
+      "createdAt": "2025-10-28T19:37:19.463Z"
     },
     {
-      "id": "4-2",
-      "followerId": 4,
-      "followingId": 2,
-      "createdAt": "2025-10-25T20:00:43.487Z"
-    },
-    {
-      "id": "3-4",
+      "id": "3-2",
       "followerId": 3,
-      "followingId": 4,
-      "createdAt": "2025-10-25T20:20:46.921Z"
+      "followingId": 2,
+      "createdAt": "2025-11-03T13:49:49.493Z"
+    },
+    {
+      "id": "2-1",
+      "followerId": 2,
+      "followingId": 1,
+      "createdAt": "2025-11-03T13:51:32.870Z"
     },
     {
       "id": "4-1",
       "followerId": 4,
       "followingId": 1,
-      "createdAt": "2025-10-25T20:28:23.451Z"
+      "createdAt": "2025-11-11T21:41:53.463Z"
     },
     {
-      "id": "4-5",
+      "id": "4-2",
       "followerId": 4,
-      "followingId": 5,
-      "createdAt": "2025-10-26T16:46:54.933Z"
+      "followingId": 2,
+      "createdAt": "2025-11-11T22:34:03.076Z"
     },
     {
-      "id": "5-4",
-      "followerId": 5,
-      "followingId": 4,
-      "createdAt": "2025-10-27T01:21:53.253Z"
-    },
-    {
-      "id": "9-1",
-      "followerId": 9,
+      "id": "6-1",
+      "followerId": 6,
       "followingId": 1,
-      "createdAt": "2025-10-27T13:58:33.355Z"
+      "createdAt": "2025-11-16T23:51:37.357Z"
     },
     {
-      "id": "1-4",
-      "followerId": 1,
-      "followingId": 4,
-      "createdAt": "2025-10-27T17:39:57.446Z"
+      "id": "6-2",
+      "followerId": 6,
+      "followingId": 2,
+      "createdAt": "2025-11-16T23:51:38.921Z"
     },
     {
-      "id": "5-1",
-      "followerId": 5,
-      "followingId": 1,
-      "createdAt": "2025-10-27T20:08:19.906Z"
-    },
-    {
-      "id": "5-3",
-      "followerId": 5,
+      "id": "6-3",
+      "followerId": 6,
       "followingId": 3,
-      "createdAt": "2025-10-27T20:18:42.232Z"
+      "createdAt": "2025-11-16T23:51:40.123Z"
     }
   ],
   "participacoes": [
     {
-      "id": "3-1-1",
+      "id": "3-1-2",
       "desafioId": "3",
       "usuarioId": "1",
-      "postId": 1,
-      "createdAt": "2025-10-27T16:53:19.489Z"
+      "postId": 2,
+      "createdAt": "2025-11-03T13:38:57.904Z"
     }
   ]
 }

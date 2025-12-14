@@ -1,3 +1,4 @@
+// src/redux/followsSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 const BASE = import.meta.env?.VITE_API_BASE || "http://localhost:5000";
 
@@ -269,3 +270,144 @@ export const selectFollowersList = (userId) => (state) =>
 
 export const selectFollowingList = (userId) => (state) =>
   state.follows.followingLists[Number(userId)] || { list: [], loading: false, error: null };
+
+{/*import api from "../api/axios";
+
+const BASE_URL = "/follows";
+
+function key(followerId, followingId) {
+  return `${Number(followerId)}-${Number(followingId)}`;
+}
+
+// 🔹 Verifica se o usuário atual segue outro
+export const fetchIsFollowing = createAsyncThunk(
+  "follows/fetchIsFollowing",
+  async ({ followerId, followingId }, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`${BASE_URL}?followerId=${followerId}&followingId=${followingId}`);
+      return { followerId, followingId, isFollowing: res.data.length > 0 };
+    } catch (err) {
+      return rejectWithValue("Erro ao verificar follow");
+    }
+  }
+);
+
+// 🔹 Seguir um usuário
+export const followUser = createAsyncThunk(
+  "follows/followUser",
+  async ({ followerId, followingId }, { rejectWithValue }) => {
+    try {
+      const res = await api.post(`${BASE_URL}/follow`, { followerId, followingId });
+      return { followerId, followingId, ...res.data };
+    } catch (err) {
+      return rejectWithValue("Erro ao seguir usuário");
+    }
+  }
+);
+
+// 🔹 Deixar de seguir um usuário
+export const unfollowUser = createAsyncThunk(
+  "follows/unfollowUser",
+  async ({ followerId, followingId }, { rejectWithValue }) => {
+    try {
+      const res = await api.post(`${BASE_URL}/unfollow`, { followerId, followingId });
+      return { followerId, followingId, ...res.data };
+    } catch (err) {
+      return rejectWithValue("Erro ao deixar de seguir usuário");
+    }
+  }
+);
+
+// 🔹 Buscar contagens (seguindo / seguidores)
+export const fetchFollowCounts = createAsyncThunk(
+  "follows/fetchCounts",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/follows/counts/${userId}`);
+      return { userId, ...res.data };
+    } catch (err) {
+      return rejectWithValue("Erro ao carregar contagens de seguidores");
+    }
+  }
+);
+
+const followsSlice = createSlice({
+  name: "follows",
+  initialState: {
+    byPair: {}, // `${followerId}-${followingId}` -> { isFollowing, loading, error }
+    countsByUser: {}, // { [userId]: { followers, following } }
+    loading: false,
+    error: null,
+  },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      // Verificar follow
+      .addCase(fetchIsFollowing.fulfilled, (state, action) => {
+        const { followerId, followingId, isFollowing } = action.payload;
+        state.byPair[key(followerId, followingId)] = { isFollowing, loading: false, error: null };
+      })
+      // Follow
+      .addCase(followUser.fulfilled, (state, action) => {
+        const { followerId, followingId } = action.payload;
+        state.byPair[key(followerId, followingId)] = { isFollowing: true, loading: false, error: null };
+      })
+      // Unfollow
+      .addCase(unfollowUser.fulfilled, (state, action) => {
+        const { followerId, followingId } = action.payload;
+        state.byPair[key(followerId, followingId)] = { isFollowing: false, loading: false, error: null };
+      })
+      // Contagens
+      .addCase(fetchFollowCounts.fulfilled, (state, action) => {
+        const { userId, followers, following } = action.payload;
+        state.countsByUser[userId] = { followers, following };
+      })
+      // Erros
+      .addMatcher(
+        (action) => action.type.endsWith("rejected"),
+        (state, action) => {
+          state.loading = false;
+          state.error = action.payload || "Erro genérico";
+        }
+      );
+  },
+});
+
+// 🔹 Buscar lista de seguidores
+export const fetchFollowers = createAsyncThunk(
+  "follows/fetchFollowers",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/follows/followers/${userId}`);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue("Erro ao buscar seguidores");
+    }
+  }
+);
+
+// 🔹 Buscar lista de usuários que o usuário está seguindo
+export const fetchFollowing = createAsyncThunk(
+  "follows/fetchFollowing",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/follows/following/${userId}`);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue("Erro ao buscar seguindo");
+    }
+  }
+);
+
+export default followsSlice.reducer;
+
+// 🔹 Selectors
+export const selectIsFollowing = (followerId, followingId) => (state) =>
+  state.follows.byPair[key(followerId, followingId)]?.isFollowing || false;
+
+export const selectFollowCounts = (userId) => (state) =>
+  state.follows.countsByUser[userId] || { followers: 0, following: 0 };
+
+export const fetchFollowersList = fetchFollowers;
+export const fetchFollowingList = fetchFollowing;
+*/}
