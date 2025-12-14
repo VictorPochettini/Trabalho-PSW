@@ -126,7 +126,7 @@
       "tipo": "visual",
       "genero": "ilustracao-digital",
       "data": "2025-10-13T20:03:15.182Z",
-      "ratingAvg": 3.71,
+      "ratingAvg": 3.86,
       "ratingCount": 7
     },
     {
@@ -615,14 +615,6 @@
       "updatedAt": "2025-10-21T00:54:47.842Z"
     },
     {
-      "id": "5-5",
-      "postId": 5,
-      "usuarioId": 5,
-      "estrelas": 4,
-      "createdAt": "2025-10-21T00:54:49.503Z",
-      "updatedAt": "2025-10-27T21:44:11.102Z"
-    },
-    {
       "id": "3-3",
       "postId": 3,
       "usuarioId": 3,
@@ -725,6 +717,14 @@
       "estrelas": 4,
       "createdAt": "2025-10-27T20:33:18.127Z",
       "updatedAt": "2025-10-27T20:33:18.127Z"
+    },
+    {
+      "id": "5-5",
+      "postId": 5,
+      "usuarioId": 5,
+      "estrelas": 5,
+      "createdAt": "2025-10-27T22:05:58.778Z",
+      "updatedAt": "2025-10-27T22:05:58.778Z"
     }
   ],
   "seguidores": [
