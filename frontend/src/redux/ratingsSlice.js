@@ -2,6 +2,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../api/axios";
 
+// Função utilitária (não usada nos thunks finais, mas mantida por referência)
 function calcAvg(avaliacoes) {
   if (!avaliacoes || !avaliacoes.length) return { avg: 0, count: 0 };
   const sum = avaliacoes.reduce((a, r) => a + Number(r.estrelas || 0), 0);
@@ -9,16 +10,20 @@ function calcAvg(avaliacoes) {
   return { avg: Number((sum / count).toFixed(2)), count };
 }
 
-// Busca avaliação do usuário + média do post
+// --- AÇÕES ASSÍNCRONAS (THUNKS) ---
+
+/**
+ * Busca a avaliação do usuário logado para um post E as estatísticas (média/contagem) do post.
+ */
 export const fetchMyRatingForPost = createAsyncThunk(
   "ratings/fetchMyForPost",
   async ({ postId, usuarioId }, { rejectWithValue }) => {
     try {
-      // Buscar avaliação específica do usuário
+      // 1. Buscar avaliação específica do usuário
       const myRes = await api.get(`/avaliacoes/user/${usuarioId}/post/${postId}`);
       const myStars = myRes.data.exists ? Number(myRes.data.estrelas || 0) : 0;
 
-      // Buscar estatísticas do post
+      // 2. Buscar estatísticas do post
       const statsRes = await api.get(`/avaliacoes/stats/${postId}`);
       const postRating = {
         avg: Number(statsRes.data.average || 0),
@@ -32,7 +37,9 @@ export const fetchMyRatingForPost = createAsyncThunk(
   }
 );
 
-// Buscar média do post (sem necessidade de usuário logado)
+/**
+ * Buscar apenas a média e contagem de avaliações de um post.
+ */
 export const fetchPostRating = createAsyncThunk(
   "ratings/fetchPostRating",
   async (postId, { rejectWithValue }) => {
@@ -49,23 +56,18 @@ export const fetchPostRating = createAsyncThunk(
   }
 );
 
-// 🔥 CORREÇÃO CRÍTICA: Backend pega usuarioId do token JWT (req.user._id)
-// Então NÃO precisamos enviar usuarioId no body!
+/**
+ * Cria ou atualiza a avaliação de um post (upsert).
+ * Requisita usuarioId no payload para consistência do estado, mas o backend usa o token.
+ */
 export const upsertRating = createAsyncThunk(
   "ratings/upsert",
   async ({ postId, usuarioId, estrelas }, { rejectWithValue }) => {
     try {
-      // ✅ Backend usa req.user._id automaticamente do token
-      // Enviamos apenas postId e estrelas
-      const res = await api.post("/avaliacoes", {
-        postId,
-        estrelas: Number(estrelas)
-        // ❌ NÃO enviar usuarioId - backend ignora e usa do token
-      });
+      // O backend usará req.user._id do token.
+      await api.post("/avaliacoes", { postId, estrelas: Number(estrelas) });
 
-      console.log('✅ [ratingsSlice] Avaliação salva:', res.data);
-
-      // Buscar estatísticas atualizadas do post
+      // Buscar estatísticas atualizadas do post após a ação (fonte de verdade)
       const statsRes = await api.get(`/avaliacoes/stats/${postId}`);
       const postRating = {
         avg: Number(statsRes.data.average || 0),
@@ -79,21 +81,20 @@ export const upsertRating = createAsyncThunk(
         postRating 
       };
     } catch (err) {
-      console.error('❌ [ratingsSlice] Erro ao salvar avaliação:', err);
       return rejectWithValue(err.response?.data?.error || err.response?.data?.message || "Erro ao salvar avaliação");
     }
   }
 );
 
-// Remover avaliação
+/**
+ * Remove a avaliação do usuário logado para um post.
+ */
 export const removeRating = createAsyncThunk(
   "ratings/remove",
   async ({ postId, usuarioId }, { rejectWithValue }) => {
     try {
-      // Delete usando a rota específica
+      // Rota de DELETE específica para remover a avaliação do usuário
       await api.delete(`/avaliacoes/user/${usuarioId}/post/${postId}`);
-      
-      console.log('✅ [ratingsSlice] Avaliação removida');
       
       // Buscar estatísticas atualizadas
       const statsRes = await api.get(`/avaliacoes/stats/${postId}`);
@@ -104,19 +105,24 @@ export const removeRating = createAsyncThunk(
 
       return { postId: String(postId), usuarioId: String(usuarioId), estrelas: 0, postRating };
     } catch (err) {
-      console.error('❌ [ratingsSlice] Erro ao remover avaliação:', err);
       return rejectWithValue(err.response?.data?.error || err.response?.data?.message || "Erro ao remover avaliação");
     }
   }
 );
 
+// --- SLICE E REDUCERS ---
+
 const ratingsSlice = createSlice({
   name: "ratings",
   initialState: {
-    byPostId: {}, // postId -> { myStars, postAvg, postCount, saving, error }
+    // Cache de estado por Post ID
+    // postId -> { myStars: number, postAvg: number, postCount: number, saving: boolean, error: string|null }
+    byPostId: {}, 
   },
   reducers: {
-    // Reducer para limpar erro
+    /**
+     * Limpa o erro para um post específico.
+     */
     clearRatingError: (state, action) => {
       const postId = String(action.payload);
       if (state.byPostId[postId]) {
@@ -126,7 +132,7 @@ const ratingsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // fetchMyRatingForPost
+      // --- fetchMyRatingForPost ---
       .addCase(fetchMyRatingForPost.pending, (s, a) => {
         const postId = String(a.meta.arg.postId);
         s.byPostId[postId] = s.byPostId[postId] || { myStars: 0, saving: false, error: null, postAvg: 0, postCount: 0 };
@@ -147,7 +153,7 @@ const ratingsSlice = createSlice({
         s.byPostId[postId].error = a.payload || a.error?.message;
       })
       
-      // fetchPostRating
+      // --- fetchPostRating (Apenas estatísticas) ---
       .addCase(fetchPostRating.pending, (s, a) => {
         const postId = String(a.meta.arg);
         s.byPostId[postId] = s.byPostId[postId] || { myStars: 0, saving: false, error: null, postAvg: 0, postCount: 0 };
@@ -164,15 +170,16 @@ const ratingsSlice = createSlice({
         s.byPostId[postId].error = a.payload || a.error?.message;
       })
       
-      // upsertRating
+      // --- upsertRating ---
       .addCase(upsertRating.pending, (s, a) => {
         const postId = String(a.meta.arg.postId);
         s.byPostId[postId] = s.byPostId[postId] || { myStars: 0, saving: false, error: null, postAvg: 0, postCount: 0 };
-        s.byPostId[postId].saving = true;
+        s.byPostId[postId].saving = true; // Indica que a ação está em andamento
         s.byPostId[postId].error = null;
       })
       .addCase(upsertRating.fulfilled, (s, a) => {
         const { postId, estrelas, postRating } = a.payload;
+        // Atualiza a avaliação do usuário e as estatísticas do post com dados frescos do backend
         s.byPostId[postId] = { 
           myStars: Number(estrelas), 
           saving: false, 
@@ -188,7 +195,7 @@ const ratingsSlice = createSlice({
         s.byPostId[postId].error = a.payload || a.error?.message;
       })
       
-      // removeRating
+      // --- removeRating ---
       .addCase(removeRating.pending, (s, a) => {
         const postId = String(a.meta.arg.postId);
         s.byPostId[postId] = s.byPostId[postId] || { myStars: 0, saving: false, error: null, postAvg: 0, postCount: 0 };
@@ -197,6 +204,7 @@ const ratingsSlice = createSlice({
       })
       .addCase(removeRating.fulfilled, (s, a) => {
         const { postId, postRating } = a.payload;
+        // Zera a avaliação do usuário e atualiza as estatísticas
         s.byPostId[postId] = { 
           myStars: 0, 
           saving: false, 
@@ -218,6 +226,11 @@ const ratingsSlice = createSlice({
 export const { clearRatingError } = ratingsSlice.actions;
 export default ratingsSlice.reducer;
 
-// selector
+// --- SELECTOR ---
+
+/**
+ * Seletor de fábrica que retorna todo o objeto de estado de avaliação de um post.
+ * @param {string} postId
+ */
 export const selectRatingState = (postId) => (state) => 
   state.ratings.byPostId[String(postId)] || { myStars: 0, saving: false, error: null, postAvg: 0, postCount: 0 };

@@ -2,6 +2,11 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../api/axios";
 
+// --- AÇÕES ASSÍNCRONAS (THUNKS) ---
+
+/**
+ * Busca comentários de um post específico, ordenando por criação (mais recente primeiro).
+ */
 export const fetchCommentsByPost = createAsyncThunk(
   "comments/fetchByPost",
   async (postId, { rejectWithValue }) => {
@@ -14,6 +19,9 @@ export const fetchCommentsByPost = createAsyncThunk(
   }
 );
 
+/**
+ * Cria um novo comentário. Requer que o usuário esteja autenticado.
+ */
 export const createComment = createAsyncThunk(
   "comments/create",
   async ({ postId, texto }, { getState, rejectWithValue }) => {
@@ -38,7 +46,9 @@ export const createComment = createAsyncThunk(
   }
 );
 
-// ✅ NOVA ACTION: Update Comment
+/**
+ * Atualiza o texto de um comentário existente.
+ */
 export const updateComment = createAsyncThunk(
   "comments/update",
   async ({ commentId, texto }, { rejectWithValue }) => {
@@ -55,25 +65,33 @@ export const updateComment = createAsyncThunk(
   }
 );
 
-// src/redux/commentsSlice.js - Correção no deleteComment
+/**
+ * Exclui um comentário pelo seu ID.
+ */
 export const deleteComment = createAsyncThunk(
   "comments/delete",
-  async (commentId, { rejectWithValue }) => { // ✅ Recebe commentId diretamente
+  async (commentId, { rejectWithValue }) => {
     try {
       await api.delete(`/comentarios/${commentId}`);
-      return { id: commentId }; // ✅ Retorna o ID
+      return { id: commentId }; // Retorna o ID para o reducer remover do estado
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Erro ao excluir comentário");
     }
   }
 );
 
+// --- SLICE E REDUCERS ---
+
 const commentsSlice = createSlice({
   name: "comments",
   initialState: {
-    byPostId: {}, // postId -> { items, loading, error }
+    byPostId: {}, // Estrutura: postId -> { items, loading, error }
   },
   reducers: {
+    /**
+     * Limpa o cache de comentários para um post específico.
+     * @param {string} postId
+     */
     clearCommentsOfPost(state, action) {
       const postId = String(action.payload);
       delete state.byPostId[postId];
@@ -81,22 +99,26 @@ const commentsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // FETCH PENDING
       .addCase(fetchCommentsByPost.pending, (state, action) => {
         const postId = String(action.meta.arg);
         state.byPostId[postId] = state.byPostId[postId] || { items: [], loading: false, error: null };
         state.byPostId[postId].loading = true;
         state.byPostId[postId].error = null;
       })
+      // FETCH FULFILLED
       .addCase(fetchCommentsByPost.fulfilled, (state, action) => {
         const { postId, items } = action.payload;
         state.byPostId[postId] = { items, loading: false, error: null };
       })
+      // FETCH REJECTED
       .addCase(fetchCommentsByPost.rejected, (state, action) => {
         const postId = String(action.meta.arg);
         state.byPostId[postId] = state.byPostId[postId] || { items: [], loading: false, error: null };
         state.byPostId[postId].loading = false;
         state.byPostId[postId].error = action.payload || action.error?.message;
       })
+      // CREATE FULFILLED
       .addCase(createComment.fulfilled, (state, action) => {
         const c = action.payload;
         const postId = String(c.postId);
@@ -104,7 +126,7 @@ const commentsSlice = createSlice({
         // Adiciona no início (mais recente primeiro)
         state.byPostId[postId].items.unshift(c);
       })
-      // ✅ NOVO CASE: Update Comment
+      // UPDATE FULFILLED
       .addCase(updateComment.fulfilled, (state, action) => {
         const updatedComment = action.payload;
         const postId = String(updatedComment.postId);
@@ -119,8 +141,10 @@ const commentsSlice = createSlice({
           }
         }
       })
+      // DELETE FULFILLED
       .addCase(deleteComment.fulfilled, (state, action) => {
         const { id } = action.payload;
+        // Percorre todos os posts para remover o comentário excluído de qualquer bucket
         for (const pid of Object.keys(state.byPostId)) {
           const bucket = state.byPostId[pid];
           if (!bucket?.items) continue;
@@ -128,8 +152,9 @@ const commentsSlice = createSlice({
           if (idx !== -1) bucket.items.splice(idx, 1);
         }
       })
+      // Matcher para lidar com erros globais (opcional)
       .addMatcher((action) => action.type.endsWith("/rejected") && action.type.includes("comments"), (s, a) => {
-        // global comment error set (optional)
+        // Lógica de tratamento de erro global
       });
   },
 });
@@ -137,6 +162,10 @@ const commentsSlice = createSlice({
 export const { clearCommentsOfPost } = commentsSlice.actions;
 export default commentsSlice.reducer;
 
-// selectors
+// --- SELECTOR ---
+
+/**
+ * Seletor que retorna o estado completo dos comentários para um postId específico.
+ */
 export const selectCommentsState = (postId) => (state) =>
   state.comments.byPostId[String(postId)] || { items: [], loading: false, error: null };

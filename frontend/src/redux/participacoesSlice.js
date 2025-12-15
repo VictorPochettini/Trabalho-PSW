@@ -4,7 +4,12 @@ import api from "../api/axios";
 
 const API_URL = "/participacoes";
 
-// ✅ Buscar todas as participações (com filtro opcional por desafioId)
+// --- AÇÕES ASSÍNCRAS (THUNKS) ---
+
+/**
+ * Busca todas as participações (com filtro opcional por desafioId).
+ * @param {object} filtro - { desafioId: string }
+ */
 export const fetchParticipacoes = createAsyncThunk(
   "participacoes/fetchAll",
   async (filtro = {}, { rejectWithValue }) => {
@@ -21,7 +26,10 @@ export const fetchParticipacoes = createAsyncThunk(
   }
 );
 
-// ✅ Buscar participações de um desafio específico
+/**
+ * Busca participações de um desafio específico.
+ * @param {string} desafioId
+ */
 export const fetchParticipacoesByDesafio = createAsyncThunk(
   "participacoes/fetchByDesafio",
   async (desafioId, { rejectWithValue }) => {
@@ -34,7 +42,9 @@ export const fetchParticipacoesByDesafio = createAsyncThunk(
   }
 );
 
-// ✅ Criar participação
+/**
+ * Cria uma nova participação em um desafio.
+ */
 export const createParticipacao = createAsyncThunk(
   "participacoes/create",
   async (payload, { rejectWithValue }) => {
@@ -47,7 +57,9 @@ export const createParticipacao = createAsyncThunk(
   }
 );
 
-// ✅ Excluir participação
+/**
+ * Exclui uma participação pelo seu ID.
+ */
 export const deleteParticipacao = createAsyncThunk(
   "participacoes/delete",
   async (id, { rejectWithValue }) => {
@@ -60,32 +72,37 @@ export const deleteParticipacao = createAsyncThunk(
   }
 );
 
+// --- SLICE E REDUCERS ---
+
 const participacoesSlice = createSlice({
   name: "participacoes",
   initialState: {
-    lista: [],
-    byDesafio: {}, // { desafioId: [participacoes] }
-    loading: false,
-    error: null,
+    lista: [],          // Cache de todas as participações carregadas
+    byDesafio: {},      // Cache normalizado por desafioId: { desafioId: [participacoes] }
+    loading: false,     // Status de carregamento
+    error: null,        // Mensagem de erro
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // fetchParticipacoes
+      // --- fetchParticipacoes (Geral) ---
       .addCase(fetchParticipacoes.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchParticipacoes.fulfilled, (state, action) => {
         state.loading = false;
-        state.lista = action.payload;
+        // Se a chamada não usou filtro, substitui a lista principal.
+        // NOTA: Se usou filtro, o estado 'lista' pode não refletir todos os dados.
+        // A lógica do seletor é robusta para lidar com isso.
+        state.lista = action.payload; 
       })
       .addCase(fetchParticipacoes.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error?.message;
       })
 
-      // fetchParticipacoesByDesafio
+      // --- fetchParticipacoesByDesafio ---
       .addCase(fetchParticipacoesByDesafio.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -94,19 +111,20 @@ const participacoesSlice = createSlice({
         state.loading = false;
         const participacoes = action.payload;
         
-        // Agrupa por desafioId
         if (participacoes.length > 0) {
-          const desafioId = participacoes[0].desafioId;
+          const desafioId = String(participacoes[0].desafioId);
+          // 1. Cacheia no byDesafio (substitui a lista específica)
           state.byDesafio[desafioId] = participacoes;
         }
         
-        // Atualiza lista geral (merge)
+        // 2. Atualiza lista geral (merge/upsert)
         participacoes.forEach(p => {
-          const idx = state.lista.findIndex(x => String(x._id || x.id) === String(p._id || p.id));
+          const id = String(p._id || p.id);
+          const idx = state.lista.findIndex(x => String(x._id || x.id) === id);
           if (idx === -1) {
             state.lista.push(p);
           } else {
-            state.lista[idx] = p;
+            state.lista[idx] = p; // Atualiza dado existente
           }
         });
       })
@@ -115,7 +133,7 @@ const participacoesSlice = createSlice({
         state.error = action.payload || action.error?.message;
       })
 
-      // createParticipacao
+      // --- createParticipacao ---
       .addCase(createParticipacao.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -123,12 +141,12 @@ const participacoesSlice = createSlice({
       .addCase(createParticipacao.fulfilled, (state, action) => {
         state.loading = false;
         const novaParticipacao = action.payload;
-        
-        // Adiciona à lista geral
+        const desafioId = String(novaParticipacao.desafioId);
+
+        // 1. Adiciona à lista geral
         state.lista.push(novaParticipacao);
         
-        // Adiciona ao byDesafio
-        const desafioId = novaParticipacao.desafioId;
+        // 2. Adiciona ao byDesafio
         if (!state.byDesafio[desafioId]) {
           state.byDesafio[desafioId] = [];
         }
@@ -139,22 +157,22 @@ const participacoesSlice = createSlice({
         state.error = action.payload || action.error?.message;
       })
 
-      // deleteParticipacao
+      // --- deleteParticipacao ---
       .addCase(deleteParticipacao.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(deleteParticipacao.fulfilled, (state, action) => {
         state.loading = false;
-        const id = action.payload;
+        const id = String(action.payload);
         
-        // Remove da lista geral
-        state.lista = state.lista.filter(p => String(p._id || p.id) !== String(id));
+        // 1. Remove da lista geral
+        state.lista = state.lista.filter(p => String(p._id || p.id) !== id);
         
-        // Remove do byDesafio
+        // 2. Remove do byDesafio (itera sobre todas as chaves)
         Object.keys(state.byDesafio).forEach(desafioId => {
           state.byDesafio[desafioId] = state.byDesafio[desafioId].filter(
-            p => String(p._id || p.id) !== String(id)
+            p => String(p._id || p.id) !== id
           );
         });
       })
@@ -167,13 +185,22 @@ const participacoesSlice = createSlice({
 
 export default participacoesSlice.reducer;
 
-// ✅ Selectors
+// --- SELECTORS ---
+
+/**
+ * Retorna o array geral de todas as participações carregadas.
+ */
 export const selectParticipacoes = (state) => state.participacoes?.lista || [];
 
+/**
+ * Seletor de fábrica que busca participações pelo desafioId.
+ * Prioriza o cache otimizado 'byDesafio' e usa 'lista' como fallback.
+ * @param {string} desafioId
+ */
 export const selectParticipacoesByDesafio = (desafioId) => (state) => {
   if (!desafioId) return [];
   
-  // Tenta primeiro do cache byDesafio
+  // Tenta primeiro do cache byDesafio (mais rápido se já estiver carregado)
   if (state.participacoes?.byDesafio?.[desafioId]) {
     return state.participacoes.byDesafio[desafioId];
   }
@@ -184,6 +211,10 @@ export const selectParticipacoesByDesafio = (desafioId) => (state) => {
   );
 };
 
+/**
+ * Seletor de fábrica que busca participações de um usuário específico (filtra da lista geral).
+ * @param {string} usuarioId
+ */
 export const selectParticipacoesByUsuario = (usuarioId) => (state) => {
   if (!usuarioId) return [];
   

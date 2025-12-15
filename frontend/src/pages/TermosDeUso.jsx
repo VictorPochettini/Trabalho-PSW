@@ -1,154 +1,174 @@
+/**
+ * @fileoverview Componente React para exibir os Termos de Uso da aplicação ArtBeat.
+ * @module TermosDeUso
+ * @author Gemini
+ */
 import React, { useEffect, useState } from "react";
 import logo from "../images/ArtBeat_Branco.png";
 import "../css/termosPoliticas.css";
 
+/**
+ * @function TermosDeUso
+ * @description Componente funcional React que exibe o conteúdo detalhado dos Termos de Uso da plataforma ArtBeat.
+ * Ele carrega a data atual, mas exibe uma data de "Última atualização" fixa no conteúdo.
+ * @returns {JSX.Element} O componente de Termos de Uso renderizado.
+ */
 export default function TermosDeUso() {
-  const [data, setData] = useState("");
+  /**
+   * @type {[string, function(string): void]} Estado para armazenar a data atual formatada.
+   */
+  const [data, setData] = useState("");
 
-  useEffect(() => {
-    const currentDate = new Date();
-    setData(currentDate.toLocaleDateString("pt-BR"));
-  }, []);
+  /**
+   * @effect
+   * Hook useEffect que é executado uma vez após a montagem do componente.
+   * Obtém a data atual e a formata para o padrão 'pt-BR' (dia/mês/ano),
+   * armazenando-a no estado `data`.
+   */
+  useEffect(() => {
+    const currentDate = new Date();
+    setData(currentDate.toLocaleDateString("pt-BR"));
+  }, []);
 
-  return (
-    <div className="pagina-termos">
-      <header className="topo">
-        <img src={logo} alt="Logo ArtBeat" class = "logo"/>
-        <h1>Termos de Uso</h1>
-      </header>
+  return (
+    <div className="pagina-termos">
+      <header className="topo">
+        <img src={logo} alt="Logo ArtBeat" class = "logo"/>
+        <h1>Termos de Uso</h1>
+      </header>
 
-      <main className="esp">
-        <h6>Última atualização: <span>25/10/2025</span></h6>
-        <p>Ao utilizar o site ArtBeat, você concorda com as regras estabelecidas neste documento. Recomendamos que leia atentamente todos os termos antes de utilizar nossos serviços.</p>
-         
-        <section>
-                <h2>Objetivo do Site</h2>
-                <p>ArtBeat é uma plataforma digital que permite a artistas (músicos, desenhistas, escritores e outros criadores) divulgar suas obras, interagir com outros usuários e participar de desafios semanais temáticos.</p>
-            </section>
-            
-            <section>
-                <h2>Cadastro e Responsabilidades do Usuário</h2>
-                
-                <h3>Requisitos para Cadastro:</h3>
-                <p>Para postar conteúdos, o usuário deve criar uma conta fornecendo informações verdadeiras, completas e atualizadas.</p>
-                
-                <h3>Responsabilidades:</h3>
-                <ul>
-                    <li>O usuário é integralmente responsável pela confidencialidade de sua senha e por todas as atividades que ocorram em sua conta.</li>
-                    <li>É obrigatório notificar imediatamente a administração do site sobre qualquer uso não autorizado de sua conta.</li>
-                    <li>É expressamente proibido criar múltiplas contas com o objetivo de manipular rankings, interações ou sistemas de recompensa.</li>
-                </ul>
-                
-                <p><strong>Importante:</strong> Violações dessas regras podem resultar na suspensão ou exclusão permanente da(s) conta(s).</p>
-            </section>
-            
-            <section>
-                <h2>Conteúdos Permitidos e Proibidos</h2>
-                
-                <h3>Conteúdos Permitidos</h3>
-                <ul>
-                    <li>Obras originais de autoria do próprio usuário</li>
-                    <li>Conteúdo que respeite os direitos autorais de terceiros</li>
-                    <li>Materiais que estejam em conformidade com a legislação brasileira</li>
-                </ul>
-                
-                <h3>Conteúdos Expressamente Proibidos</h3>
-                <ul>
-                    <li>Plagiar, copiar ou publicar conteúdos de terceiros sem autorização prévia e expressa</li>
-                    <li>Postar conteúdos ofensivos, discriminatórios, obscenos ou ilegais</li>
-                    <li>Materiais que violem direitos autorais, marcas registradas ou outros direitos de propriedade intelectual</li>
-                    <li>Manipular sistemas de avaliação, comentários ou doações de forma fraudulenta</li>
-                    <li>Conteúdo que promova atividades ilegais ou que possa causar danos a outros usuários</li>
-                </ul>
-            </section>
-            
-            <section>
-                <h2>Direitos Autorais e Propriedade Intelectual</h2>
-                
-                <h3>Direitos do Autor</h3>
-                <p>O usuário mantém todos os direitos autorais sobre as obras que postar em nossa plataforma.</p>
-                
-                <h3>Licença de Uso</h3>
-                <p>Ao publicar conteúdo no ArtBeat, o usuário concede à plataforma uma licença não exclusiva, mundial, irrevogável e isenta de royalties para exibir, distribuir, reproduzir e adaptar suas obras exclusivamente para os fins de operação e promoção do site.</p>
-                
-                <p><strong>Nota importante:</strong> O site não reivindica a propriedade das obras publicadas pelos usuários. Os autores mantêm todos os direitos sobre suas criações.</p>
-            </section>
-            
-            <section>
-                <h2>Sistema de Doações</h2>
-                
-                <h3>Funcionamento</h3>
-                <p>Usuários podem apoiar financeiramente artistas por meio de doações voluntárias através de nossa plataforma.</p>
-                
-                <h3>Política de Reembolsos</h3>
-                <p>As doações são voluntárias e consideradas não reembolsáveis, exceto em casos de erro comprovado de procesamento ou transação fraudulenta, que serão analisados individualmente.</p>
-                
-                <h3>Taxas Administrativas</h3>
-                <p>O site pode reter taxas administrativas sobre as transações, que serão claramente informadas previamente à confirmação de qualquer doação.</p>
-            </section>
-            
-            <section>
-                <h2>Desafios Semanais</h2>
-                
-                <h3>Participação</h3>
-                <p>Artistas podem se inscrever voluntariamente nos desafios semanais oferecidos pela plataforma.</p>
-                
-                <h3>Avaliação e Ranking</h3>
-                <p>O ranking é definido com base nas interações da comunidade (notas, comentários, reações) e critérios técnicos estabelecidos pelo site para cada desafio.</p>
-                
-                <h3>Alterações nas Regras</h3>
-                <p>O site reserva-se o direito de alterar as regras dos desafios a qualquer momento, com comunicação prévia aos participantes sempre que possível.</p>
-            </section>
-            
-            <section>
-                <h2>Suspensão e Exclusão de Contas</h2>
-                
-                <h3>Motivos para Suspensão ou Exclusão</h3>
-                <p>O ArtBeat pode suspender ou excluir contas que violem estes Termos de Uso, incluindo mas não limitado a:</p>
-                <ul>
-                    <li>Prática de plágio ou violação de direitos autorais</li>
-                    <li>Fraude em sistemas de doação ou interação</li>
-                    <li>Comportamento ofensivo ou assédio a outros usuários</li>
-                    <li>Qualquer forma de manipulação indevida da plataforma</li>
-                </ul>
-                
-                <h3>Processo de Moderação</h3>
-                <p>Embora possamos tomar medidas sem aviso prévio em casos graves, geralmente notificaremos o usuário sobre violações e daremos oportunidade para defesa ou retificação quando apropriado.</p>
-            </section>
-            
-            <section>
-                <h2>Limitação de Responsabilidade</h2>
-                
-                <p>O ArtBeat atua como uma plataforma de hospedagem de conteúdo e não se responsabiliza pelo material postado pelos usuários, embora reserve-se o direito de moderar e remover conteúdo inadequado.</p>
-                
-                <p>O site não garante prêmios, ganhos ou resultados específicos além do que for expressamente informado nas regras de cada desafio ou funcionalidade.</p>
-                
-                <p>Os usuários são responsáveis por verificar a autenticidade e originalidade do conteúdo que publicam, isentando a plataforma de quaisquer reclamações de violação de direitos autorais.</p>
-            </section>
-            
-            <section>
-                <h2>Alterações nos Termos de Uso</h2>
-                
-                <p>Podemos alterar estes Termos de Uso a qualquer momento para refletir mudanças em nossos serviços ou por requisitos legais. A versão atualizada sempre estará disponível nesta página, com a data da última atualização revisada.</p>
-                
-                <p>O uso continuado da plataforma após alterações significativas nos Termos constitui aceitação das novas condições.</p>
-            </section>
-            
-            <section>
-                <h2>Lei Aplicável e Foro</h2>
-                
-                <p>Este contrato é regido pelas leis da República Federativa do Brasil.</p>
-                
-                <p>Fica eleito o foro da comarca de Rio de Janeiro - RJ para dirimir qualquer questão oriunda do presente termo, com renúncia expressa a qualquer outro, por mais privilegiado que seja.</p>
-            </section>
-            
-            <section>
-                <h2>Dúvidas e Contato</h2>
-                <p>Se você tiver qualquer dúvida sobre estes Termos de Uso, entre em contato conosco pelo e-mail: <a href = "https://mail.google.com/mail/?view=cm&fs=1&to=suporteArtBeat@gmail.com" target="_blank"  title="Email de contato">suporteArtBeat@gmail.com</a></p>
-            </section>
-        
-      </main>
+      <main className="esp">
+        <h6>Última atualização: <span>25/10/2025</span></h6>
+        <p>Ao utilizar o site ArtBeat, você concorda com as regras estabelecidas neste documento. Recomendamos que leia atentamente todos os termos antes de utilizar nossos serviços.</p>
+         
+        <section>
+                <h2>Objetivo do Site</h2>
+                <p>ArtBeat é uma plataforma digital que permite a artistas (músicos, desenhistas, escritores e outros criadores) divulgar suas obras, interagir com outros usuários e participar de desafios semanais temáticos.</p>
+            </section>
+            
+            <section>
+                <h2>Cadastro e Responsabilidades do Usuário</h2>
+                
+                <h3>Requisitos para Cadastro:</h3>
+                <p>Para postar conteúdos, o usuário deve criar uma conta fornecendo informações verdadeiras, completas e atualizadas.</p>
+                
+                <h3>Responsabilidades:</h3>
+                <ul>
+                    <li>O usuário é integralmente responsável pela confidencialidade de sua senha e por todas as atividades que ocorram em sua conta.</li>
+                    <li>É obrigatório notificar imediatamente a administração do site sobre qualquer uso não autorizado de sua conta.</li>
+                    <li>É expressamente proibido criar múltiplas contas com o objetivo de manipular rankings, interações ou sistemas de recompensa.</li>
+                </ul>
+                
+                <p><strong>Importante:</strong> Violações dessas regras podem resultar na suspensão ou exclusão permanente da(s) conta(s).</p>
+            </section>
+            
+            <section>
+                <h2>Conteúdos Permitidos e Proibidos</h2>
+                
+                <h3>Conteúdos Permitidos</h3>
+                <ul>
+                    <li>Obras originais de autoria do próprio usuário</li>
+                    <li>Conteúdo que respeite os direitos autorais de terceiros</li>
+                    <li>Materiais que estejam em conformidade com a legislação brasileira</li>
+                </ul>
+                
+                <h3>Conteúdos Expressamente Proibidos</h3>
+                <ul>
+                    <li>Plagiar, copiar ou publicar conteúdos de terceiros sem autorização prévia e expressa</li>
+                    <li>Postar conteúdos ofensivos, discriminatórios, obscenos ou ilegais</li>
+                    <li>Materiais que violem direitos autorais, marcas registradas ou outros direitos de propriedade intelectual</li>
+                    <li>Manipular sistemas de avaliação, comentários ou doações de forma fraudulenta</li>
+                    <li>Conteúdo que promova atividades ilegais ou que possa causar danos a outros usuários</li>
+                </ul>
+            </section>
+            
+            <section>
+                <h2>Direitos Autorais e Propriedade Intelectual</h2>
+                
+                <h3>Direitos do Autor</h3>
+                <p>O usuário mantém todos os direitos autorais sobre as obras que postar em nossa plataforma.</p>
+                
+                <h3>Licença de Uso</h3>
+                <p>Ao publicar conteúdo no ArtBeat, o usuário concede à plataforma uma licença não exclusiva, mundial, irrevogável e isenta de royalties para exibir, distribuir, reproduzir e adaptar suas obras exclusivamente para os fins de operação e promoção do site.</p>
+                
+                <p><strong>Nota importante:</strong> O site não reivindica a propriedade das obras publicadas pelos usuários. Os autores mantêm todos os direitos sobre suas criações.</p>
+            </section>
+            
+            <section>
+                <h2>Sistema de Doações</h2>
+                
+                <h3>Funcionamento</h3>
+                <p>Usuários podem apoiar financeiramente artistas por meio de doações voluntárias através de nossa plataforma.</p>
+                
+                <h3>Política de Reembolsos</h3>
+                <p>As doações são voluntárias e consideradas não reembolsáveis, exceto em casos de erro comprovado de procesamento ou transação fraudulenta, que serão analisados individualmente.</p>
+                
+                <h3>Taxas Administrativas</h3>
+                <p>O site pode reter taxas administrativas sobre as transações, que serão claramente informadas previamente à confirmação de qualquer doação.</p>
+            </section>
+            
+            <section>
+                <h2>Desafios Semanais</h2>
+                
+                <h3>Participação</h3>
+                <p>Artistas podem se inscrever voluntariamente nos desafios semanais oferecidos pela plataforma.</p>
+                
+                <h3>Avaliação e Ranking</h3>
+                <p>O ranking é definido com base nas interações da comunidade (notas, comentários, reações) e critérios técnicos estabelecidos pelo site para cada desafio.</p>
+                
+                <h3>Alterações nas Regras</h3>
+                <p>O site reserva-se o direito de alterar as regras dos desafios a qualquer momento, com comunicação prévia aos participantes sempre que possível.</p>
+            </section>
+            
+            <section>
+                <h2>Suspensão e Exclusão de Contas</h2>
+                
+                <h3>Motivos para Suspensão ou Exclusão</h3>
+                <p>O ArtBeat pode suspender ou excluir contas que violem estes Termos de Uso, incluindo mas não limitado a:</p>
+                <ul>
+                    <li>Prática de plágio ou violação de direitos autorais</li>
+                    <li>Fraude em sistemas de doação ou interação</li>
+                    <li>Comportamento ofensivo ou assédio a outros usuários</li>
+                    <li>Qualquer forma de manipulação indevida da plataforma</li>
+                </ul>
+                
+                <h3>Processo de Moderação</h3>
+                <p>Embora possamos tomar medidas sem aviso prévio em casos graves, geralmente notificaremos o usuário sobre violações e daremos oportunidade para defesa ou retificação quando apropriado.</p>
+            </section>
+            
+            <section>
+                <h2>Limitação de Responsabilidade</h2>
+                
+                <p>O ArtBeat atua como uma plataforma de hospedagem de conteúdo e não se responsabiliza pelo material postado pelos usuários, embora reserve-se o direito de moderar e remover conteúdo inadequado.</p>
+                
+                <p>O site não garante prêmios, ganhos ou resultados específicos além do que for expressamente informado nas regras de cada desafio ou funcionalidade.</p>
+                
+                <p>Os usuários são responsáveis por verificar a autenticidade e originalidade do conteúdo que publicam, isentando a plataforma de quaisquer reclamações de violação de direitos autorais.</p>
+            </section>
+            
+            <section>
+                <h2>Alterações nos Termos de Uso</h2>
+                
+                <p>Podemos alterar estes Termos de Uso a qualquer momento para refletir mudanças em nossos serviços ou por requisitos legais. A versão atualizada sempre estará disponível nesta página, com a data da última atualização revisada.</p>
+                
+                <p>O uso continuado da plataforma após alterações significativas nos Termos constitui aceitação das novas condições.</p>
+            </section>
+            
+            <section>
+                <h2>Lei Aplicável e Foro</h2>
+                
+                <p>Este contrato é regido pelas leis da República Federativa do Brasil.</p>
+                
+                <p>Fica eleito o foro da comarca de Rio de Janeiro - RJ para dirimir qualquer questão oriunda do presente termo, com renúncia expressa a qualquer outro, por mais privilegiado que seja.</p>
+            </section>
+            
+            <section>
+                <h2>Dúvidas e Contato</h2>
+                <p>Se você tiver qualquer dúvida sobre estes Termos de Uso, entre em contato conosco pelo e-mail: <a href = "https://mail.google.com/mail/?view=cm&fs=1&to=suporteArtBeat@gmail.com" target="_blank"  title="Email de contato">suporteArtBeat@gmail.com</a></p>
+            </section>
+        
+      </main>
 
-    </div>
-  );
+    </div>
+  );
 }

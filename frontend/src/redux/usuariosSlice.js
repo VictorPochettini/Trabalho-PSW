@@ -2,25 +2,27 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../api/axios";
 
-// 🔐 Login via backend (/api/auth/login) usando username + password
+// --- AÇÕES ASSÍNCRONAS (THUNKS) ---
+
+/**
+ * 🔐 Realiza o login do usuário.
+ * Persiste o token e os dados do usuário no localStorage.
+ */
 export const login = createAsyncThunk(
   "user/login",
   async ({ username, password }, { rejectWithValue }) => {
     try {
-      // Se o backend esperar { email, password }, troque aqui.
       const res = await api.post("/api/auth/login", { username, password });
 
-      // Esperado algo como: { user: {...}, accessToken: '...', refreshToken? }
       const data = res.data;
-
       const token = data.accessToken || data.token || data.access_token;
-      const user = data.user || data.usuario || data;
+      const user = data.user || data.usuario || data; // Adaptação para diferentes estruturas de resposta
 
       if (!token || !user) {
         return rejectWithValue("Resposta de login inválida do servidor");
       }
 
-      // persiste no localStorage
+      // Persiste no localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("userData", JSON.stringify({ user, token }));
 
@@ -35,16 +37,25 @@ export const login = createAsyncThunk(
   }
 );
 
-// 🔄 Carrega usuário do storage ao iniciar o app
+/**
+ * 🔄 Carrega o usuário e o token do localStorage ao iniciar a aplicação.
+ */
 export const setUserFromStorage = createAsyncThunk(
   "user/setUserFromStorage",
   async (_, { rejectWithValue }) => {
     try {
       const stored = localStorage.getItem("userData");
       if (!stored) return rejectWithValue("No stored user");
+      
       const parsed = JSON.parse(stored);
+      if (!parsed.user || !parsed.token) throw new Error("Dados incompletos");
+      
+      // Também garante que o token esteja disponível globalmente via interceptor
+      localStorage.setItem("token", parsed.token); 
+      
       return parsed;
     } catch (err) {
+      // Limpa storage em caso de erro de parsing
       localStorage.removeItem("userData");
       localStorage.removeItem("token");
       return rejectWithValue("Failed to read stored user");
@@ -52,7 +63,9 @@ export const setUserFromStorage = createAsyncThunk(
   }
 );
 
-// 👥 Buscar todos os usuários (exige token, enviado via api/axios interceptor)
+/**
+ * 👥 Busca a lista completa de todos os usuários (requer autenticação).
+ */
 export const fetchUsuarios = createAsyncThunk(
   "user/fetchUsuarios",
   async (_, { rejectWithValue }) => {
@@ -66,13 +79,16 @@ export const fetchUsuarios = createAsyncThunk(
   }
 );
 
-// ✏️ Atualizar dados do usuário logado
+/**
+ * ✏️ Atualiza os dados do usuário logado (PATCH).
+ * Sincroniza o estado do Redux e o localStorage.
+ */
 export const updateUser = createAsyncThunk(
   "user/updateUser",
   async (dadosAtualizados, { getState, rejectWithValue }) => {
     try {
       const state = getState();
-      const current = state.user.currentUser; // { user, token }
+      const current = state.user.currentUser;
       const user = current?.user;
 
       if (!user || (!user.id && !user._id)) {
@@ -81,28 +97,16 @@ export const updateUser = createAsyncThunk(
 
       const id = user.id || user._id;
 
-      // Usamos PATCH para atualizar parcialmente sem sobrescrever tudo
-      const res = await api.patch(`/usuarios/${id}`, {
-        ...dadosAtualizados,
-      });
-
+      const res = await api.patch(`/usuarios/${id}`, dadosAtualizados);
       const updated = res.data;
 
-      // atualiza localStorage se o usuário atualizado for o logado
+      // Sincroniza localStorage
       const storedRaw = localStorage.getItem("userData");
       if (storedRaw) {
-        try {
-          const stored = JSON.parse(storedRaw);
-          if (
-            stored.user &&
-            (stored.user.id === updated.id || stored.user._id === updated._id)
-          ) {
-            const newStored = { ...stored, user: updated };
-            localStorage.setItem("userData", JSON.stringify(newStored));
-          }
-        } catch {
-          // se der erro, limpamos para não quebrar
-          localStorage.removeItem("userData");
+        const stored = JSON.parse(storedRaw);
+        if (stored.user) {
+          const newStored = { ...stored, user: updated };
+          localStorage.setItem("userData", JSON.stringify(newStored));
         }
       }
 
@@ -115,17 +119,21 @@ export const updateUser = createAsyncThunk(
   }
 );
 
+// --- SLICE E REDUCERS ---
+
 const userSlice = createSlice({
   name: "user",
   initialState: {
-    // currentUser: { user: {...}, token: '...' } após login
-    currentUser: null,
-    usuarios: [],
+    // currentUser: { user: { ... }, token: '...' }
+    currentUser: null, 
+    usuarios: [], // Lista de todos os usuários
     loading: false,
     error: null,
   },
   reducers: {
-    // 🚪 Logout local: limpa storage e state
+    /**
+     * 🚪 Realiza o logout local: limpa o estado e o localStorage.
+     */
     logout: (state) => {
       state.currentUser = null;
       state.error = null;
@@ -145,19 +153,17 @@ const userSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentUser = {
-          user: action.payload.user,
-          token: action.payload.token,
-        };
+        state.currentUser = action.payload; // payload é { user, token }
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
+        state.currentUser = null;
         state.error = action.payload || action.error?.message;
       })
 
       // 🔄 setUserFromStorage
       .addCase(setUserFromStorage.fulfilled, (state, action) => {
-        state.currentUser = action.payload;
+        state.currentUser = action.payload; // payload é { user, token }
       })
       .addCase(setUserFromStorage.rejected, (state) => {
         state.currentUser = null;
@@ -170,7 +176,7 @@ const userSlice = createSlice({
       })
       .addCase(fetchUsuarios.fulfilled, (state, action) => {
         state.loading = false;
-        state.usuarios = action.payload;
+        state.usuarios = action.payload; // Lista de todos os usuários
       })
       .addCase(fetchUsuarios.rejected, (state, action) => {
         state.loading = false;
@@ -185,24 +191,23 @@ const userSlice = createSlice({
       .addCase(updateUser.fulfilled, (state, action) => {
         state.loading = false;
 
-        // atualiza currentUser.user se for o mesmo usuário
+        const updatedUser = action.payload;
+        
+        // 1. Atualiza currentUser.user se o ID coincidir
         if (
           state.currentUser?.user &&
-          (state.currentUser.user.id === action.payload.id ||
-            state.currentUser.user._id === action.payload._id)
+          (state.currentUser.user.id === updatedUser.id ||
+            state.currentUser.user._id === updatedUser._id)
         ) {
-          state.currentUser.user = action.payload;
-          localStorage.setItem(
-            "userData",
-            JSON.stringify(state.currentUser)
-          );
+          state.currentUser.user = updatedUser;
+          // O localStorage já foi atualizado no thunk para garantir consistência.
         }
 
-        // também atualiza lista usuarios
+        // 2. Atualiza na lista geral de usuários (`usuarios`)
         const idx = state.usuarios.findIndex(
-          (u) => u.id === action.payload.id || u._id === action.payload._id
+          (u) => u.id === updatedUser.id || u._id === updatedUser._id
         );
-        if (idx !== -1) state.usuarios[idx] = action.payload;
+        if (idx !== -1) state.usuarios[idx] = updatedUser;
       })
       .addCase(updateUser.rejected, (state, action) => {
         state.loading = false;
@@ -213,13 +218,33 @@ const userSlice = createSlice({
 
 export const { logout, clearError } = userSlice.actions;
 
-// Selectors
+// --- SELECTORS ---
+
+/**
+ * Retorna o objeto do usuário logado ou null.
+*/
 export const selectCurrentUser = (state) =>
   state.user.currentUser?.user || null;
+
+/**
+ * Retorna o token de autenticação (prioriza o state, fallback para localStorage).
+*/
 export const selectAuthToken = (state) =>
   state.user.currentUser?.token || localStorage.getItem("token");
+
+/**
+ * Retorna a lista de todos os usuários buscados.
+*/
 export const selectUsuarios = (state) => state.user.usuarios || [];
+
+/**
+ * Retorna o status de carregamento.
+*/
 export const selectUserLoading = (state) => state.user.loading;
+
+/**
+ * Retorna a mensagem de erro.
+*/
 export const selectUserError = (state) => state.user.error;
 
 export default userSlice.reducer;

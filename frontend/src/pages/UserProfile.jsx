@@ -1,4 +1,8 @@
-// src/pages/UserProfile.jsx - VERSÃO CORRIGIDA
+/**
+ * @fileoverview Componente React para exibir o perfil de um usuário, incluindo seus posts, estatísticas de seguidores/seguidos e funcionalidade de edição de posts.
+ * @module UserProfile
+ * @author Gemini
+ */
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
@@ -13,848 +17,944 @@ import FloatingActionButton from "../components/FloatingActionButton";
 import MonetizationPopup from "../components/MonetizationPopup";
 import CommentsPopup from "../components/CommentsPopup";
 
+/**
+ * @function BackButton
+ * @description Componente de botão de retorno que utiliza a função `Maps(-1)` para voltar à página anterior.
+ * @returns {JSX.Element} O botão de retorno.
+ */
 const BackButton = () => {
-  const navigate = useNavigate();
-  return (
-    <button
-      type="button"
-      className={styles.backButton}
-      onClick={() => navigate(-1)}
-    >
-      <img src={botaoVolta} alt="Voltar" />
-    </button>
-  );
+  const navigate = useNavigate();
+  return (
+    <button
+      type="button"
+      className={styles.backButton}
+      onClick={() => navigate(-1)}
+    >
+      <img src={botaoVolta} alt="Voltar" />
+    </button>
+  );
 };
 
+/**
+ * @function UserProfile
+ * @description Componente principal da página de perfil do usuário.
+ * Carrega dados do Redux (usuário, posts, contagens de seguidores) e gerencia o estado da interface,
+ * incluindo popups de monetização, comentários e listas de seguidores/seguindo.
+ * Implementa a lógica de edição de posts para o perfil do próprio usuário.
+ * @returns {JSX.Element} A interface de perfil do usuário.
+ */
 const UserProfile = () => {
-  const { username } = useParams();
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
+  // Hooks de Roteamento e Redux
+  const { username } = useParams();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const usuarios = useSelector((state) => state.user.usuarios || []);
-  const posts = useSelector((state) => state.posts.lista || []);
-  const currentUserState = useSelector((state) => state.user.currentUser);
-  const currentUser = currentUserState?.user ?? null;
+  // Seletores de Estado
+  const usuarios = useSelector((state) => state.user.usuarios || []);
+  const posts = useSelector((state) => state.posts.lista || []);
+  const currentUserState = useSelector((state) => state.user.currentUser);
+  const currentUser = currentUserState?.user ?? null;
 
-  const isOwnProfile = currentUser?.username === username;
+  // Variáveis de Checagem
+  const isOwnProfile = currentUser?.username === username;
 
-  const usersLoading = useSelector((s) => s.user.loading);
-  const postsLoading = useSelector((s) => s.posts.loading);
-  const ready = !usersLoading && !postsLoading;
+  const usersLoading = useSelector((s) => s.user.loading);
+  const postsLoading = useSelector((s) => s.posts.loading);
+  const ready = !usersLoading && !postsLoading;
 
-  const [profilePhoto, setProfilePhoto] = useState(null);
-  const fileInputRef = useRef(null);
+  // Estados Locais
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const fileInputRef = useRef(null);
 
-  const [showMonetization, setShowMonetization] = useState(false);
-  const [monetizationUsername, setMonetizationUsername] = useState("");
-  const [showComments, setShowComments] = useState(false);
-  const [currentPostIdForComments, setCurrentPostIdForComments] = useState(null);
+  // Estados de Popups
+  const [showMonetization, setShowMonetization] = useState(false);
+  const [monetizationUsername, setMonetizationUsername] = useState("");
+  const [showComments, setShowComments] = useState(false);
+  const [currentPostIdForComments, setCurrentPostIdForComments] = useState(null);
 
-  const [showFollowers, setShowFollowers] = useState(false);
-  const [showFollowing, setShowFollowing] = useState(false);
-  const [followersList, setFollowersList] = useState([]);
-  const [followingList, setFollowingList] = useState([]);
+  // Estados de Seguidores/Seguindo
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
+  const [followersList, setFollowersList] = useState([]);
+  const [followingList, setFollowingList] = useState([]);
 
-  // ✅ ESTADO DE EDIÇÃO CORRIGIDO
-  const [editingPost, setEditingPost] = useState(null);
-  const [editText, setEditText] = useState('');
-  const [editTitle, setEditTitle] = useState('');
+  // ✅ ESTADO DE EDIÇÃO CORRIGIDO
+  /** @type {[string|number|null, function(string|number|null): void]} ID do post que está sendo editado. */
+  const [editingPost, setEditingPost] = useState(null);
+  /** @type {[string, function(string): void]} Conteúdo do texto/descrição em edição. */
+  const [editText, setEditText] = useState('');
+  /** @type {[string, function(string): void]} Título do post em edição (usado para posts de texto/letra). */
+  const [editTitle, setEditTitle] = useState('');
 
-  const didInitRef = useRef(false);
-  useEffect(() => {
-    if (didInitRef.current) return;
-    didInitRef.current = true;
-    if (!usuarios.length) dispatch(fetchUsuarios());
-    if (!posts.length) dispatch(fetchPosts());
-  }, [dispatch, usuarios.length, posts.length]);
+  // Efeito de inicialização para carregar dados
+  const didInitRef = useRef(false);
+  useEffect(() => {
+    if (didInitRef.current) return;
+    didInitRef.current = true;
+    if (!usuarios.length) dispatch(fetchUsuarios());
+    if (!posts.length) dispatch(fetchPosts());
+  }, [dispatch, usuarios.length, posts.length]);
 
-  const user = useMemo(() => {
-    if (!ready) return null;
-    return usuarios.find((u) => u.username === username) || null;
-  }, [ready, usuarios, username]);
+  // Memo para encontrar o usuário do perfil
+  const user = useMemo(() => {
+    if (!ready) return null;
+    return usuarios.find((u) => u.username === username) || null;
+  }, [ready, usuarios, username]);
 
-  const lastCountUserIdRef = useRef(null);
-  useEffect(() => {
-    const userId = user ? (user._id || user.id) : null;
-    if (!userId) return;
-    if (lastCountUserIdRef.current === String(userId)) return;
-    lastCountUserIdRef.current = String(userId);
-    dispatch(fetchFollowCounts({ userId }));
-  }, [dispatch, user]);
+  // Efeito para buscar as contagens de seguidores/seguindo
+  const lastCountUserIdRef = useRef(null);
+  useEffect(() => {
+    const userId = user ? (user._id || user.id) : null;
+    if (!userId) return;
+    if (lastCountUserIdRef.current === String(userId)) return;
+    lastCountUserIdRef.current = String(userId);
+    /** @type {object} */
+    const payload = { userId };
+    dispatch(fetchFollowCounts(payload));
+  }, [dispatch, user]);
 
-  const followCounts = useSelector((state) =>
-    selectFollowCounts(user ? (user._id || user.id) : 0)(state)
-  );
-  const followersCount = followCounts?.followersCount || 0;
-  const followingCount = followCounts?.followingCount || 0;
+  // Seleção das contagens de seguidores/seguindo
+  const followCounts = useSelector((state) =>
+    selectFollowCounts(user ? (user._id || user.id) : 0)(state)
+  );
+  const followersCount = followCounts?.followersCount || 0;
+  const followingCount = followCounts?.followingCount || 0;
 
-  useEffect(() => {
-    if (user?.fotoPerfil) setProfilePhoto(user.fotoPerfil);
-  }, [user?.fotoPerfil]);
+  // Efeito para atualizar a foto de perfil
+  useEffect(() => {
+    if (user?.fotoPerfil) setProfilePhoto(user.fotoPerfil);
+  }, [user?.fotoPerfil]);
 
-  const handlePhotoChange = (event) => {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onload = (e) => setProfilePhoto(e.target.result);
-      reader.readAsDataURL(file);
-    }
-  };
+  /**
+   * @function handlePhotoChange
+   * @description Lida com a seleção de uma nova foto de perfil pelo input de arquivo.
+   * @param {React.ChangeEvent<HTMLInputElement>} event Evento de mudança do input de arquivo.
+   */
+  const handlePhotoChange = (event) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (e) => setProfilePhoto(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
 
-  useEffect(() => {
-    setShowMonetization(false);
-    setMonetizationUsername("");
-    setShowComments(false);
-    setCurrentPostIdForComments(null);
-    document.body.style.overflow = "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [username]);
+  // Efeito para redefinir estados de popups ao mudar de perfil
+  useEffect(() => {
+    setShowMonetization(false);
+    setMonetizationUsername("");
+    setShowComments(false);
+    setCurrentPostIdForComments(null);
+    document.body.style.overflow = "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [username]);
 
-  const handleEditProfile = () => navigate("/edit-profile");
+  /**
+   * @function handleEditProfile
+   * @description Navega para a página de edição de perfil.
+   */
+  const handleEditProfile = () => navigate("/edit-profile");
 
-  const userIdKey = user ? String(user._id || user.id) : null;
-  const userPostsRaw = user
-    ? posts.filter((p) => String(p.usuarioId || p.userId) === String(userIdKey))
-    : [];
-  
-  const userPosts = userPostsRaw
-  .map((p) => {
-    const isTexto = p.tipo === "texto" || p.tipo === "letra";
-    const isMusica = p.tipo === "musica";
-    const isImagem = p.tipo === "visual";
+  // ID da chave do usuário (compatibilidade entre _id e id)
+  const userIdKey = user ? String(user._id || user.id) : null;
+  
+  // Filtra e processa os posts do usuário atual
+  const userPostsRaw = user
+    ? posts.filter((p) => String(p.usuarioId || p.userId) === String(userIdKey))
+    : [];
+  
+  /**
+   * @type {Array<object>} Lista de posts do usuário processada para uso no PostCard.
+   */
+  const userPosts = userPostsRaw
+  .map((p) => {
+    const isTexto = p.tipo === "texto" || p.tipo === "letra";
+    const isMusica = p.tipo === "musica";
+    const isImagem = p.tipo === "visual";
 
-    // ✅ CORREÇÃO: Construir mediaSrc usando mediaPath
-    const API_URL = import.meta?.env?.VITE_API_URL ||
-  (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL) ||
-  'http://localhost:5000';
-    let mediaSrc = undefined;
-    if ((isMusica || isImagem) && p.mediaPath) {
-      const normalizedPath = p.mediaPath.replace(/\\/g, '/');
-      mediaSrc = `${API_URL}/${normalizedPath}`;
-    }
+    // ✅ CORREÇÃO: Construir mediaSrc usando mediaPath
+    const API_URL = import.meta?.env?.VITE_API_URL ||
+  (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL) ||
+  'http://localhost:5000';
+    let mediaSrc = undefined;
+    if ((isMusica || isImagem) && p.mediaPath) {
+      const normalizedPath = p.mediaPath.replace(/\\/g, '/');
+      mediaSrc = `${API_URL}/${normalizedPath}`;
+    }
 
-    const base = {
-      ...p,
-      time: new Date(p.data).toLocaleString("pt-BR"),
-      mediaType: isMusica ? "audio" : isImagem ? "image" : isTexto ? "text" : undefined,
-      mediaSrc: mediaSrc,  // ✅ CORRIGIDO
-      mediaAlt: p.titulo || "Mídia do post",
-      authorName: user?.nome || user?.username || "Usuário",
-      authorUsername: user?.username || "",
-      authorPhoto: user?.fotoPerfil || null,
-    };
+    /** @type {object} Objeto base do post formatado. */
+    const base = {
+      ...p,
+      time: new Date(p.data).toLocaleString("pt-BR"),
+      mediaType: isMusica ? "audio" : isImagem ? "image" : isTexto ? "text" : undefined,
+      mediaSrc: mediaSrc,  // ✅ CORRIGIDO
+      mediaAlt: p.titulo || "Mídia do post",
+      authorName: user?.nome || user?.username || "Usuário",
+      authorUsername: user?.username || "",
+      authorPhoto: user?.fotoPerfil || null,
+    };
 
-    if (isTexto) {
-      return {
-        ...base,
-        content: p.titulo || "",
-        texto: p.texto ?? p.conteudo ?? "",
-      };
-    }
+    if (isTexto) {
+      return {
+        ...base,
+        content: p.titulo || "",
+        texto: p.texto ?? p.conteudo ?? "",
+      };
+    }
 
-    const content = p.titulo
-      ? p.titulo
-      : (isMusica || isImagem)
-        ? (p.conteudo || "")
-        : "";
+    const content = p.titulo
+      ? p.titulo
+      : (isMusica || isImagem)
+        ? (p.conteudo || "")
+        : "";
 
-    return {
-      ...base,
-      content,
-      texto: p.texto ?? "",
-    };
-  })
-  .sort((a, b) => new Date(b.data) - new Date(a.data));
+    return {
+      ...base,
+      content,
+      texto: p.texto ?? "",
+    };
+  })
+  .sort((a, b) => new Date(b.data) - new Date(a.data));
 
-  const handleMonetizeClick = (uname) => {
-    setMonetizationUsername(uname || username);
-    setShowMonetization(true);
-    document.body.style.overflow = "hidden";
-  };
-  
-  const handleCloseMonetization = () => {
-    setShowMonetization(false);
-    document.body.style.overflow = "";
-  };
+  /**
+   * @function handleMonetizeClick
+   * @description Abre o popup de monetização para o usuário do perfil.
+   * @param {string} uname O nome de usuário para o qual a doação será direcionada.
+   */
+  const handleMonetizeClick = (uname) => {
+    setMonetizationUsername(uname || username);
+    setShowMonetization(true);
+    document.body.style.overflow = "hidden";
+  };
+  
+  /**
+   * @function handleCloseMonetization
+   * @description Fecha o popup de monetização e restaura o scroll do body.
+   */
+  const handleCloseMonetization = () => {
+    setShowMonetization(false);
+    document.body.style.overflow = "";
+  };
 
-  const handleCommentClick = (postId) => {
-    setCurrentPostIdForComments(postId);
-    setShowComments(true);
-    document.body.style.overflow = "hidden";
-  };
-  
-  const handleCloseComments = () => {
-    setShowComments(false);
-    setCurrentPostIdForComments(null);
-    document.body.style.overflow = "";
-  };
+  /**
+   * @function handleCommentClick
+   * @description Abre o popup de comentários para um post específico.
+   * @param {string|number} postId O ID do post a ser comentado.
+   */
+  const handleCommentClick = (postId) => {
+    setCurrentPostIdForComments(postId);
+    setShowComments(true);
+    document.body.style.overflow = "hidden";
+  };
+  
+  /**
+   * @function handleCloseComments
+   * @description Fecha o popup de comentários e restaura o scroll do body.
+   */
+  const handleCloseComments = () => {
+    setShowComments(false);
+    setCurrentPostIdForComments(null);
+    document.body.style.overflow = "";
+  };
 
-  const handleShowFollowers = async () => {
-    if (!userIdKey) return;
-    
-    try {
-      const result = await dispatch(fetchFollowersList(userIdKey)).unwrap();
-      setFollowersList(result.followers || []);
-      setShowFollowers(true);
-      document.body.style.overflow = "hidden";
-    } catch (error) {
-      console.error("Erro ao carregar seguidores:", error);
-      setFollowersList([]);
-      setShowFollowers(true);
-    }
-  };
+  /**
+   * @function handleShowFollowers
+   * @description Busca e exibe a lista de seguidores do usuário em um popup.
+   */
+  const handleShowFollowers = async () => {
+    if (!userIdKey) return;
+    
+    try {
+      const result = await dispatch(fetchFollowersList(userIdKey)).unwrap();
+      setFollowersList(result.followers || []);
+      setShowFollowers(true);
+      document.body.style.overflow = "hidden";
+    } catch (error) {
+      console.error("Erro ao carregar seguidores:", error);
+      setFollowersList([]);
+      setShowFollowers(true);
+    }
+  };
 
-  const handleShowFollowing = async () => {
-    if (!userIdKey) return;
-    
-    try {
-      const result = await dispatch(fetchFollowingList(userIdKey)).unwrap();
-      setFollowingList(result.following || []);
-      setShowFollowing(true);
-      document.body.style.overflow = "hidden";
-    } catch (error) {
-      console.error("Erro ao carregar seguindo:", error);
-      setFollowingList([]);
-      setShowFollowing(true);
-    }
-  };
+  /**
+   * @function handleShowFollowing
+   * @description Busca e exibe a lista de usuários que o usuário do perfil está seguindo em um popup.
+   */
+  const handleShowFollowing = async () => {
+    if (!userIdKey) return;
+    
+    try {
+      const result = await dispatch(fetchFollowingList(userIdKey)).unwrap();
+      setFollowingList(result.following || []);
+      setShowFollowing(true);
+      document.body.style.overflow = "hidden";
+    } catch (error) {
+      console.error("Erro ao carregar seguindo:", error);
+      setFollowingList([]);
+      setShowFollowing(true);
+    }
+  };
 
-  const handleCloseFollowers = () => {
-    setShowFollowers(false);
-    document.body.style.overflow = "";
-  };
+  /**
+   * @function handleCloseFollowers
+   * @description Fecha o popup de lista de seguidores e restaura o scroll do body.
+   */
+  const handleCloseFollowers = () => {
+    setShowFollowers(false);
+    document.body.style.overflow = "";
+  };
 
-  const handleCloseFollowing = () => {
-    setShowFollowing(false);
-    document.body.style.overflow = "";
-  };
+  /**
+   * @function handleCloseFollowing
+   * @description Fecha o popup de lista de seguindo e restaura o scroll do body.
+   */
+  const handleCloseFollowing = () => {
+    setShowFollowing(false);
+    document.body.style.overflow = "";
+  };
 
-  // ✅ FUNÇÃO CORRIGIDA - Iniciar edição
-  const handleEditClick = (post) => {
-    const postId = post._id || post.id;
-    setEditingPost(postId);
-    
-    // ✅ BUSCA O TEXTO E TÍTULO CORRETO DEPENDENDO DO TIPO DE POST
-    let textToEdit = '';
-    let titleToEdit = '';
-    
-    if (post.tipo === 'texto' || post.tipo === 'letra') {
-      // Para posts de texto, usa o campo 'texto' ou 'conteudo' + título separado
-      titleToEdit = post.titulo || '';
-      textToEdit = post.texto || post.conteudo || post.content || '';
-    } else if (post.tipo === 'musica' || post.tipo === 'visual') {
-      // Para posts de mídia, usa o 'titulo'
-      textToEdit = post.titulo || post.content || '';
-    } else {
-      // Fallback
-      textToEdit = post.content || post.texto || post.titulo || '';
-    }
-    
-    console.log('📝 Iniciando edição:', {
-      postId,
-      tipo: post.tipo,
-      tituloParaEditar: titleToEdit,
-      textoParaEditar: textToEdit
-    });
-    
-    setEditText(textToEdit);
-    setEditTitle(titleToEdit);
-  };
+  // ✅ FUNÇÃO CORRIGIDA - Iniciar edição
+  /**
+   * @function handleEditClick
+   * @description Inicia o modo de edição para um post, preenchendo os campos de estado `editText` e `editTitle` corretamente com base no tipo de post.
+   * @param {object} post O objeto de postagem a ser editado.
+   */
+  const handleEditClick = (post) => {
+    const postId = post._id || post.id;
+    setEditingPost(postId);
+    
+    // ✅ BUSCA O TEXTO E TÍTULO CORRETO DEPENDENDO DO TIPO DE POST
+    let textToEdit = '';
+    let titleToEdit = '';
+    
+    if (post.tipo === 'texto' || post.tipo === 'letra') {
+      // Para posts de texto, usa o campo 'texto' ou 'conteudo' + título separado
+      titleToEdit = post.titulo || '';
+      textToEdit = post.texto || post.conteudo || post.content || '';
+    } else if (post.tipo === 'musica' || post.tipo === 'visual') {
+      // Para posts de mídia, usa o 'titulo' (que funciona como a descrição/legenda)
+      textToEdit = post.titulo || post.content || '';
+    } else {
+      // Fallback
+      textToEdit = post.content || post.texto || post.titulo || '';
+    }
+    
+    console.log('📝 Iniciando edição:', {
+      postId,
+      tipo: post.tipo,
+      tituloParaEditar: titleToEdit,
+      textoParaEditar: textToEdit
+    });
+    
+    setEditText(textToEdit);
+    setEditTitle(titleToEdit);
+  };
 
-  // ✅ FUNÇÃO CORRIGIDA - Salvar edição usando Redux
-  const handleSaveEdit = async (postId) => {
-    try {
-      // Busca o post original
-      const postToUpdate = posts.find(p => String(p._id || p.id) === String(postId));
-      
-      if (!postToUpdate) {
-        console.error('Post não encontrado para edição');
-        alert('Post não encontrado');
-        return;
-      }
+  // ✅ FUNÇÃO CORRIGIDA - Salvar edição usando Redux
+  /**
+   * @function handleSaveEdit
+   * @description Salva as edições de um post, enviando a atualização para o backend via Redux.
+   * Os campos de atualização são formatados corretamente com base no tipo de postagem.
+   * @param {string|number} postId O ID do post a ser atualizado.
+   */
+  const handleSaveEdit = async (postId) => {
+    try {
+      // Busca o post original
+      const postToUpdate = posts.find(p => String(p._id || p.id) === String(postId));
+      
+      if (!postToUpdate) {
+        console.error('Post não encontrado para edição');
+        alert('Post não encontrado');
+        return;
+      }
 
-      // Validação específica para posts de texto
-      if (postToUpdate.tipo === 'texto' || postToUpdate.tipo === 'letra') {
-        if (!editTitle.trim() || !editText.trim()) {
-          alert('Título e letra não podem estar vazios!');
-          return;
-        }
-      } else {
-        if (!editText.trim()) {
-          alert('O texto não pode estar vazio!');
-          return;
-        }
-      }
+      // Validação específica para posts de texto
+      if (postToUpdate.tipo === 'texto' || postToUpdate.tipo === 'letra') {
+        if (!editTitle.trim() || !editText.trim()) {
+          alert('Título e letra não podem estar vazios!');
+          return;
+        }
+      } else {
+        if (!editText.trim()) {
+          alert('O texto não pode estar vazio!');
+          return;
+        }
+      }
 
-      // ✅ PREPARA OS DADOS CORRETAMENTE BASEADO NO TIPO
-      let updateData = {};
-      
-      if (postToUpdate.tipo === 'texto' || postToUpdate.tipo === 'letra') {
-        // Para posts de texto, atualiza 'conteudo' e 'titulo' separadamente
-        updateData = {
-          titulo: editTitle.trim(),
-          conteudo: editText.trim(),
-        };
-      } else if (postToUpdate.tipo === 'musica' || postToUpdate.tipo === 'visual') {
-        // Para posts de mídia, atualiza apenas o 'titulo' (descrição)
-        updateData = {
-          titulo: editText.trim(),
-        };
-      } else {
-        // Fallback
-        updateData = {
-          conteudo: editText.trim(),
-          titulo: editText.trim().substring(0, 100),
-        };
-      }
+      // ✅ PREPARA OS DADOS CORRETAMENTE BASEADO NO TIPO
+      /** @type {object} Dados a serem enviados para o backend. */
+      let updateData = {};
+      
+      if (postToUpdate.tipo === 'texto' || postToUpdate.tipo === 'letra') {
+        // Para posts de texto, atualiza 'conteudo' e 'titulo' separadamente
+        updateData = {
+          titulo: editTitle.trim(),
+          conteudo: editText.trim(),
+        };
+      } else if (postToUpdate.tipo === 'musica' || postToUpdate.tipo === 'visual') {
+        // Para posts de mídia, atualiza apenas o 'titulo' (descrição/legenda)
+        updateData = {
+          titulo: editText.trim(),
+        };
+      } else {
+        // Fallback
+        updateData = {
+          conteudo: editText.trim(),
+          titulo: editText.trim().substring(0, 100),
+        };
+      }
 
-      console.log('💾 Salvando edição:', {
-        postId,
-        tipo: postToUpdate.tipo,
-        updateData
-      });
+      console.log('💾 Salvando edição:', {
+        postId,
+        tipo: postToUpdate.tipo,
+        updateData
+      });
 
-      // ✅ USA O REDUX ACTION updatePost
-      await dispatch(updatePost({ 
-        id: postId, 
-        data: updateData 
-      })).unwrap();
+      // ✅ USA O REDUX ACTION updatePost
+      await dispatch(updatePost({ 
+        id: postId, 
+        data: updateData 
+      })).unwrap();
 
-      // ✅ LIMPA O ESTADO DE EDIÇÃO
-      setEditingPost(null);
-      setEditText('');
-      setEditTitle('');
+      // ✅ LIMPA O ESTADO DE EDIÇÃO
+      setEditingPost(null);
+      setEditText('');
+      setEditTitle('');
 
-      console.log('✅ Post editado com sucesso!');
-      
-    } catch (error) {
-      console.error('❌ Erro ao editar post:', error);
-      alert('Erro ao salvar a edição. Verifique o console para mais detalhes.');
-    }
-  };
+      console.log('✅ Post editado com sucesso!');
+      
+    } catch (error) {
+      console.error('❌ Erro ao editar post:', error);
+      alert('Erro ao salvar a edição. Verifique o console para mais detalhes.');
+    }
+  };
 
-  // ✅ FUNÇÃO CORRIGIDA - Cancelar edição
-  const handleCancelEdit = () => {
-    setEditingPost(null);
-    setEditText('');
-    setEditTitle('');
-  };
+  // ✅ FUNÇÃO CORRIGIDA - Cancelar edição
+  /**
+   * @function handleCancelEdit
+   * @description Cancela o modo de edição, limpando os estados de edição.
+   */
+  const handleCancelEdit = () => {
+    setEditingPost(null);
+    setEditText('');
+    setEditTitle('');
+  };
 
-  return (
-    <>
-      <BackButton/>
-      <div className="container-fluid">
-        <div className="row justify-content-center">
-          <div className="col-12">
-            <div className="profile-container profile-shell glass-header" key={`profile-${username}`}>
-              {(ready && usuarios.length > 0 && !user) ? (
-                <div className="container-fluid text-center py-5">
-                  <h2>Usuário "{username}" não encontrado 😢</h2>
-                  <button className="btn btn-primary mt-3" onClick={() => navigate(-1)}>
-                    Voltar
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="profile-header position-relative profile-header-glass banner-narrow">
-                    {user?.username === currentUser?.username && (
-                      <button className="lapis" onClick={handleEditProfile} title="Editar perfil">
-                        <i className="fa-solid fa-pencil fa-lg" style={{ color: "#ffffff" }} />
-                      </button>
-                    )}
+  return (
+    <>
+      <BackButton/>
+      <div className="container-fluid">
+        <div className="row justify-content-center">
+          <div className="col-12">
+            <div className="profile-container profile-shell glass-header" key={`profile-${username}`}>
+              {(ready && usuarios.length > 0 && !user) ? (
+                <div className="container-fluid text-center py-5">
+                  <h2>Usuário "{username}" não encontrado 😢</h2>
+                  <button className="btn btn-primary mt-3" onClick={() => navigate(-1)}>
+                    Voltar
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="profile-header position-relative profile-header-glass banner-narrow">
+                    {user?.username === currentUser?.username && (
+                      <button className="lapis" onClick={handleEditProfile} title="Editar perfil">
+                        <i className="fa-solid fa-pencil fa-lg" style={{ color: "#ffffff" }} />
+                      </button>
+                    )}
 
-                    <div className="profile-picture-container avatar-wrap">
-                      {profilePhoto ? (
-                        <img
-                          src={profilePhoto}
-                          alt="Foto de perfil"
-                          className="profile-picture rounded-circle avatar-photo"
-                        />
-                      ) : (
-                        <div className="avatar-fallback rounded-circle">
-                          <i className="fas fa-user" />
-                        </div>
-                      )}
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="file-input"
-                        accept="image/*"
-                        onChange={handlePhotoChange}
-                        style={{ display: "none" }}
-                      />
-                    </div>
+                    <div className="profile-picture-container avatar-wrap">
+                      {profilePhoto ? (
+                        <img
+                          src={profilePhoto}
+                          alt="Foto de perfil"
+                          className="profile-picture rounded-circle avatar-photo"
+                        />
+                      ) : (
+                        <div className="avatar-fallback rounded-circle">
+                          <i className="fas fa-user" />
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="file-input"
+                        accept="image/*"
+                        onChange={handlePhotoChange}
+                        style={{ display: "none" }}
+                      />
+                    </div>
 
-                    <h1 className="profile-name">{user?.name || user?.username}</h1>
-                    <div className="profile-username subtle-username">@{user?.username}</div>
+                    <h1 className="profile-name">{user?.nome || user?.username}</h1>
+                    <div className="profile-username subtle-username">@{user?.username}</div>
 
-                    <div className="profile-stats">
-                      <div className="stat clickable-stat" onClick={handleShowFollowers}>
-                        <div className="stat-number">{followersCount}</div>
-                        <div className="stat-label">Seguidores</div>
-                      </div>
-                      <div className="stat clickable-stat" onClick={handleShowFollowing}>
-                        <div className="stat-number">{followingCount}</div>
-                        <div className="stat-label">Seguindo</div>
-                      </div>
-                    </div>
+                    <div className="profile-stats">
+                      <div className="stat clickable-stat" onClick={handleShowFollowers}>
+                        <div className="stat-number">{followersCount}</div>
+                        <div className="stat-label">Seguidores</div>
+                      </div>
+                      <div className="stat clickable-stat" onClick={handleShowFollowing}>
+                        <div className="stat-number">{followingCount}</div>
+                        <div className="stat-label">Seguindo</div>
+                      </div>
+                    </div>
 
-                    {(user?.bio || user?.generosMusicais || user?.estilosArte) && (
-                      <div className="about-wrap banner-narrow">
-                        {user?.bio && (
-                          <div className="about-card fade-in-up" style={{ animationDelay: '0ms' }}>
-                            <div className="about-icon"><i className="fas fa-quote-left" /></div>
-                            <div className="about-content">
-                              <div className="about-title">Bio</div>
-                              <div className="about-text">{user.bio}</div>
-                            </div>
-                          </div>
-                        )}
-                        {user?.generosMusicais && (
-                          <div className="about-card fade-in-up" style={{ animationDelay: '80ms' }}>
-                            <div className="about-icon"><i className="fas fa-music" /></div>
-                            <div className="about-content">
-                              <div className="about-title">Gêneros de interesse</div>
-                              <div className="about-chips">
-                                {String(user.generosMusicais).split(/[;,/|]+|\s*,\s*/).filter(Boolean).map((g, i) => (
-                                  <span key={i} className="chip">{g.trim()}</span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        {user?.estilosArte && (
-                          <div className="about-card fade-in-up" style={{ animationDelay: '160ms' }}>
-                            <div className="about-icon"><i className="fas fa-palette" /></div>
-                            <div className="about-content">
-                              <div className="about-title">Estilos de arte</div>
-                              <div className="about-chips">
-                                {String(user.estilosArte).split(/[;,/|]+|\s*,\s*/).filter(Boolean).map((e, i) => (
-                                  <span key={i} className="chip">{e.trim()}</span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                    {(user?.bio || user?.generosMusicais || user?.estilosArte) && (
+                      <div className="about-wrap banner-narrow">
+                        {user?.bio && (
+                          <div className="about-card fade-in-up" style={{ animationDelay: '0ms' }}>
+                            <div className="about-icon"><i className="fas fa-quote-left" /></div>
+                            <div className="about-content">
+                              <div className="about-title">Bio</div>
+                              <div className="about-text">{user.bio}</div>
+                            </div>
+                          </div>
+                        )}
+                        {user?.generosMusicais && (
+                          <div className="about-card fade-in-up" style={{ animationDelay: '80ms' }}>
+                            <div className="about-icon"><i className="fas fa-music" /></div>
+                            <div className="about-content">
+                              <div className="about-title">Gêneros de interesse</div>
+                              <div className="about-chips">
+                                {String(user.generosMusicais).split(/[;,/|]+|\s*,\s*/).filter(Boolean).map((g, i) => (
+                                  <span key={i} className="chip">{g.trim()}</span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {user?.estilosArte && (
+                          <div className="about-card fade-in-up" style={{ animationDelay: '160ms' }}>
+                            <div className="about-icon"><i className="fas fa-palette" /></div>
+                            <div className="about-content">
+                              <div className="about-title">Estilos de arte</div>
+                              <div className="about-chips">
+                                {String(user.estilosArte).split(/[;,/|]+|\s*,\s*/).filter(Boolean).map((e, i) => (
+                                  <span key={i} className="chip">{e.trim()}</span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
-                  <div className="posts-container posts-feed">
-                    {userPosts.length === 0 ? (
-                      <div className="card text-center text-muted py-5 empty-card">
-                        <i className="fas fa-images display-4 mb-3"></i>
-                        <p className="mb-0">Nenhuma publicação ainda.</p>
-                      </div>
-                    ) : (
-                      userPosts.map((p) => {
-                        const postId = p._id || p.id;
-                        return (
-                          <div key={postId} className="mb-3">
-                            <PostCard
-                              post={p}
-                              onMonetizeClick={handleMonetizeClick}
-                              onCommentClick={handleCommentClick}
-                              onEditClick={handleEditClick}
-                              onSaveEdit={handleSaveEdit}
-                              onCancelEdit={handleCancelEdit}
-                              isEditing={editingPost === postId}
-                              editText={editText}
-                              editTitle={editTitle}
-                              onEditTextChange={setEditText}
-                              onEditTitleChange={setEditTitle}
-                              isOwnProfile={isOwnProfile}
-                            />
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+                  <div className="posts-container posts-feed">
+                    {userPosts.length === 0 ? (
+                      <div className="card text-center text-muted py-5 empty-card">
+                        <i className="fas fa-images display-4 mb-3"></i>
+                        <p className="mb-0">Nenhuma publicação ainda.</p>
+                      </div>
+                    ) : (
+                      userPosts.map((p) => {
+                        const postId = p._id || p.id;
+                        return (
+                          <div key={postId} className="mb-3">
+                            <PostCard
+                              post={p}
+                              onMonetizeClick={handleMonetizeClick}
+                              onCommentClick={handleCommentClick}
+                              onEditClick={handleEditClick}
+                              onSaveEdit={handleSaveEdit}
+                              onCancelEdit={handleCancelEdit}
+                              isEditing={editingPost === postId}
+                              editText={editText}
+                              editTitle={editTitle}
+                              onEditTextChange={setEditText}
+                              onEditTitleChange={setEditTitle}
+                              isOwnProfile={isOwnProfile}
+                            />
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <MonetizationPopup
-        show={showMonetization}
-        onClose={handleCloseMonetization}
-        username={monetizationUsername}
-      />
-      <CommentsPopup
-        show={showComments}
-        onClose={handleCloseComments}
-        postId={currentPostIdForComments}
-      />
+      <MonetizationPopup
+        show={showMonetization}
+        onClose={handleCloseMonetization}
+        username={monetizationUsername}
+      />
+      <CommentsPopup
+        show={showComments}
+        onClose={handleCloseComments}
+        postId={currentPostIdForComments}
+      />
 
-      <FloatingActionButton />
+      <FloatingActionButton />
 
-      {showFollowers && (
-        <div className="custom-popup-overlay" onClick={handleCloseFollowers}>
-          <div className="custom-popup-content" onClick={(e) => e.stopPropagation()}>
-            <div className="popup-header">
-              <h3>Seguidores</h3>
-              <button className="popup-close-btn" onClick={handleCloseFollowers}>
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="popup-body">
-              {followersList.length === 0 ? (
-                <div className="empty-list-message">
-                  <i className="fas fa-users" style={{fontSize: '3rem', opacity: 0.5, marginBottom: '1rem'}}></i>
-                  <p>Nenhum seguidor ainda</p>
-                </div>
-              ) : (
-                <div className="users-list">
-                  {followersList.map((follower) => (
-                    <div key={follower._id} className="user-list-item">
-                      <div className="user-avatar-small">
-                        {follower.fotoPerfil ? (
-                          <img src={follower.fotoPerfil} alt={follower.nome} />
-                        ) : (
-                          <i className="fas fa-user"></i>
-                        )}
-                      </div>
-                      <div className="user-info-small">
-                        <div className="user-name">{follower.nome}</div>
-                        <div className="user-username">@{follower.username}</div>
-                      </div>
-                      <button 
-                        className="btn btn-sm view-profile-btn"
-                        onClick={() => {
-                          handleCloseFollowers();
-                          navigate(`/user/${follower.username}`);
-                        }}
-                      >
-                        Ver Perfil
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {showFollowers && (
+        <div className="custom-popup-overlay" onClick={handleCloseFollowers}>
+          <div className="custom-popup-content" onClick={(e) => e.stopPropagation()}>
+            <div className="popup-header">
+              <h3>Seguidores</h3>
+              <button className="popup-close-btn" onClick={handleCloseFollowers}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="popup-body">
+              {followersList.length === 0 ? (
+                <div className="empty-list-message">
+                  <i className="fas fa-users" style={{fontSize: '3rem', opacity: 0.5, marginBottom: '1rem'}}></i>
+                  <p>Nenhum seguidor ainda</p>
+                </div>
+              ) : (
+                <div className="users-list">
+                  {followersList.map((follower) => (
+                    <div key={follower._id} className="user-list-item">
+                      <div className="user-avatar-small">
+                        {follower.fotoPerfil ? (
+                          <img src={follower.fotoPerfil} alt={follower.nome} />
+                        ) : (
+                          <i className="fas fa-user"></i>
+                        )}
+                      </div>
+                      <div className="user-info-small">
+                        <div className="user-name">{follower.nome}</div>
+                        <div className="user-username">@{follower.username}</div>
+                      </div>
+                      <button 
+                        className="btn btn-sm view-profile-btn"
+                        onClick={() => {
+                          handleCloseFollowers();
+                          navigate(`/user/${follower.username}`);
+                        }}
+                      >
+                        Ver Perfil
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
-      {showFollowing && (
-        <div className="custom-popup-overlay" onClick={handleCloseFollowing}>
-          <div className="custom-popup-content" onClick={(e) => e.stopPropagation()}>
-            <div className="popup-header">
-              <h3>Seguindo</h3>
-              <button className="popup-close-btn" onClick={handleCloseFollowing}>
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="popup-body">
-              {followingList.length === 0 ? (
-                <div className="empty-list-message">
-                  <i className="fas fa-user-plus" style={{fontSize: '3rem', opacity: 0.5, marginBottom: '1rem'}}></i>
-                  <p>Não está seguindo ninguém ainda</p>
-                </div>
-              ) : (
-                <div className="users-list">
-                  {followingList.map((following) => (
-                    <div key={following._id} className="user-list-item">
-                      <div className="user-avatar-small">
-                        {following.fotoPerfil ? (
-                          <img src={following.fotoPerfil} alt={following.nome} />
-                        ) : (
-                          <i className="fas fa-user"></i>
-                        )}
-                      </div>
-                      <div className="user-info-small">
-                        <div className="user-name">{following.nome}</div>
-                        <div className="user-username">@{following.username}</div>
-                      </div>
-                      <button 
-                        className="btn btn-sm view-profile-btn"
-                        onClick={() => {
-                          handleCloseFollowing();
-                          navigate(`/user/${following.username}`);
-                        }}
-                      >
-                        Ver Perfil
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {showFollowing && (
+        <div className="custom-popup-overlay" onClick={handleCloseFollowing}>
+          <div className="custom-popup-content" onClick={(e) => e.stopPropagation()}>
+            <div className="popup-header">
+              <h3>Seguindo</h3>
+              <button className="popup-close-btn" onClick={handleCloseFollowing}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="popup-body">
+              {followingList.length === 0 ? (
+                <div className="empty-list-message">
+                  <i className="fas fa-user-plus" style={{fontSize: '3rem', opacity: 0.5, marginBottom: '1rem'}}></i>
+                  <p>Não está seguindo ninguém ainda</p>
+                </div>
+              ) : (
+                <div className="users-list">
+                  {followingList.map((following) => (
+                    <div key={following._id} className="user-list-item">
+                      <div className="user-avatar-small">
+                        {following.fotoPerfil ? (
+                          <img src={following.fotoPerfil} alt={following.nome} />
+                        ) : (
+                          <i className="fas fa-user"></i>
+                        )}
+                      </div>
+                      <div className="user-info-small">
+                        <div className="user-name">{following.nome}</div>
+                        <div className="user-username">@{following.username}</div>
+                      </div>
+                      <button 
+                        className="btn btn-sm view-profile-btn"
+                        onClick={() => {
+                          handleCloseFollowing();
+                          navigate(`/user/${following.username}`);
+                        }}
+                      >
+                        Ver Perfil
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
-      <style>{`
-        .lapis{
-          border: none;
-          background: none;
-          padding-left: 16px;
-        }
-        @media (max-width: 768px) {
-          .lapis {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            left: auto;
-            padding-left: 0;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            z-index: 10;
-          }
-          .lapis:hover {
-            transform: scale(1.1);
-          }
-          .lapis i {
-            font-size: 18px !important;
-          }
-        }
-        .banner-narrow {
-          max-width: clamp(640px, 88vw, 840px);
-          width: 100%;
-          margin: 0 auto;
-          padding-left: 16px;
-          padding-right: 16px;
-        }
-        .glass-header .profile-header-glass {
-          position: relative;
-          background: rgba(255,255,255,.10);
-          border: 1px solid rgba(255,255,255,.14);
-          border-radius: 20px;
-          padding: 24px 16px 16px;
-          box-shadow: 0 12px 26px rgba(0,0,0,.18);
-          backdrop-filter: blur(10px) saturate(1.05);
-        }
-        .avatar-wrap {
-          width: 112px; height: 112px; margin: 0 auto 12px; position: relative;
-          border-radius: 999px; padding: 4px;
-          background: linear-gradient(135deg, rgba(106,90,224,.55), rgba(140,127,242,.45));
-          box-shadow: 0 10px 24px rgba(106,90,224,.28);
-        }
-        .avatar-photo {
-          width: 100%; height: 100%; object-fit: cover; display: block;
-          border: 3px solid rgba(255,255,255,.75);
-        }
-        .avatar-fallback {
-          width: 100%; height: 100%; display: grid; place-items: center; color: #fff;
-          background: linear-gradient(135deg, var(--roxo, #6a5ae0), #8c7ff2);
-          font-size: 42px; box-shadow: inset 0 0 30px rgba(0,0,0,.18);
-          border: 3px solid rgba(255,255,255,.75);
-        }
-        .profile-name {
-          text-align: center; margin: 10px 0 2px;
-          color: var(--text-color, #f3f5ff);
-          text-shadow: 0 2px 14px rgba(0,0,0,.25);
-        }
-        .subtle-username {
-          text-align: center; color: rgba(255,255,255,.85);
-          font-weight: 500; letter-spacing: .2px; margin-bottom: 10px;
-          text-shadow: 0 1px 10px rgba(0,0,0,.22);
-        }
-        .profile-stats {
-          display: grid; grid-auto-flow: column; justify-content: center; gap: 24px;
-          margin: 8px 0 2px;
-        }
-        .stat { text-align: center; }
-        .stat-number {
-          font-size: 20px; font-weight: 700; color: #fff;
-          text-shadow: 0 2px 12px rgba(0,0,0,.25);
-        }
-        .stat-label { color: rgba(255,255,255,.8); font-size: 13px; }
-        .empty-card {
-          background: rgba(255,255,255,.08);
-          border: 1px solid rgba(255,255,255,.14);
-          border-radius: 16px;
-          backdrop-filter: blur(6px);
-          margin-top: 10px;
-        }
-        .clickable-stat {
-          cursor: pointer;
-          transition: all 0.2s ease;
-          padding: 8px 12px;
-          border-radius: 12px;
-        }
-        .clickable-stat:hover {
-          background: rgba(255, 255, 255, 0.1);
-          transform: translateY(-2px);
-        }
-        .about-wrap{
-          display: grid;
-          gap: 12px;
-          margin-top: 14px;
-        }
-        .about-card{
-          display: grid; grid-template-columns: 44px 1fr; gap: 12px;
-          background: rgba(255,255,255,.07);
-          border: 1px solid rgba(255,255,255,.14);
-          border-radius: 14px;
-          padding: 12px;
-          box-shadow: 0 8px 20px rgba(0,0,0,.18);
-          backdrop-filter: blur(8px);
-          transform: translateY(8px);
-          opacity: 0;
-        }
-        .fade-in-up{
-          animation: fadeInUp .5s ease forwards;
-        }
-        @keyframes fadeInUp{
-          to { transform: translateY(0); opacity: 1; }
-        }
-        .about-icon{
-          width: 44px; height: 44px; border-radius: 12px;
-          display: grid; place-items: center;
-          background: linear-gradient(135deg, rgba(106,90,224,.6), rgba(140,127,242,.45));
-          color: #fff; font-size: 18px;
-          box-shadow: 0 6px 16px rgba(106,90,224,.35);
-        }
-        .about-content{}
-        .about-title{
-          font-size: 13px; letter-spacing: .3px; text-transform: uppercase;
-          color: rgba(255,255,255,.85); margin-bottom: 4px;
-        }
-        .about-text{
-          color: #fff; line-height: 1.35;
-        }
-        .about-chips{
-          display: flex; flex-wrap: wrap; gap: 8px;
-        }
-        .chip{
-          display: inline-flex; align-items: center; gap: 6px;
-          padding: 6px 10px; border-radius: 999px;
-          background: rgba(106,90,224,.25);
-          border: 1px solid rgba(106,90,224,.45);
-          color: #fff; font-size: 12px; font-weight: 600;
-          box-shadow: 0 6px 16px rgba(106,90,224,.18);
-          transition: transform .15s ease;
-        }
-        .chip:hover{ transform: translateY(-1px); }
-        .custom-popup-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.7);
-          backdrop-filter: blur(8px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 9999;
-          padding: 20px;
-        }
-        .custom-popup-content {
-          background: linear-gradient(135deg, rgba(30, 30, 40, 0.95), rgba(40, 40, 60, 0.95));
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          border-radius: 20px;
-          width: 100%;
-          max-width: 500px;
-          max-height: 80vh;
-          overflow: hidden;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-          backdrop-filter: blur(20px);
-        }
-        .popup-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 20px 24px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .popup-header h3 {
-          margin: 0;
-          color: white;
-          font-weight: 600;
-        }
-        .popup-close-btn {
-          background: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          color: white;
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-        }
-        .popup-close-btn i { pointer-events: none; }
-        .popup-body {
-          padding: 16px;
-          overflow: auto;
-          max-height: calc(80vh - 110px);
-        }
-        .empty-list-message {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 28px 12px;
-          color: rgba(255,255,255,0.85);
-        }
-        .users-list {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-        .user-list-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 8px 10px;
-          border-radius: 12px;
-          background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(255,255,255,0.03);
-        }
-        .user-avatar-small {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          overflow: hidden;
-          display: grid;
-          place-items: center;
-          background: rgba(255,255,255,0.03);
-        }
-        .user-avatar-small img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-        .user-info-small { flex: 1; min-width: 0; }
-        .user-name {
-          color: #fff;
-          font-weight: 600;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .user-username {
-          color: rgba(255,255,255,0.7);
-          font-size: 13px;
-        }
-        .view-profile-btn {
-          background: rgba(255,255,255,0.06);
-          border: 1px solid rgba(255,255,255,0.08);
-          color: #fff;
-          padding: 6px 10px;
-          border-radius: 8px;
-          font-size: 13px;
-        }
-        @media (max-width: 420px) {
-          .custom-popup-content { max-width: 92%; border-radius: 14px; }
-          .user-list-item { padding: 8px; gap: 8px; }
-          .view-profile-btn { padding: 6px 8px; font-size: 12px; }
-          .profile-name { font-size: 18px; }
-        }
-      `}</style>
-    </>
-  );
+      <style>{`
+        .lapis{
+          border: none;
+          background: none;
+          padding-left: 16px;
+        }
+        @media (max-width: 768px) {
+          .lapis {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            left: auto;
+            padding-left: 0;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+          }
+          .lapis:hover {
+            transform: scale(1.1);
+          }
+          .lapis i {
+            font-size: 18px !important;
+          }
+        }
+        .banner-narrow {
+          max-width: clamp(640px, 88vw, 840px);
+          width: 100%;
+          margin: 0 auto;
+          padding-left: 16px;
+          padding-right: 16px;
+        }
+        .glass-header .profile-header-glass {
+          position: relative;
+          background: rgba(255,255,255,.10);
+          border: 1px solid rgba(255,255,255,.14);
+          border-radius: 20px;
+          padding: 24px 16px 16px;
+          box-shadow: 0 12px 26px rgba(0,0,0,.18);
+          backdrop-filter: blur(10px) saturate(1.05);
+        }
+        .avatar-wrap {
+          width: 112px; height: 112px; margin: 0 auto 12px; position: relative;
+          border-radius: 999px; padding: 4px;
+          background: linear-gradient(135deg, rgba(106,90,224,.55), rgba(140,127,242,.45));
+          box-shadow: 0 10px 24px rgba(106,90,224,.28);
+        }
+        .avatar-photo {
+          width: 100%; height: 100%; object-fit: cover; display: block;
+          border: 3px solid rgba(255,255,255,.75);
+        }
+        .avatar-fallback {
+          width: 100%; height: 100%; display: grid; place-items: center; color: #fff;
+          background: linear-gradient(135deg, var(--roxo, #6a5ae0), #8c7ff2);
+          font-size: 42px; box-shadow: inset 0 0 30px rgba(0,0,0,.18);
+          border: 3px solid rgba(255,255,255,.75);
+        }
+        .profile-name {
+          text-align: center; margin: 10px 0 2px;
+          color: var(--text-color, #f3f5ff);
+          text-shadow: 0 2px 14px rgba(0,0,0,.25);
+        }
+        .subtle-username {
+          text-align: center; color: rgba(255,255,255,.85);
+          font-weight: 500; letter-spacing: .2px; margin-bottom: 10px;
+          text-shadow: 0 1px 10px rgba(0,0,0,.22);
+        }
+        .profile-stats {
+          display: grid; grid-auto-flow: column; justify-content: center; gap: 24px;
+          margin: 8px 0 2px;
+        }
+        .stat { text-align: center; }
+        .stat-number {
+          font-size: 20px; font-weight: 700; color: #fff;
+          text-shadow: 0 2px 12px rgba(0,0,0,.25);
+        }
+        .stat-label { color: rgba(255,255,255,.8); font-size: 13px; }
+        .empty-card {
+          background: rgba(255,255,255,.08);
+          border: 1px solid rgba(255,255,255,.14);
+          border-radius: 16px;
+          backdrop-filter: blur(6px);
+          margin-top: 10px;
+        }
+        .clickable-stat {
+          cursor: pointer;
+          transition: all 0.2s ease;
+          padding: 8px 12px;
+          border-radius: 12px;
+        }
+        .clickable-stat:hover {
+          background: rgba(255, 255, 255, 0.1);
+          transform: translateY(-2px);
+        }
+        .about-wrap{
+          display: grid;
+          gap: 12px;
+          margin-top: 14px;
+        }
+        .about-card{
+          display: grid; grid-template-columns: 44px 1fr; gap: 12px;
+          background: rgba(255,255,255,.07);
+          border: 1px solid rgba(255,255,255,.14);
+          border-radius: 14px;
+          padding: 12px;
+          box-shadow: 0 8px 20px rgba(0,0,0,.18);
+          backdrop-filter: blur(8px);
+          transform: translateY(8px);
+          opacity: 0;
+        }
+        .fade-in-up{
+          animation: fadeInUp .5s ease forwards;
+        }
+        @keyframes fadeInUp{
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .about-icon{
+          width: 44px; height: 44px; border-radius: 12px;
+          display: grid; place-items: center;
+          background: linear-gradient(135deg, rgba(106,90,224,.6), rgba(140,127,242,.45));
+          color: #fff; font-size: 18px;
+          box-shadow: 0 6px 16px rgba(106,90,224,.35);
+        }
+        .about-content{}
+        .about-title{
+          font-size: 13px; letter-spacing: .3px; text-transform: uppercase;
+          color: rgba(255,255,255,.85); margin-bottom: 4px;
+        }
+        .about-text{
+          color: #fff; line-height: 1.35;
+        }
+        .about-chips{
+          display: flex; flex-wrap: wrap; gap: 8px;
+        }
+        .chip{
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 6px 10px; border-radius: 999px;
+          background: rgba(106,90,224,.25);
+          border: 1px solid rgba(106,90,224,.45);
+          color: #fff; font-size: 12px; font-weight: 600;
+          box-shadow: 0 6px 16px rgba(106,90,224,.18);
+          transition: transform .15s ease;
+        }
+        .chip:hover{ transform: translateY(-1px); }
+        .custom-popup-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(8px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          padding: 20px;
+        }
+        .custom-popup-content {
+          background: linear-gradient(135deg, rgba(30, 30, 40, 0.95), rgba(40, 40, 60, 0.95));
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 20px;
+          width: 100%;
+          max-width: 500px;
+          max-height: 80vh;
+          overflow: hidden;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(20px);
+        }
+        .popup-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px 24px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .popup-header h3 {
+          margin: 0;
+          color: white;
+          font-weight: 600;
+        }
+        .popup-close-btn {
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          color: white;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
+        .popup-close-btn i { pointer-events: none; }
+        .popup-body {
+          padding: 16px;
+          overflow: auto;
+          max-height: calc(80vh - 110px);
+        }
+        .empty-list-message {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 28px 12px;
+          color: rgba(255,255,255,0.85);
+        }
+        .users-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .user-list-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 8px 10px;
+          border-radius: 12px;
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.03);
+        }
+        .user-avatar-small {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          overflow: hidden;
+          display: grid;
+          place-items: center;
+          background: rgba(255,255,255,0.03);
+        }
+        .user-avatar-small img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .user-info-small { flex: 1; min-width: 0; }
+        .user-name {
+          color: #fff;
+          font-weight: 600;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .user-username {
+          color: rgba(255,255,255,0.7);
+          font-size: 13px;
+        }
+        .view-profile-btn {
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.08);
+          color: #fff;
+          padding: 6px 10px;
+          border-radius: 8px;
+          font-size: 13px;
+        }
+        @media (max-width: 420px) {
+          .custom-popup-content { max-width: 92%; border-radius: 14px; }
+          .user-list-item { padding: 8px; gap: 8px; }
+          .view-profile-btn { padding: 6px 8px; font-size: 12px; }
+          .profile-name { font-size: 18px; }
+        }
+      `}</style>
+    </>
+  );
 };
 
 export default UserProfile;
