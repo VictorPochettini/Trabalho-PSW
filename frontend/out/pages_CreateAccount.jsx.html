@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/CreateAccount.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/CreateAccount.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// CreateAccount.jsx
+import React, { useState, useEffect } from "react";
+import styles from "../css/Login.module.css";
+import botaoVolta from "../images/botaoVolta.png";
+import logo from "../images/ArtBeat_Branco.png";
+import olhoFechado from "../images/olhoFechadoRoxo.png";
+import olhoAberto from "../images/olhoAbertoRoxo.png";
+import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
+
+/**
+ * Componente simples para renderizar o botão de voltar/link para a página inicial.
+ * @returns {JSX.Element} O link do botão de voltar.
+ */
+const BackButton = () => (
+  &lt;Link to="/" className={styles.backButton} aria-label="Voltar para início">
+    &lt;img src={botaoVolta} alt="Voltar" />
+  &lt;/Link>
+);
+
+/**
+ * Página/Componente para Criação de Nova Conta de Usuário (Registro).
+ *
+ * Este componente gerencia os campos de entrada (nome, username, email, senha),
+ * a lógica de visibilidade da senha, a validação de que as senhas coincidem e
+ * a aceitação dos termos de uso. Ele interage com o endpoint de registro
+ * da API (`/api/auth/register`) para criar um novo usuário.
+ *
+ * @returns {JSX.Element} O formulário de criação de conta renderizado.
+ */
+export default function CriacaoConta() {
+  const [nome, setNome] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [confSenha, setConfSenha] = useState("");
+  /** @type {boolean} Controla a visibilidade dos campos de senha. */
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
+  /** @type {string} Mensagem de erro a ser exibida para o usuário. */
+  const [erro, setErro] = useState("");
+  /** @type {boolean} Indica se o usuário marcou a caixa de aceitação dos termos. */
+  const [aceitouTermos, setAceitouTermos] = useState(false);
+  /** @type {boolean} Indica se o formulário está atualmente submetendo dados (para desabilitar o botão). */
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  /** @type {boolean} Indica se a Senha e a Confirmação de Senha são iguais e não vazias. */
+  const senhasCoincidem = senha !== "" &amp;&amp; senha === confSenha;
+  /** @type {boolean} Condição final para permitir a submissão do formulário. */
+  const podeCriarConta = senhasCoincidem &amp;&amp; aceitouTermos;
+
+  /**
+   * @private
+   * Alterna a visibilidade dos campos de senha (troca entre "text" e "password").
+   * @returns {void}
+   */
+  const toggleSenha = () => setSenhaVisivel((prev) => !prev);
+
+  /**
+   * Handler de submissão do formulário.
+   *
+   * Realiza a validação final (senhas e termos), desabilita o formulário,
+   * envia os dados para a API de registro e, em caso de sucesso, redireciona
+   * para a página de login. Trata erros de validação do servidor (409/400) ou
+   * erros gerais.
+   *
+   * @async
+   * @private
+   * @param {React.FormEvent&lt;HTMLFormElement>} e Evento de submissão do formulário.
+   * @returns {Promise&lt;void>}
+   */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErro("");
+
+    if (!senhasCoincidem) {
+      setErro("As senhas não coincidem!");
+      return;
+    }
+
+    if (!aceitouTermos) {
+      setErro("Você precisa aceitar os termos para criar a conta.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Payload compatível com /api/auth/register (password em vez de 'senha')
+      const payload = {
+        name: nome,
+        username,
+        email,
+        password: senha,
+        // não enviar admin do front por segurança a menos que seu backend permita explicitamente
+      };
+
+      // rota recomendada para registro: /api/auth/register
+      await axios.post("http://localhost:5000/api/auth/register", payload);
+
+      // Redireciona para login após criação bem-sucedida
+      navigate("/login");
+    } catch (err) {
+      const serverMsg = err.response?.data;
+      if (err.response?.status === 409) {
+        setErro(serverMsg?.error || "Username ou email já cadastrado.");
+      } else if (err.response?.status === 400) {
+        const msgs = serverMsg?.messages || serverMsg?.error || serverMsg;
+        setErro(Array.isArray(msgs) ? msgs.join(", ") : String(msgs));
+      } else {
+        setErro("Erro ao cadastrar usuário. Tente novamente.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (senha &amp;&amp; confSenha &amp;&amp; senha !== confSenha) {
+      setErro("As senhas não coincidem!");
+    } else {
+      setErro("");
+    }
+  }, [senha, confSenha]);
+
+  return (
+    &lt;div className={styles.loginPage}>
+      &lt;BackButton />
+
+      &lt;div className={styles.container}>
+        &lt;img src={logo} alt="ART BEAT" className={styles.logo} />
+
+        &lt;h1 className={styles.fonteh1}>Criação de Conta&lt;/h1>
+
+        &lt;form className={styles.formContainer} onSubmit={handleSubmit}>
+          &lt;div className={styles.formGroup}>
+            &lt;label className={styles.fonte} htmlFor="nome">Nome:&lt;/label>
+            &lt;input
+              className={styles.input}
+              type="text"
+              id="nome"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="João da Silva"
+              required
+            />
+          &lt;/div>
+
+          &lt;div className={styles.formGroup}>
+            &lt;label className={styles.fonte} htmlFor="username">Username:&lt;/label>
+            &lt;input
+              className={styles.input}
+              type="text"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="joao_da_silva"
+              required
+            />
+          &lt;/div>
+
+          &lt;div className={styles.formGroup}>
+            &lt;label className={styles.fonte} htmlFor="email">Email:&lt;/label>
+            &lt;input
+              className={styles.input}
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="joaodasilva@gmail.com"
+              required
+            />
+          &lt;/div>
+
+          &lt;div className={styles.formGroup}>
+            &lt;label className={styles.fonte} htmlFor="senha">Senha:&lt;/label>
+            &lt;div className={styles.inputContainer}>
+              &lt;input
+                className={`${styles.input} ${erro ? styles.inputErro : ""}`}
+                type={senhaVisivel ? "text" : "password"}
+                id="senha"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                required
+              />
+              &lt;img
+                src={senhaVisivel ? olhoAberto : olhoFechado}
+                alt="visualizar senha"
+                className={styles.eyeIcon}
+                onClick={toggleSenha}
+              />
+            &lt;/div>
+          &lt;/div>
+
+          &lt;div className={styles.formGroup}>
+            &lt;label className={styles.fonte} htmlFor="confSenha">
+              Confirmação de Senha:
+            &lt;/label>
+            &lt;input
+              className={`${styles.input} ${erro ? styles.inputErro : ""}`}
+              type="password"
+              id="confSenha"
+              value={confSenha}
+              onChange={(e) => setConfSenha(e.target.value)}
+              required
+            />
+            {erro &amp;&amp; &lt;span className={styles.inputErrorMsg}>{erro}&lt;/span>}
+          &lt;/div>
+
+          &lt;div className={`${styles.formGroup} ${styles.termosContainer}`}>
+            &lt;input
+              type="checkbox"
+              id="termos"
+              checked={aceitouTermos}
+              onChange={(e) => setAceitouTermos(e.target.checked)}
+              className={styles.termosCheckbox}
+              required
+            />
+            &lt;label className={styles.termos} htmlFor="termos">
+              Eu aceito os{" "}
+              &lt;Link to="/termos" className={styles.linkTermos}>
+                termos de uso
+              &lt;/Link>{" "}
+              e as{" "}
+              &lt;Link to="/politicas" className={styles.linkTermos}>
+                políticas de privacidade
+              &lt;/Link>
+            &lt;/label>
+          &lt;/div>
+
+          &lt;button
+            type="submit"
+            className={`${styles.entrarbtn} ${
+              !podeCriarConta || loading ? styles.desabilitado : ""
+            }`}
+            disabled={!podeCriarConta || loading}
+          >
+            {loading ? "Cadastrando..." : "Criar Conta"}
+          &lt;/button>
+        &lt;/form>
+      &lt;/div>
+    &lt;/div>
+  );
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CommentsPopup.html">CommentsPopup</a></li><li><a href="module-FooterAL.html">FooterAL</a></li><li><a href="module-Header.html">Header</a></li><li><a href="module-HeaderForYou.html">HeaderForYou</a></li><li><a href="module-MonetizationPopup.html">MonetizationPopup</a></li><li><a href="module-NavbarAL.html">NavbarAL</a></li><li><a href="module-NavbarLog.html">NavbarLog</a></li><li><a href="module-PoliticasPrivacidade.html">PoliticasPrivacidade</a></li><li><a href="module-PostCard.html">PostCard</a></li><li><a href="module-ProtectedRoute.html">ProtectedRoute</a></li><li><a href="module-PublicarImagem.html">PublicarImagem</a></li><li><a href="module-PublicarLayout.html">PublicarLayout</a></li><li><a href="module-PublicarLetra.html">PublicarLetra</a></li><li><a href="module-PublicarMusica.html">PublicarMusica</a></li><li><a href="module-TermosDeUso.html">TermosDeUso</a></li><li><a href="module-UserProfile.html">UserProfile</a></li><li><a href="module-VerificaLogin.html">VerificaLogin</a></li><li><a href="module-api_axios.html">api/axios</a></li></ul><h3>Global</h3><ul><li><a href="global.html#API_BASE_URL">API_BASE_URL</a></li><li><a href="global.html#ArtistPage">ArtistPage</a></li><li><a href="global.html#BackButton">BackButton</a></li><li><a href="global.html#DescricaoInput">DescricaoInput</a></li><li><a href="global.html#DiscoverArtist">DiscoverArtist</a></li><li><a href="global.html#EdicaoDeConta">EdicaoDeConta</a></li><li><a href="global.html#Feed">Feed</a></li><li><a href="global.html#FloatingActionButton">FloatingActionButton</a></li><li><a href="global.html#ForYou">ForYou</a></li><li><a href="global.html#GeneroSelect">GeneroSelect</a></li><li><a href="global.html#InitialPage">InitialPage</a></li><li><a href="global.html#ParticipatePage">ParticipatePage</a></li><li><a href="global.html#StarRater">StarRater</a></li><li><a href="global.html#UploadArea">UploadArea</a></li><li><a href="global.html#UploadPostForm">UploadPostForm</a></li><li><a href="global.html#authAPI">authAPI</a></li><li><a href="global.html#avaliacoesAPI">avaliacoesAPI</a></li><li><a href="global.html#comentariosAPI">comentariosAPI</a></li><li><a href="global.html#createComment">createComment</a></li><li><a href="global.html#createDesafio">createDesafio</a></li><li><a href="global.html#createParticipacao">createParticipacao</a></li><li><a href="global.html#createPost">createPost</a></li><li><a href="global.html#createPostWithUpload">createPostWithUpload</a></li><li><a href="global.html#deleteComment">deleteComment</a></li><li><a href="global.html#deleteDesafio">deleteDesafio</a></li><li><a href="global.html#deleteParticipacao">deleteParticipacao</a></li><li><a href="global.html#deletePost">deletePost</a></li><li><a href="global.html#fetchCommentsByPost">fetchCommentsByPost</a></li><li><a href="global.html#fetchDesafioById">fetchDesafioById</a></li><li><a href="global.html#fetchDesafios">fetchDesafios</a></li><li><a href="global.html#fetchFollowCounts">fetchFollowCounts</a></li><li><a href="global.html#fetchFollowersList">fetchFollowersList</a></li><li><a href="global.html#fetchFollowingList">fetchFollowingList</a></li><li><a href="global.html#fetchIsFollowing">fetchIsFollowing</a></li><li><a href="global.html#fetchMyRatingForPost">fetchMyRatingForPost</a></li><li><a href="global.html#fetchParticipacoes">fetchParticipacoes</a></li><li><a href="global.html#fetchParticipacoesByDesafio">fetchParticipacoesByDesafio</a></li><li><a href="global.html#fetchPostRating">fetchPostRating</a></li><li><a href="global.html#fetchPosts">fetchPosts</a></li><li><a href="global.html#fetchPostsByUser">fetchPostsByUser</a></li><li><a href="global.html#fetchUsuarios">fetchUsuarios</a></li><li><a href="global.html#fetchWithAuth">fetchWithAuth</a></li><li><a href="global.html#followUser">followUser</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#makeSelectRankingByStars">makeSelectRankingByStars</a></li><li><a href="global.html#patchDesafio">patchDesafio</a></li><li><a href="global.html#postsAPI">postsAPI</a></li><li><a href="global.html#removeRating">removeRating</a></li><li><a href="global.html#seguidoresAPI">seguidoresAPI</a></li><li><a href="global.html#selectAuthToken">selectAuthToken</a></li><li><a href="global.html#selectCommentsState">selectCommentsState</a></li><li><a href="global.html#selectCurrentUser">selectCurrentUser</a></li><li><a href="global.html#selectDesafioById">selectDesafioById</a></li><li><a href="global.html#selectDesafios">selectDesafios</a></li><li><a href="global.html#selectFollowCounts">selectFollowCounts</a></li><li><a href="global.html#selectIsFollowing">selectIsFollowing</a></li><li><a href="global.html#selectMyFollowingList">selectMyFollowingList</a></li><li><a href="global.html#selectParticipacoes">selectParticipacoes</a></li><li><a href="global.html#selectParticipacoesByDesafio">selectParticipacoesByDesafio</a></li><li><a href="global.html#selectParticipacoesByUsuario">selectParticipacoesByUsuario</a></li><li><a href="global.html#selectRatingState">selectRatingState</a></li><li><a href="global.html#selectUserError">selectUserError</a></li><li><a href="global.html#selectUserLoading">selectUserLoading</a></li><li><a href="global.html#selectUsuarios">selectUsuarios</a></li><li><a href="global.html#setUserFromStorage">setUserFromStorage</a></li><li><a href="global.html#store">store</a></li><li><a href="global.html#unfollowUser">unfollowUser</a></li><li><a href="global.html#updateComment">updateComment</a></li><li><a href="global.html#updatePost">updatePost</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#upsertRating">upsertRating</a></li><li><a href="global.html#usuariosAPI">usuariosAPI</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Dec 16 2025 13:21:09 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

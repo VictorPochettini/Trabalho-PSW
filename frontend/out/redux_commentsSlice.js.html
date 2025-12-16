@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: redux/commentsSlice.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: redux/commentsSlice.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// src/redux/commentsSlice.js
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import api from "../api/axios";
+
+// --- AÇÕES ASSÍNCRONAS (THUNKS) ---
+
+/**
+ * Busca comentários de um post específico, ordenando por criação (mais recente primeiro).
+ */
+export const fetchCommentsByPost = createAsyncThunk(
+  "comments/fetchByPost",
+  async (postId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/comentarios?postId=${postId}&amp;_sort=createdAt&amp;_order=desc`);
+      return { postId: String(postId), items: res.data };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao carregar comentários");
+    }
+  }
+);
+
+/**
+ * Cria um novo comentário. Requer que o usuário esteja autenticado.
+ */
+export const createComment = createAsyncThunk(
+  "comments/create",
+  async ({ postId, texto }, { getState, rejectWithValue }) => {
+    try {
+      const current = getState().user.currentUser;
+      const usuarioId = current?.user?._id || current?.user?.id;
+      if (!usuarioId) return rejectWithValue("Usuário não autenticado");
+
+      const now = new Date().toISOString();
+      const body = {
+        postId: String(postId),
+        usuarioId,
+        texto: texto.trim(),
+        createdAt: now,
+        updatedAt: now,
+      };
+      const res = await api.post("/comentarios", body);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao criar comentário");
+    }
+  }
+);
+
+/**
+ * Atualiza o texto de um comentário existente.
+ */
+export const updateComment = createAsyncThunk(
+  "comments/update",
+  async ({ commentId, texto }, { rejectWithValue }) => {
+    try {
+      const body = {
+        texto: texto.trim(),
+        updatedAt: new Date().toISOString(),
+      };
+      const res = await api.patch(`/comentarios/${commentId}`, body);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao atualizar comentário");
+    }
+  }
+);
+
+/**
+ * Exclui um comentário pelo seu ID.
+ */
+export const deleteComment = createAsyncThunk(
+  "comments/delete",
+  async (commentId, { rejectWithValue }) => {
+    try {
+      await api.delete(`/comentarios/${commentId}`);
+      return { id: commentId }; // Retorna o ID para o reducer remover do estado
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao excluir comentário");
+    }
+  }
+);
+
+// --- SLICE E REDUCERS ---
+
+const commentsSlice = createSlice({
+  name: "comments",
+  initialState: {
+    byPostId: {}, // Estrutura: postId -> { items, loading, error }
+  },
+  reducers: {
+    /**
+     * Limpa o cache de comentários para um post específico.
+     * @param {string} postId
+     */
+    clearCommentsOfPost(state, action) {
+      const postId = String(action.payload);
+      delete state.byPostId[postId];
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // FETCH PENDING
+      .addCase(fetchCommentsByPost.pending, (state, action) => {
+        const postId = String(action.meta.arg);
+        state.byPostId[postId] = state.byPostId[postId] || { items: [], loading: false, error: null };
+        state.byPostId[postId].loading = true;
+        state.byPostId[postId].error = null;
+      })
+      // FETCH FULFILLED
+      .addCase(fetchCommentsByPost.fulfilled, (state, action) => {
+        const { postId, items } = action.payload;
+        state.byPostId[postId] = { items, loading: false, error: null };
+      })
+      // FETCH REJECTED
+      .addCase(fetchCommentsByPost.rejected, (state, action) => {
+        const postId = String(action.meta.arg);
+        state.byPostId[postId] = state.byPostId[postId] || { items: [], loading: false, error: null };
+        state.byPostId[postId].loading = false;
+        state.byPostId[postId].error = action.payload || action.error?.message;
+      })
+      // CREATE FULFILLED
+      .addCase(createComment.fulfilled, (state, action) => {
+        const c = action.payload;
+        const postId = String(c.postId);
+        state.byPostId[postId] = state.byPostId[postId] || { items: [], loading: false, error: null };
+        // Adiciona no início (mais recente primeiro)
+        state.byPostId[postId].items.unshift(c);
+      })
+      // UPDATE FULFILLED
+      .addCase(updateComment.fulfilled, (state, action) => {
+        const updatedComment = action.payload;
+        const postId = String(updatedComment.postId);
+        
+        if (state.byPostId[postId]) {
+          const idx = state.byPostId[postId].items.findIndex(
+            (c) => String(c._id || c.id) === String(updatedComment._id || updatedComment.id)
+          );
+          if (idx !== -1) {
+            // Substitui o comentário atualizado mantendo a posição
+            state.byPostId[postId].items[idx] = updatedComment;
+          }
+        }
+      })
+      // DELETE FULFILLED
+      .addCase(deleteComment.fulfilled, (state, action) => {
+        const { id } = action.payload;
+        // Percorre todos os posts para remover o comentário excluído de qualquer bucket
+        for (const pid of Object.keys(state.byPostId)) {
+          const bucket = state.byPostId[pid];
+          if (!bucket?.items) continue;
+          const idx = bucket.items.findIndex((c) => String(c._id || c.id) === String(id));
+          if (idx !== -1) bucket.items.splice(idx, 1);
+        }
+      })
+      // Matcher para lidar com erros globais (opcional)
+      .addMatcher((action) => action.type.endsWith("/rejected") &amp;&amp; action.type.includes("comments"), (s, a) => {
+        // Lógica de tratamento de erro global
+      });
+  },
+});
+
+export const { clearCommentsOfPost } = commentsSlice.actions;
+export default commentsSlice.reducer;
+
+// --- SELECTOR ---
+
+/**
+ * Seletor que retorna o estado completo dos comentários para um postId específico.
+ */
+export const selectCommentsState = (postId) => (state) =>
+  state.comments.byPostId[String(postId)] || { items: [], loading: false, error: null };</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CommentsPopup.html">CommentsPopup</a></li><li><a href="module-FooterAL.html">FooterAL</a></li><li><a href="module-Header.html">Header</a></li><li><a href="module-HeaderForYou.html">HeaderForYou</a></li><li><a href="module-MonetizationPopup.html">MonetizationPopup</a></li><li><a href="module-NavbarAL.html">NavbarAL</a></li><li><a href="module-NavbarLog.html">NavbarLog</a></li><li><a href="module-PoliticasPrivacidade.html">PoliticasPrivacidade</a></li><li><a href="module-PostCard.html">PostCard</a></li><li><a href="module-ProtectedRoute.html">ProtectedRoute</a></li><li><a href="module-PublicarImagem.html">PublicarImagem</a></li><li><a href="module-PublicarLayout.html">PublicarLayout</a></li><li><a href="module-PublicarLetra.html">PublicarLetra</a></li><li><a href="module-PublicarMusica.html">PublicarMusica</a></li><li><a href="module-TermosDeUso.html">TermosDeUso</a></li><li><a href="module-UserProfile.html">UserProfile</a></li><li><a href="module-VerificaLogin.html">VerificaLogin</a></li><li><a href="module-api_axios.html">api/axios</a></li></ul><h3>Global</h3><ul><li><a href="global.html#API_BASE_URL">API_BASE_URL</a></li><li><a href="global.html#ArtistPage">ArtistPage</a></li><li><a href="global.html#BackButton">BackButton</a></li><li><a href="global.html#DescricaoInput">DescricaoInput</a></li><li><a href="global.html#DiscoverArtist">DiscoverArtist</a></li><li><a href="global.html#EdicaoDeConta">EdicaoDeConta</a></li><li><a href="global.html#Feed">Feed</a></li><li><a href="global.html#FloatingActionButton">FloatingActionButton</a></li><li><a href="global.html#ForYou">ForYou</a></li><li><a href="global.html#GeneroSelect">GeneroSelect</a></li><li><a href="global.html#InitialPage">InitialPage</a></li><li><a href="global.html#ParticipatePage">ParticipatePage</a></li><li><a href="global.html#StarRater">StarRater</a></li><li><a href="global.html#UploadArea">UploadArea</a></li><li><a href="global.html#UploadPostForm">UploadPostForm</a></li><li><a href="global.html#authAPI">authAPI</a></li><li><a href="global.html#avaliacoesAPI">avaliacoesAPI</a></li><li><a href="global.html#comentariosAPI">comentariosAPI</a></li><li><a href="global.html#createComment">createComment</a></li><li><a href="global.html#createDesafio">createDesafio</a></li><li><a href="global.html#createParticipacao">createParticipacao</a></li><li><a href="global.html#createPost">createPost</a></li><li><a href="global.html#createPostWithUpload">createPostWithUpload</a></li><li><a href="global.html#deleteComment">deleteComment</a></li><li><a href="global.html#deleteDesafio">deleteDesafio</a></li><li><a href="global.html#deleteParticipacao">deleteParticipacao</a></li><li><a href="global.html#deletePost">deletePost</a></li><li><a href="global.html#fetchCommentsByPost">fetchCommentsByPost</a></li><li><a href="global.html#fetchDesafioById">fetchDesafioById</a></li><li><a href="global.html#fetchDesafios">fetchDesafios</a></li><li><a href="global.html#fetchFollowCounts">fetchFollowCounts</a></li><li><a href="global.html#fetchFollowersList">fetchFollowersList</a></li><li><a href="global.html#fetchFollowingList">fetchFollowingList</a></li><li><a href="global.html#fetchIsFollowing">fetchIsFollowing</a></li><li><a href="global.html#fetchMyRatingForPost">fetchMyRatingForPost</a></li><li><a href="global.html#fetchParticipacoes">fetchParticipacoes</a></li><li><a href="global.html#fetchParticipacoesByDesafio">fetchParticipacoesByDesafio</a></li><li><a href="global.html#fetchPostRating">fetchPostRating</a></li><li><a href="global.html#fetchPosts">fetchPosts</a></li><li><a href="global.html#fetchPostsByUser">fetchPostsByUser</a></li><li><a href="global.html#fetchUsuarios">fetchUsuarios</a></li><li><a href="global.html#fetchWithAuth">fetchWithAuth</a></li><li><a href="global.html#followUser">followUser</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#makeSelectRankingByStars">makeSelectRankingByStars</a></li><li><a href="global.html#patchDesafio">patchDesafio</a></li><li><a href="global.html#postsAPI">postsAPI</a></li><li><a href="global.html#removeRating">removeRating</a></li><li><a href="global.html#seguidoresAPI">seguidoresAPI</a></li><li><a href="global.html#selectAuthToken">selectAuthToken</a></li><li><a href="global.html#selectCommentsState">selectCommentsState</a></li><li><a href="global.html#selectCurrentUser">selectCurrentUser</a></li><li><a href="global.html#selectDesafioById">selectDesafioById</a></li><li><a href="global.html#selectDesafios">selectDesafios</a></li><li><a href="global.html#selectFollowCounts">selectFollowCounts</a></li><li><a href="global.html#selectIsFollowing">selectIsFollowing</a></li><li><a href="global.html#selectMyFollowingList">selectMyFollowingList</a></li><li><a href="global.html#selectParticipacoes">selectParticipacoes</a></li><li><a href="global.html#selectParticipacoesByDesafio">selectParticipacoesByDesafio</a></li><li><a href="global.html#selectParticipacoesByUsuario">selectParticipacoesByUsuario</a></li><li><a href="global.html#selectRatingState">selectRatingState</a></li><li><a href="global.html#selectUserError">selectUserError</a></li><li><a href="global.html#selectUserLoading">selectUserLoading</a></li><li><a href="global.html#selectUsuarios">selectUsuarios</a></li><li><a href="global.html#setUserFromStorage">setUserFromStorage</a></li><li><a href="global.html#store">store</a></li><li><a href="global.html#unfollowUser">unfollowUser</a></li><li><a href="global.html#updateComment">updateComment</a></li><li><a href="global.html#updatePost">updatePost</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#upsertRating">upsertRating</a></li><li><a href="global.html#usuariosAPI">usuariosAPI</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Dec 16 2025 13:21:09 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

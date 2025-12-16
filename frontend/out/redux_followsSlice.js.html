@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: redux/followsSlice.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: redux/followsSlice.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// src/redux/followsSlice.js
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import api from "../api/axios";
+
+const API_URL = "/follows";
+
+// --- AÇÕES ASSÍNCRONAS (THUNKS) ---
+
+/**
+ * Verifica se um usuário está seguindo outro.
+ */
+export const fetchIsFollowing = createAsyncThunk(
+  "follows/fetchIsFollowing",
+  async ({ followerId, followingId }, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`${API_URL}/is-following`, {
+        params: { followerId, followingId }
+      });
+      return { 
+        followerId, 
+        followingId, 
+        isFollowing: res.data.isFollowing || false 
+      };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao verificar seguidor");
+    }
+  }
+);
+
+/**
+ * Inicia a relação de seguir.
+ */
+export const followUser = createAsyncThunk(
+  "follows/followUser",
+  async ({ followerId, followingId }, { rejectWithValue }) => {
+    try {
+      const res = await api.post(API_URL, { followerId, followingId });
+      return { followerId, followingId, data: res.data };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao seguir usuário");
+    }
+  }
+);
+
+/**
+ * Encerra a relação de seguir.
+ */
+export const unfollowUser = createAsyncThunk(
+  "follows/unfollowUser",
+  async ({ followerId, followingId }, { rejectWithValue }) => {
+    try {
+      await api.delete(API_URL, {
+        data: { followerId, followingId }
+      });
+      return { followerId, followingId };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao deixar de seguir");
+    }
+  }
+);
+
+/**
+ * Busca as contagens de seguidores/seguindo de um usuário.
+ */
+export const fetchFollowCounts = createAsyncThunk(
+  "follows/fetchFollowCounts",
+  async ({ userId }, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`${API_URL}/counts/${userId}`);
+      return { 
+        userId, 
+        followersCount: res.data.followersCount || 0,
+        followingCount: res.data.followingCount || 0
+      };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao buscar contagens");
+    }
+  }
+);
+
+/**
+ * Busca a lista de seguidores de um usuário.
+ */
+export const fetchFollowersList = createAsyncThunk(
+  "follows/fetchFollowersList",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`${API_URL}/followers/${userId}`);
+      return { 
+        userId,
+        followers: res.data.followers || []
+      };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao buscar seguidores");
+    }
+  }
+);
+
+/**
+ * Busca a lista de usuários que um usuário está seguindo.
+ */
+export const fetchFollowingList = createAsyncThunk(
+  "follows/fetchFollowingList",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`${API_URL}/following/${userId}`);
+      return { 
+        userId,
+        following: res.data.following || []
+      };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Erro ao buscar seguindo");
+    }
+  }
+);
+
+// --- SLICE E REDUCERS ---
+
+const followsSlice = createSlice({
+  name: "follows",
+  initialState: {
+    following: {},        // Cache de status 'followerId_followingId': true/false
+    myFollowingList: [],  // Lista de IDs que o usuário atual está seguindo
+    counts: {},           // Cache de contagens por userId
+    loading: false,
+    error: null,
+  },
+  reducers: {
+    clearFollowsError: (state) => {
+      state.error = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // fetchIsFollowing
+      .addCase(fetchIsFollowing.fulfilled, (state, action) => {
+        state.loading = false;
+        const { followerId, followingId, isFollowing } = action.payload;
+        const key = `${followerId}_${followingId}`;
+        state.following[key] = isFollowing;
+      })
+
+      // followUser PENDING (Otimista)
+      .addCase(followUser.pending, (state, action) => {
+        const { followerId, followingId } = action.meta.arg;
+        const key = `${followerId}_${followingId}`;
+        state.following[key] = true;
+        state.error = null;
+        
+        const followingIdStr = String(followingId);
+        if (!state.myFollowingList.includes(followingIdStr)) {
+          state.myFollowingList.push(followingIdStr);
+        }
+        
+        // Incrementa contagens (Otimista)
+        if (state.counts[followingId]) {
+          state.counts[followingId].followersCount++;
+        }
+        if (state.counts[followerId]) {
+          state.counts[followerId].followingCount++;
+        }
+      })
+      // followUser REJECTED (Reversão)
+      .addCase(followUser.rejected, (state, action) => {
+        const { followerId, followingId } = action.meta.arg;
+        const key = `${followerId}_${followingId}`;
+        state.following[key] = false;
+        
+        const followingIdStr = String(followingId);
+        state.myFollowingList = state.myFollowingList.filter(id => id !== followingIdStr);
+        
+        // Reverte contagens
+        if (state.counts[followingId] &amp;&amp; state.counts[followingId].followersCount > 0) {
+          state.counts[followingId].followersCount--;
+        }
+        if (state.counts[followerId] &amp;&amp; state.counts[followerId].followingCount > 0) {
+          state.counts[followerId].followingCount--;
+        }
+        state.error = action.payload || action.error?.message;
+      })
+
+      // unfollowUser PENDING (Otimista)
+      .addCase(unfollowUser.pending, (state, action) => {
+        const { followerId, followingId } = action.meta.arg;
+        const key = `${followerId}_${followingId}`;
+        state.following[key] = false;
+        state.error = null;
+        
+        const followingIdStr = String(followingId);
+        state.myFollowingList = state.myFollowingList.filter(id => id !== followingIdStr);
+        
+        // Decrementa contagens (Otimista)
+        if (state.counts[followingId] &amp;&amp; state.counts[followingId].followersCount > 0) {
+          state.counts[followingId].followersCount--;
+        }
+        if (state.counts[followerId] &amp;&amp; state.counts[followerId].followingCount > 0) {
+          state.counts[followerId].followingCount--;
+        }
+      })
+      // unfollowUser REJECTED (Reversão)
+      .addCase(unfollowUser.rejected, (state, action) => {
+        const { followerId, followingId } = action.meta.arg;
+        const key = `${followerId}_${followingId}`;
+        state.following[key] = true;
+        
+        const followingIdStr = String(followingId);
+        if (!state.myFollowingList.includes(followingIdStr)) {
+          state.myFollowingList.push(followingIdStr);
+        }
+        
+        // Reverte contagens
+        if (state.counts[followingId]) {
+          state.counts[followingId].followersCount++;
+        }
+        if (state.counts[followerId]) {
+          state.counts[followerId].followingCount++;
+        }
+        state.error = action.payload || action.error?.message;
+      })
+
+      // fetchFollowCounts
+      .addCase(fetchFollowCounts.fulfilled, (state, action) => {
+        const { userId, followersCount, followingCount } = action.payload;
+        state.counts[userId] = { followersCount, followingCount };
+      })
+      
+      // fetchFollowingList
+      .addCase(fetchFollowingList.fulfilled, (state, action) => {
+        state.loading = false;
+        const { userId, following } = action.payload;
+        // Popula a lista de IDs
+        state.myFollowingList = following.map(u => String(u._id || u.id));
+        // Popula o cache 'following' para o usuário atual
+        following.forEach(u => {
+          const targetId = String(u._id || u.id);
+          const key = `${userId}_${targetId}`;
+          state.following[key] = true;
+        });
+      });
+  },
+});
+
+export const { clearFollowsError } = followsSlice.actions;
+export default followsSlice.reducer;
+
+// --- SELECTORS ---
+
+/**
+ * Seletor de fábrica que verifica se followerId está seguindo followingId.
+ */
+export const selectIsFollowing = (followerId, followingId) => (state) => {
+  if (!followerId || !followingId) return false;
+  const key = `${followerId}_${followingId}`;
+  return state.follows.following[key] || false;
+};
+
+/**
+ * Seletor de fábrica que retorna as contagens de seguidores/seguindo para um userId.
+ */
+export const selectFollowCounts = (userId) => (state) => {
+  if (!userId) return { followersCount: 0, followingCount: 0 };
+  return state.follows.counts[userId] || { followersCount: 0, followingCount: 0 };
+};
+
+/**
+ * Retorna a lista de IDs dos usuários que o usuário atual está seguindo.
+ */
+export const selectMyFollowingList = (state) => state.follows.myFollowingList || [];</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CommentsPopup.html">CommentsPopup</a></li><li><a href="module-FooterAL.html">FooterAL</a></li><li><a href="module-Header.html">Header</a></li><li><a href="module-HeaderForYou.html">HeaderForYou</a></li><li><a href="module-MonetizationPopup.html">MonetizationPopup</a></li><li><a href="module-NavbarAL.html">NavbarAL</a></li><li><a href="module-NavbarLog.html">NavbarLog</a></li><li><a href="module-PoliticasPrivacidade.html">PoliticasPrivacidade</a></li><li><a href="module-PostCard.html">PostCard</a></li><li><a href="module-ProtectedRoute.html">ProtectedRoute</a></li><li><a href="module-PublicarImagem.html">PublicarImagem</a></li><li><a href="module-PublicarLayout.html">PublicarLayout</a></li><li><a href="module-PublicarLetra.html">PublicarLetra</a></li><li><a href="module-PublicarMusica.html">PublicarMusica</a></li><li><a href="module-TermosDeUso.html">TermosDeUso</a></li><li><a href="module-UserProfile.html">UserProfile</a></li><li><a href="module-VerificaLogin.html">VerificaLogin</a></li><li><a href="module-api_axios.html">api/axios</a></li></ul><h3>Global</h3><ul><li><a href="global.html#API_BASE_URL">API_BASE_URL</a></li><li><a href="global.html#ArtistPage">ArtistPage</a></li><li><a href="global.html#BackButton">BackButton</a></li><li><a href="global.html#DescricaoInput">DescricaoInput</a></li><li><a href="global.html#DiscoverArtist">DiscoverArtist</a></li><li><a href="global.html#EdicaoDeConta">EdicaoDeConta</a></li><li><a href="global.html#Feed">Feed</a></li><li><a href="global.html#FloatingActionButton">FloatingActionButton</a></li><li><a href="global.html#ForYou">ForYou</a></li><li><a href="global.html#GeneroSelect">GeneroSelect</a></li><li><a href="global.html#InitialPage">InitialPage</a></li><li><a href="global.html#ParticipatePage">ParticipatePage</a></li><li><a href="global.html#StarRater">StarRater</a></li><li><a href="global.html#UploadArea">UploadArea</a></li><li><a href="global.html#UploadPostForm">UploadPostForm</a></li><li><a href="global.html#authAPI">authAPI</a></li><li><a href="global.html#avaliacoesAPI">avaliacoesAPI</a></li><li><a href="global.html#comentariosAPI">comentariosAPI</a></li><li><a href="global.html#createComment">createComment</a></li><li><a href="global.html#createDesafio">createDesafio</a></li><li><a href="global.html#createParticipacao">createParticipacao</a></li><li><a href="global.html#createPost">createPost</a></li><li><a href="global.html#createPostWithUpload">createPostWithUpload</a></li><li><a href="global.html#deleteComment">deleteComment</a></li><li><a href="global.html#deleteDesafio">deleteDesafio</a></li><li><a href="global.html#deleteParticipacao">deleteParticipacao</a></li><li><a href="global.html#deletePost">deletePost</a></li><li><a href="global.html#fetchCommentsByPost">fetchCommentsByPost</a></li><li><a href="global.html#fetchDesafioById">fetchDesafioById</a></li><li><a href="global.html#fetchDesafios">fetchDesafios</a></li><li><a href="global.html#fetchFollowCounts">fetchFollowCounts</a></li><li><a href="global.html#fetchFollowersList">fetchFollowersList</a></li><li><a href="global.html#fetchFollowingList">fetchFollowingList</a></li><li><a href="global.html#fetchIsFollowing">fetchIsFollowing</a></li><li><a href="global.html#fetchMyRatingForPost">fetchMyRatingForPost</a></li><li><a href="global.html#fetchParticipacoes">fetchParticipacoes</a></li><li><a href="global.html#fetchParticipacoesByDesafio">fetchParticipacoesByDesafio</a></li><li><a href="global.html#fetchPostRating">fetchPostRating</a></li><li><a href="global.html#fetchPosts">fetchPosts</a></li><li><a href="global.html#fetchPostsByUser">fetchPostsByUser</a></li><li><a href="global.html#fetchUsuarios">fetchUsuarios</a></li><li><a href="global.html#fetchWithAuth">fetchWithAuth</a></li><li><a href="global.html#followUser">followUser</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#makeSelectRankingByStars">makeSelectRankingByStars</a></li><li><a href="global.html#patchDesafio">patchDesafio</a></li><li><a href="global.html#postsAPI">postsAPI</a></li><li><a href="global.html#removeRating">removeRating</a></li><li><a href="global.html#seguidoresAPI">seguidoresAPI</a></li><li><a href="global.html#selectAuthToken">selectAuthToken</a></li><li><a href="global.html#selectCommentsState">selectCommentsState</a></li><li><a href="global.html#selectCurrentUser">selectCurrentUser</a></li><li><a href="global.html#selectDesafioById">selectDesafioById</a></li><li><a href="global.html#selectDesafios">selectDesafios</a></li><li><a href="global.html#selectFollowCounts">selectFollowCounts</a></li><li><a href="global.html#selectIsFollowing">selectIsFollowing</a></li><li><a href="global.html#selectMyFollowingList">selectMyFollowingList</a></li><li><a href="global.html#selectParticipacoes">selectParticipacoes</a></li><li><a href="global.html#selectParticipacoesByDesafio">selectParticipacoesByDesafio</a></li><li><a href="global.html#selectParticipacoesByUsuario">selectParticipacoesByUsuario</a></li><li><a href="global.html#selectRatingState">selectRatingState</a></li><li><a href="global.html#selectUserError">selectUserError</a></li><li><a href="global.html#selectUserLoading">selectUserLoading</a></li><li><a href="global.html#selectUsuarios">selectUsuarios</a></li><li><a href="global.html#setUserFromStorage">setUserFromStorage</a></li><li><a href="global.html#store">store</a></li><li><a href="global.html#unfollowUser">unfollowUser</a></li><li><a href="global.html#updateComment">updateComment</a></li><li><a href="global.html#updatePost">updatePost</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#upsertRating">upsertRating</a></li><li><a href="global.html#usuariosAPI">usuariosAPI</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Dec 16 2025 13:21:09 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

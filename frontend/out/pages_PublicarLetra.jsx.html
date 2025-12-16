@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/PublicarLetra.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/PublicarLetra.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// /mnt/data/PublicarLetra.jsx
+/**
+ * @fileoverview Página de Publicação de Letra (Post de Texto).
+ * @module PublicarLetra
+ * @author Gemini
+ */
+import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { createPost } from "../redux/postsSlice";
+import PublicarLayout from "../components/layout/PublicarLayout";
+import DescricaoInput from "../components/publicar/DescricaoInput"; // usado como campo curto (título)
+import GeneroSelect from "../components/publicar/GeneroSelect";
+import EnviarButton from "../components/publicar/EnviarButton";
+import botaoVolta from "../images/botaoVolta.png";
+import "../css/publicar.css";
+import styles from "../css/Login.module.css";
+
+/**
+ * @function BackButton
+ * @description Componente de botão que utiliza `useNavigate` para retornar à página anterior no histórico.
+ * @returns {JSX.Element} O botão de voltar.
+ */
+const BackButton = () => {
+  const navigate = useNavigate();
+  return (
+    &lt;button
+      type="button"
+      className={styles.backButton}
+      onClick={() => navigate(-1)}
+      aria-label="Voltar"
+    >
+      &lt;img src={botaoVolta} alt="Voltar" />
+    &lt;/button>
+  );
+};
+
+/**
+ * PublicarLetra — versão sem upload de arquivos.
+ * Campos:
+ *  - Título curto (input, usa DescricaoInput para manter estilo)
+ *  - Letra completa (textarea)
+ *  - Gênero (GeneroSelect)
+ *
+ * Usa createPost (thunk) para fazer requisição ao backend.
+ * @function PublicarLetra
+ * @description Componente funcional React que permite ao usuário publicar um post de texto (letra de música, poesia, etc.).
+ * @returns {JSX.Element} O componente da página PublicarLetra.
+ */
+const PublicarLetra = () => {
+  /** @type {function} Hook do Redux para despachar ações. */
+  const dispatch = useDispatch();
+  /** @type {function} Hook para navegação programática. */
+  const navigate = useNavigate();
+
+  // suporta novo/velho formato de currentUser
+  /** @type {object | null} Estado do usuário logado do Redux. */
+  const currentUserState = useSelector((s) => s.user?.currentUser);
+  /** @type {object | null} Dados consolidados do usuário logado. */
+  const currentUser = currentUserState?.user ?? currentUserState ?? null;
+  /** @type {string | null} ID do usuário logado. */
+  const userId = currentUser?._id ?? currentUser?.id ?? null;
+  /** @type {string} Nome de usuário para navegação pós-publicação. */
+  const username = currentUser?.username ?? currentUser?.nome ?? "";
+
+  /** @type {[string, function(string): void]} Estado para o título curto da obra. */
+  const [tituloCurto, setTituloCurto] = useState("");
+  /** @type {[string, function(string): void]} Estado para o conteúdo completo da letra. */
+  const [letraCompleta, setLetraCompleta] = useState("");
+  /** @type {[string, function(string): void]} Estado para o gênero selecionado. */
+  const [genero, setGenero] = useState("");
+
+  /**
+   * @async
+   * @function handleEnviar
+   * @description Lida com o envio do formulário, validando os dados e despachando a action de criação de post.
+   */
+  const handleEnviar = async () => {
+    // validações simples (título + letra + gênero)
+    if (!tituloCurto.trim() || !letraCompleta.trim() || !genero) {
+      alert("Preencha título, letra e escolha um gênero.");
+      return;
+    }
+    if (!userId) {
+      alert("Faça login para publicar.");
+      return;
+    }
+
+    /** @type {object} Objeto de dados do novo post. */
+    const novoPost = {
+      titulo: tituloCurto.trim().slice(0, 120),
+      conteudo: letraCompleta.trim(),
+      tipo: "texto",
+      genero,
+    };
+
+    try {
+      /** @type {object} Resultado da action assíncrona. */
+      const res = await dispatch(createPost(novoPost));
+      
+      if (res.error || res.payload?.error) {
+        console.error("createPost returned error:", res.error || res.payload?.error);
+        alert("Erro ao enviar o post. Tente novamente.");
+        return;
+      }
+
+      // sucesso
+      alert("Letra publicada com sucesso!");
+      setTituloCurto("");
+      setLetraCompleta("");
+      setGenero("");
+      if (username) navigate(`/user/${username}`);
+      else navigate("/");
+    } catch (err) {
+      console.error("Erro ao enviar post:", err);
+      alert("Erro ao enviar o post. Tente novamente.");
+    }
+  };
+
+  return (
+    &lt;>
+      &lt;BackButton />
+      &lt;PublicarLayout>
+        &lt;div className="container-publicar">
+          {/* Campo curto — título/trecho */}
+          &lt;DescricaoInput
+            value={tituloCurto}
+            onChange={(e) => setTituloCurto(e.target.value)}
+            placeholder="Ex.: Refrão - Noite sem fim"
+            maxLength={120}
+          />
+
+          {/* Campo grande — letra completa */}
+          &lt;textarea
+            value={letraCompleta}
+            onChange={(e) => setLetraCompleta(e.target.value)}
+            placeholder="Escreva a letra completa aqui..."
+            rows={12}
+            style={{
+              width: "100%",
+              padding: 12,
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.18)",
+              background: "rgba(255,255,255,0.04)",
+              color: "#fff",
+              resize: "vertical",
+              fontFamily: "inherit",
+              boxShadow: "0 8px 18px rgba(0,0,0,0.14)",
+            }}
+          />
+
+          {/* Gênero */}
+          &lt;GeneroSelect tipo="texto" value={genero} onChange={setGenero} />
+
+          {/* Botão enviar */}
+          &lt;EnviarButton onClick={handleEnviar} />
+        &lt;/div>
+      &lt;/PublicarLayout>
+    &lt;/>
+  );
+};
+
+export default PublicarLetra;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CommentsPopup.html">CommentsPopup</a></li><li><a href="module-FooterAL.html">FooterAL</a></li><li><a href="module-Header.html">Header</a></li><li><a href="module-HeaderForYou.html">HeaderForYou</a></li><li><a href="module-MonetizationPopup.html">MonetizationPopup</a></li><li><a href="module-NavbarAL.html">NavbarAL</a></li><li><a href="module-NavbarLog.html">NavbarLog</a></li><li><a href="module-PoliticasPrivacidade.html">PoliticasPrivacidade</a></li><li><a href="module-PostCard.html">PostCard</a></li><li><a href="module-ProtectedRoute.html">ProtectedRoute</a></li><li><a href="module-PublicarImagem.html">PublicarImagem</a></li><li><a href="module-PublicarLayout.html">PublicarLayout</a></li><li><a href="module-PublicarLetra.html">PublicarLetra</a></li><li><a href="module-PublicarMusica.html">PublicarMusica</a></li><li><a href="module-TermosDeUso.html">TermosDeUso</a></li><li><a href="module-UserProfile.html">UserProfile</a></li><li><a href="module-VerificaLogin.html">VerificaLogin</a></li><li><a href="module-api_axios.html">api/axios</a></li></ul><h3>Global</h3><ul><li><a href="global.html#API_BASE_URL">API_BASE_URL</a></li><li><a href="global.html#ArtistPage">ArtistPage</a></li><li><a href="global.html#BackButton">BackButton</a></li><li><a href="global.html#DescricaoInput">DescricaoInput</a></li><li><a href="global.html#DiscoverArtist">DiscoverArtist</a></li><li><a href="global.html#EdicaoDeConta">EdicaoDeConta</a></li><li><a href="global.html#Feed">Feed</a></li><li><a href="global.html#FloatingActionButton">FloatingActionButton</a></li><li><a href="global.html#ForYou">ForYou</a></li><li><a href="global.html#GeneroSelect">GeneroSelect</a></li><li><a href="global.html#InitialPage">InitialPage</a></li><li><a href="global.html#ParticipatePage">ParticipatePage</a></li><li><a href="global.html#StarRater">StarRater</a></li><li><a href="global.html#UploadArea">UploadArea</a></li><li><a href="global.html#UploadPostForm">UploadPostForm</a></li><li><a href="global.html#authAPI">authAPI</a></li><li><a href="global.html#avaliacoesAPI">avaliacoesAPI</a></li><li><a href="global.html#comentariosAPI">comentariosAPI</a></li><li><a href="global.html#createComment">createComment</a></li><li><a href="global.html#createDesafio">createDesafio</a></li><li><a href="global.html#createParticipacao">createParticipacao</a></li><li><a href="global.html#createPost">createPost</a></li><li><a href="global.html#createPostWithUpload">createPostWithUpload</a></li><li><a href="global.html#deleteComment">deleteComment</a></li><li><a href="global.html#deleteDesafio">deleteDesafio</a></li><li><a href="global.html#deleteParticipacao">deleteParticipacao</a></li><li><a href="global.html#deletePost">deletePost</a></li><li><a href="global.html#fetchCommentsByPost">fetchCommentsByPost</a></li><li><a href="global.html#fetchDesafioById">fetchDesafioById</a></li><li><a href="global.html#fetchDesafios">fetchDesafios</a></li><li><a href="global.html#fetchFollowCounts">fetchFollowCounts</a></li><li><a href="global.html#fetchFollowersList">fetchFollowersList</a></li><li><a href="global.html#fetchFollowingList">fetchFollowingList</a></li><li><a href="global.html#fetchIsFollowing">fetchIsFollowing</a></li><li><a href="global.html#fetchMyRatingForPost">fetchMyRatingForPost</a></li><li><a href="global.html#fetchParticipacoes">fetchParticipacoes</a></li><li><a href="global.html#fetchParticipacoesByDesafio">fetchParticipacoesByDesafio</a></li><li><a href="global.html#fetchPostRating">fetchPostRating</a></li><li><a href="global.html#fetchPosts">fetchPosts</a></li><li><a href="global.html#fetchPostsByUser">fetchPostsByUser</a></li><li><a href="global.html#fetchUsuarios">fetchUsuarios</a></li><li><a href="global.html#fetchWithAuth">fetchWithAuth</a></li><li><a href="global.html#followUser">followUser</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#makeSelectRankingByStars">makeSelectRankingByStars</a></li><li><a href="global.html#patchDesafio">patchDesafio</a></li><li><a href="global.html#postsAPI">postsAPI</a></li><li><a href="global.html#removeRating">removeRating</a></li><li><a href="global.html#seguidoresAPI">seguidoresAPI</a></li><li><a href="global.html#selectAuthToken">selectAuthToken</a></li><li><a href="global.html#selectCommentsState">selectCommentsState</a></li><li><a href="global.html#selectCurrentUser">selectCurrentUser</a></li><li><a href="global.html#selectDesafioById">selectDesafioById</a></li><li><a href="global.html#selectDesafios">selectDesafios</a></li><li><a href="global.html#selectFollowCounts">selectFollowCounts</a></li><li><a href="global.html#selectIsFollowing">selectIsFollowing</a></li><li><a href="global.html#selectMyFollowingList">selectMyFollowingList</a></li><li><a href="global.html#selectParticipacoes">selectParticipacoes</a></li><li><a href="global.html#selectParticipacoesByDesafio">selectParticipacoesByDesafio</a></li><li><a href="global.html#selectParticipacoesByUsuario">selectParticipacoesByUsuario</a></li><li><a href="global.html#selectRatingState">selectRatingState</a></li><li><a href="global.html#selectUserError">selectUserError</a></li><li><a href="global.html#selectUserLoading">selectUserLoading</a></li><li><a href="global.html#selectUsuarios">selectUsuarios</a></li><li><a href="global.html#setUserFromStorage">setUserFromStorage</a></li><li><a href="global.html#store">store</a></li><li><a href="global.html#unfollowUser">unfollowUser</a></li><li><a href="global.html#updateComment">updateComment</a></li><li><a href="global.html#updatePost">updatePost</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#upsertRating">upsertRating</a></li><li><a href="global.html#usuariosAPI">usuariosAPI</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Dec 16 2025 13:21:09 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

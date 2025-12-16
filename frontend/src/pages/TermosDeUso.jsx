@@ -1,7 +1,6 @@
 /**
  * @fileoverview Componente React para exibir os Termos de Uso da aplicação ArtBeat.
  * @module TermosDeUso
- * @author Gemini
  */
 import React, { useEffect, useState } from "react";
 import logo from "../images/ArtBeat_Branco.png";

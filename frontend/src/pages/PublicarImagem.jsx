@@ -2,7 +2,6 @@
 /**
  * @fileoverview Página de Publicação de Imagem.
  * @module PublicarImagem
- * @author Gemini
  */
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";

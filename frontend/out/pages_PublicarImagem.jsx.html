@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/PublicarImagem.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/PublicarImagem.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// src/pages/PublicarImagem.jsx
+/**
+ * @fileoverview Página de Publicação de Imagem.
+ * @module PublicarImagem
+ * @author Gemini
+ */
+import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { createPostWithUpload } from "../redux/postsSlice";
+import PublicarLayout from "../components/layout/PublicarLayout";
+import DescricaoInput from "../components/publicar/DescricaoInput";
+import GeneroSelect from "../components/publicar/GeneroSelect";
+import UploadArea from "../components/publicar/UploadArea";
+import EnviarButton from "../components/publicar/EnviarButton";
+import botaoVolta from "../images/botaoVolta.png";
+import "../css/publicar.css";
+import styles from "../css/Login.module.css";
+
+/**
+ * @function BackButton
+ * @description Componente de botão que utiliza `useNavigate` para retornar à página anterior no histórico.
+ * @returns {JSX.Element} O botão de voltar.
+ */
+const BackButton = () => {
+  const navigate = useNavigate();
+  return (
+    &lt;button
+      type="button"
+      className={styles.backButton}
+      onClick={() => navigate(-1)}
+    >
+      &lt;img src={botaoVolta} alt="Voltar" />
+    &lt;/button>
+  );
+};
+
+/**
+ * @function PublicarImagem
+ * @description Página principal para o upload e publicação de uma imagem na plataforma.
+ * Gerencia os estados do formulário, a lógica de upload via Redux e a navegação.
+ * @returns {JSX.Element} O componente da página PublicarImagem.
+ */
+const PublicarImagem = () => {
+  /** @type {function} Hook do Redux para despachar ações. */
+  const dispatch = useDispatch();
+  /** @type {function} Hook para navegação programática. */
+  const navigate = useNavigate();
+
+  /** @type {object | null} Estado do usuário logado (pode ser o objeto de usuário completo ou nulo). */
+  const currentUserState = useSelector((s) => s.user?.currentUser);
+  /** @type {object | null} Dados consolidados do usuário logado. */
+  const currentUser = currentUserState?.user ?? currentUserState ?? null;
+  /** @type {string | null} ID do usuário para a criação do post. */
+  const userId = currentUser?._id ?? currentUser?.id ?? null;
+  /** @type {string} Nome de usuário para navegação pós-publicação. */
+  const username = currentUser?.username ?? currentUser?.nome ?? "";
+  
+  // Estados do Redux
+  /** @type {boolean} Indica se o upload está em progresso. */
+  const uploading = useSelector((state) => state.posts.uploading);
+  /** @type {string | null} Mensagem de erro do upload, se houver. */
+  const error = useSelector((state) => state.posts.error);
+
+  /** @type {[string, function(string): void]} Estado para a descrição/título da imagem. */
+  const [descricao, setDescricao] = useState("");
+  /** @type {[string, function(string): void]} Estado para o gênero/categoria da arte. */
+  const [genero, setGenero] = useState("");
+  /** @type {[File | null, function(File | null): void]} Estado para o objeto File selecionado. */
+  const [arquivo, setArquivo] = useState(null);
+  /** @type {[string | null, function(string | null): void]} Estado para a URL de preview da imagem. */
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  /**
+   * @function handleFileSelect
+   * @description Lida com a seleção de um arquivo de imagem, atualizando os estados de arquivo e preview.
+   * @param {File | null} file O arquivo de imagem selecionado.
+   */
+  const handleFileSelect = (file) => {
+    setArquivo(file);
+    
+    // Criar preview da imagem
+    if (file) {
+      const reader = new FileReader();
+      /** @type {function} Callback chamado quando o arquivo é lido. */
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPreviewUrl(null);
+    }
+  };
+
+  /**
+   * @async
+   * @function handleEnviar
+   * @description Lida com o envio do formulário, validando os dados e despachando a action de upload.
+   */
+  const handleEnviar = async () => {
+    if (!descricao || !genero || !arquivo) {
+      alert("Preencha todos os campos e selecione um arquivo!");
+      return;
+    }
+    if (!userId) {
+      alert("Faça login para publicar.");
+      return;
+    }
+
+    try {
+      // Preparar dados do post
+      /** @type {object} Dados textuais do post a serem enviados. */
+      const postData = {
+        titulo: descricao.trim(),
+        tipo: "visual",
+        genero,
+        conteudo: descricao.trim(),
+      };
+
+      // Dispatch da action com FormData
+      /** @type {object} Resultado da action de criação de post. */
+      const result = await dispatch(
+        createPostWithUpload({ postData, file: arquivo })
+      ).unwrap();
+
+      console.log("✅ Post criado:", result);
+      alert("Imagem publicada com sucesso!");
+      
+      // Limpar formulário
+      setDescricao("");
+      setGenero("");
+      setArquivo(null);
+      setPreviewUrl(null);
+      
+      // Navegar para o perfil do usuário
+      if (username) navigate(`/user/${username}`);
+      else navigate("/");
+    } catch (err) {
+      console.error("❌ Erro ao enviar imagem:", err);
+      alert(err || "Não foi possível enviar a imagem. Tente novamente.");
+    }
+  };
+
+  return (
+    &lt;>
+      &lt;BackButton />
+      &lt;PublicarLayout>
+        &lt;div className="container-publicar">
+          &lt;DescricaoInput
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            placeholder="Descreva sua imagem..."
+          />
+          &lt;GeneroSelect tipo="visual" value={genero} onChange={setGenero} />
+          
+          {previewUrl &amp;&amp; (
+            &lt;div className="preview-container" style={{ margin: "20px 0", textAlign: "center" }}>
+              &lt;img
+                src={previewUrl}
+                alt="Preview"
+                style={{ maxWidth: "100%", maxHeight: "300px", borderRadius: "8px" }}
+              />
+              &lt;p style={{ marginTop: "10px", fontSize: "14px", color: "#666" }}>
+                {arquivo?.name}
+              &lt;/p>
+            &lt;/div>
+          )}
+          
+          &lt;UploadArea
+            tipo="image"
+            accept=".png,.jpg,.jpeg,.webp,.gif"
+            textoPrincipal="Faça upload da imagem"
+            textoSecundario="PNG / JPG / WEBP / GIF"
+            onFileSelect={handleFileSelect}
+          />
+          
+          {error &amp;&amp; (
+            &lt;div style={{ color: "red", margin: "10px 0", textAlign: "center" }}>
+              {error}
+            &lt;/div>
+          )}
+          
+          &lt;EnviarButton onClick={handleEnviar} loading={uploading} disabled={uploading} />
+        &lt;/div>
+      &lt;/PublicarLayout>
+    &lt;/>
+  );
+};
+
+export default PublicarImagem;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CommentsPopup.html">CommentsPopup</a></li><li><a href="module-FooterAL.html">FooterAL</a></li><li><a href="module-Header.html">Header</a></li><li><a href="module-HeaderForYou.html">HeaderForYou</a></li><li><a href="module-MonetizationPopup.html">MonetizationPopup</a></li><li><a href="module-NavbarAL.html">NavbarAL</a></li><li><a href="module-NavbarLog.html">NavbarLog</a></li><li><a href="module-PoliticasPrivacidade.html">PoliticasPrivacidade</a></li><li><a href="module-PostCard.html">PostCard</a></li><li><a href="module-ProtectedRoute.html">ProtectedRoute</a></li><li><a href="module-PublicarImagem.html">PublicarImagem</a></li><li><a href="module-PublicarLayout.html">PublicarLayout</a></li><li><a href="module-PublicarLetra.html">PublicarLetra</a></li><li><a href="module-PublicarMusica.html">PublicarMusica</a></li><li><a href="module-TermosDeUso.html">TermosDeUso</a></li><li><a href="module-UserProfile.html">UserProfile</a></li><li><a href="module-VerificaLogin.html">VerificaLogin</a></li><li><a href="module-api_axios.html">api/axios</a></li></ul><h3>Global</h3><ul><li><a href="global.html#API_BASE_URL">API_BASE_URL</a></li><li><a href="global.html#ArtistPage">ArtistPage</a></li><li><a href="global.html#BackButton">BackButton</a></li><li><a href="global.html#DescricaoInput">DescricaoInput</a></li><li><a href="global.html#DiscoverArtist">DiscoverArtist</a></li><li><a href="global.html#EdicaoDeConta">EdicaoDeConta</a></li><li><a href="global.html#Feed">Feed</a></li><li><a href="global.html#FloatingActionButton">FloatingActionButton</a></li><li><a href="global.html#ForYou">ForYou</a></li><li><a href="global.html#GeneroSelect">GeneroSelect</a></li><li><a href="global.html#InitialPage">InitialPage</a></li><li><a href="global.html#ParticipatePage">ParticipatePage</a></li><li><a href="global.html#StarRater">StarRater</a></li><li><a href="global.html#UploadArea">UploadArea</a></li><li><a href="global.html#UploadPostForm">UploadPostForm</a></li><li><a href="global.html#authAPI">authAPI</a></li><li><a href="global.html#avaliacoesAPI">avaliacoesAPI</a></li><li><a href="global.html#comentariosAPI">comentariosAPI</a></li><li><a href="global.html#createComment">createComment</a></li><li><a href="global.html#createDesafio">createDesafio</a></li><li><a href="global.html#createParticipacao">createParticipacao</a></li><li><a href="global.html#createPost">createPost</a></li><li><a href="global.html#createPostWithUpload">createPostWithUpload</a></li><li><a href="global.html#deleteComment">deleteComment</a></li><li><a href="global.html#deleteDesafio">deleteDesafio</a></li><li><a href="global.html#deleteParticipacao">deleteParticipacao</a></li><li><a href="global.html#deletePost">deletePost</a></li><li><a href="global.html#fetchCommentsByPost">fetchCommentsByPost</a></li><li><a href="global.html#fetchDesafioById">fetchDesafioById</a></li><li><a href="global.html#fetchDesafios">fetchDesafios</a></li><li><a href="global.html#fetchFollowCounts">fetchFollowCounts</a></li><li><a href="global.html#fetchFollowersList">fetchFollowersList</a></li><li><a href="global.html#fetchFollowingList">fetchFollowingList</a></li><li><a href="global.html#fetchIsFollowing">fetchIsFollowing</a></li><li><a href="global.html#fetchMyRatingForPost">fetchMyRatingForPost</a></li><li><a href="global.html#fetchParticipacoes">fetchParticipacoes</a></li><li><a href="global.html#fetchParticipacoesByDesafio">fetchParticipacoesByDesafio</a></li><li><a href="global.html#fetchPostRating">fetchPostRating</a></li><li><a href="global.html#fetchPosts">fetchPosts</a></li><li><a href="global.html#fetchPostsByUser">fetchPostsByUser</a></li><li><a href="global.html#fetchUsuarios">fetchUsuarios</a></li><li><a href="global.html#fetchWithAuth">fetchWithAuth</a></li><li><a href="global.html#followUser">followUser</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#makeSelectRankingByStars">makeSelectRankingByStars</a></li><li><a href="global.html#patchDesafio">patchDesafio</a></li><li><a href="global.html#postsAPI">postsAPI</a></li><li><a href="global.html#removeRating">removeRating</a></li><li><a href="global.html#seguidoresAPI">seguidoresAPI</a></li><li><a href="global.html#selectAuthToken">selectAuthToken</a></li><li><a href="global.html#selectCommentsState">selectCommentsState</a></li><li><a href="global.html#selectCurrentUser">selectCurrentUser</a></li><li><a href="global.html#selectDesafioById">selectDesafioById</a></li><li><a href="global.html#selectDesafios">selectDesafios</a></li><li><a href="global.html#selectFollowCounts">selectFollowCounts</a></li><li><a href="global.html#selectIsFollowing">selectIsFollowing</a></li><li><a href="global.html#selectMyFollowingList">selectMyFollowingList</a></li><li><a href="global.html#selectParticipacoes">selectParticipacoes</a></li><li><a href="global.html#selectParticipacoesByDesafio">selectParticipacoesByDesafio</a></li><li><a href="global.html#selectParticipacoesByUsuario">selectParticipacoesByUsuario</a></li><li><a href="global.html#selectRatingState">selectRatingState</a></li><li><a href="global.html#selectUserError">selectUserError</a></li><li><a href="global.html#selectUserLoading">selectUserLoading</a></li><li><a href="global.html#selectUsuarios">selectUsuarios</a></li><li><a href="global.html#setUserFromStorage">setUserFromStorage</a></li><li><a href="global.html#store">store</a></li><li><a href="global.html#unfollowUser">unfollowUser</a></li><li><a href="global.html#updateComment">updateComment</a></li><li><a href="global.html#updatePost">updatePost</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#upsertRating">upsertRating</a></li><li><a href="global.html#usuariosAPI">usuariosAPI</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Dec 16 2025 13:21:09 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

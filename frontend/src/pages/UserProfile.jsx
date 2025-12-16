@@ -1,7 +1,6 @@
 /**
  * @fileoverview Componente React para exibir o perfil de um usuário, incluindo seus posts, estatísticas de seguidores/seguidos e funcionalidade de edição de posts.
  * @module UserProfile
- * @author Gemini
  */
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";

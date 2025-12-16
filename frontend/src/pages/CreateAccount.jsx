@@ -107,7 +107,8 @@ export default function CriacaoConta() {
         const msgs = serverMsg?.messages || serverMsg?.error || serverMsg;
         setErro(Array.isArray(msgs) ? msgs.join(", ") : String(msgs));
       } else {
-        setErro("Erro ao cadastrar usuário. Tente novamente.");
+        //setErro("Erro ao cadastrar usuário. Tente novamente.");
+        setErro("A senha escolhida deve ter 6 ou mais caracteres. Tente novamente.");
       }
     } finally {
       setLoading(false);

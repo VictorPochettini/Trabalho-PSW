@@ -2,7 +2,6 @@
 /**
  * @fileoverview Página de Publicação de Letra (Post de Texto).
  * @module PublicarLetra
- * @author Gemini
  */
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";

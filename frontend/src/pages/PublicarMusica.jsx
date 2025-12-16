@@ -2,7 +2,6 @@
 /**
  * @fileoverview Página de Publicação de Música (Post com upload de áudio).
  * @module PublicarMusica
- * @author Gemini
  */
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";

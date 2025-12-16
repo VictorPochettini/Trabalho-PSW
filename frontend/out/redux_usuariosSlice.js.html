@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: redux/usuariosSlice.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: redux/usuariosSlice.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// src/redux/userSlice.js
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import api from "../api/axios";
+
+// --- AÇÕES ASSÍNCRONAS (THUNKS) ---
+
+/**
+ * 🔐 Realiza o login do usuário.
+ * Persiste o token e os dados do usuário no localStorage.
+ */
+export const login = createAsyncThunk(
+  "user/login",
+  async ({ username, password }, { rejectWithValue }) => {
+    try {
+      const res = await api.post("/api/auth/login", { username, password });
+
+      const data = res.data;
+      const token = data.accessToken || data.token || data.access_token;
+      const user = data.user || data.usuario || data; // Adaptação para diferentes estruturas de resposta
+
+      if (!token || !user) {
+        return rejectWithValue("Resposta de login inválida do servidor");
+      }
+
+      // Persiste no localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("userData", JSON.stringify({ user, token }));
+
+      return { user, token };
+    } catch (err) {
+      const message =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Falha ao autenticar. Verifique suas credenciais.";
+      return rejectWithValue(message);
+    }
+  }
+);
+
+/**
+ * 🔄 Carrega o usuário e o token do localStorage ao iniciar a aplicação.
+ */
+export const setUserFromStorage = createAsyncThunk(
+  "user/setUserFromStorage",
+  async (_, { rejectWithValue }) => {
+    try {
+      const stored = localStorage.getItem("userData");
+      if (!stored) return rejectWithValue("No stored user");
+      
+      const parsed = JSON.parse(stored);
+      if (!parsed.user || !parsed.token) throw new Error("Dados incompletos");
+      
+      // Também garante que o token esteja disponível globalmente via interceptor
+      localStorage.setItem("token", parsed.token); 
+      
+      return parsed;
+    } catch (err) {
+      // Limpa storage em caso de erro de parsing
+      localStorage.removeItem("userData");
+      localStorage.removeItem("token");
+      return rejectWithValue("Failed to read stored user");
+    }
+  }
+);
+
+/**
+ * 👥 Busca a lista completa de todos os usuários (requer autenticação).
+ */
+export const fetchUsuarios = createAsyncThunk(
+  "user/fetchUsuarios",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get("/usuarios");
+      return res.data;
+    } catch (err) {
+      const message = err.response?.data?.error || "Erro ao buscar usuários";
+      return rejectWithValue(message);
+    }
+  }
+);
+
+/**
+ * ✏️ Atualiza os dados do usuário logado (PATCH).
+ * Sincroniza o estado do Redux e o localStorage.
+ */
+export const updateUser = createAsyncThunk(
+  "user/updateUser",
+  async (dadosAtualizados, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      const current = state.user.currentUser;
+      const user = current?.user;
+
+      if (!user || (!user.id &amp;&amp; !user._id)) {
+        throw new Error("Usuário não autenticado.");
+      }
+
+      const id = user.id || user._id;
+
+      const res = await api.patch(`/usuarios/${id}`, dadosAtualizados);
+      const updated = res.data;
+
+      // Sincroniza localStorage
+      const storedRaw = localStorage.getItem("userData");
+      if (storedRaw) {
+        const stored = JSON.parse(storedRaw);
+        if (stored.user) {
+          const newStored = { ...stored, user: updated };
+          localStorage.setItem("userData", JSON.stringify(newStored));
+        }
+      }
+
+      return updated;
+    } catch (err) {
+      const message =
+        err.response?.data?.error || err.message || "Erro ao atualizar usuário";
+      return rejectWithValue(message);
+    }
+  }
+);
+
+// --- SLICE E REDUCERS ---
+
+const userSlice = createSlice({
+  name: "user",
+  initialState: {
+    // currentUser: { user: { ... }, token: '...' }
+    currentUser: null, 
+    usuarios: [], // Lista de todos os usuários
+    loading: false,
+    error: null,
+  },
+  reducers: {
+    /**
+     * 🚪 Realiza o logout local: limpa o estado e o localStorage.
+     */
+    logout: (state) => {
+      state.currentUser = null;
+      state.error = null;
+      localStorage.removeItem("token");
+      localStorage.removeItem("userData");
+    },
+    clearError: (state) => {
+      state.error = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // 🔐 login
+      .addCase(login.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(login.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentUser = action.payload; // payload é { user, token }
+      })
+      .addCase(login.rejected, (state, action) => {
+        state.loading = false;
+        state.currentUser = null;
+        state.error = action.payload || action.error?.message;
+      })
+
+      // 🔄 setUserFromStorage
+      .addCase(setUserFromStorage.fulfilled, (state, action) => {
+        state.currentUser = action.payload; // payload é { user, token }
+      })
+      .addCase(setUserFromStorage.rejected, (state) => {
+        state.currentUser = null;
+      })
+
+      // 👥 fetchUsuarios
+      .addCase(fetchUsuarios.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchUsuarios.fulfilled, (state, action) => {
+        state.loading = false;
+        state.usuarios = action.payload; // Lista de todos os usuários
+      })
+      .addCase(fetchUsuarios.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error?.message;
+      })
+
+      // ✏️ updateUser
+      .addCase(updateUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUser.fulfilled, (state, action) => {
+        state.loading = false;
+
+        const updatedUser = action.payload;
+        
+        // 1. Atualiza currentUser.user se o ID coincidir
+        if (
+          state.currentUser?.user &amp;&amp;
+          (state.currentUser.user.id === updatedUser.id ||
+            state.currentUser.user._id === updatedUser._id)
+        ) {
+          state.currentUser.user = updatedUser;
+          // O localStorage já foi atualizado no thunk para garantir consistência.
+        }
+
+        // 2. Atualiza na lista geral de usuários (`usuarios`)
+        const idx = state.usuarios.findIndex(
+          (u) => u.id === updatedUser.id || u._id === updatedUser._id
+        );
+        if (idx !== -1) state.usuarios[idx] = updatedUser;
+      })
+      .addCase(updateUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error?.message;
+      });
+  },
+});
+
+export const { logout, clearError } = userSlice.actions;
+
+// --- SELECTORS ---
+
+/**
+ * Retorna o objeto do usuário logado ou null.
+*/
+export const selectCurrentUser = (state) =>
+  state.user.currentUser?.user || null;
+
+/**
+ * Retorna o token de autenticação (prioriza o state, fallback para localStorage).
+*/
+export const selectAuthToken = (state) =>
+  state.user.currentUser?.token || localStorage.getItem("token");
+
+/**
+ * Retorna a lista de todos os usuários buscados.
+*/
+export const selectUsuarios = (state) => state.user.usuarios || [];
+
+/**
+ * Retorna o status de carregamento.
+*/
+export const selectUserLoading = (state) => state.user.loading;
+
+/**
+ * Retorna a mensagem de erro.
+*/
+export const selectUserError = (state) => state.user.error;
+
+export default userSlice.reducer;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CommentsPopup.html">CommentsPopup</a></li><li><a href="module-FooterAL.html">FooterAL</a></li><li><a href="module-Header.html">Header</a></li><li><a href="module-HeaderForYou.html">HeaderForYou</a></li><li><a href="module-MonetizationPopup.html">MonetizationPopup</a></li><li><a href="module-NavbarAL.html">NavbarAL</a></li><li><a href="module-NavbarLog.html">NavbarLog</a></li><li><a href="module-PoliticasPrivacidade.html">PoliticasPrivacidade</a></li><li><a href="module-PostCard.html">PostCard</a></li><li><a href="module-ProtectedRoute.html">ProtectedRoute</a></li><li><a href="module-PublicarImagem.html">PublicarImagem</a></li><li><a href="module-PublicarLayout.html">PublicarLayout</a></li><li><a href="module-PublicarLetra.html">PublicarLetra</a></li><li><a href="module-PublicarMusica.html">PublicarMusica</a></li><li><a href="module-TermosDeUso.html">TermosDeUso</a></li><li><a href="module-UserProfile.html">UserProfile</a></li><li><a href="module-VerificaLogin.html">VerificaLogin</a></li><li><a href="module-api_axios.html">api/axios</a></li></ul><h3>Global</h3><ul><li><a href="global.html#API_BASE_URL">API_BASE_URL</a></li><li><a href="global.html#ArtistPage">ArtistPage</a></li><li><a href="global.html#BackButton">BackButton</a></li><li><a href="global.html#DescricaoInput">DescricaoInput</a></li><li><a href="global.html#DiscoverArtist">DiscoverArtist</a></li><li><a href="global.html#EdicaoDeConta">EdicaoDeConta</a></li><li><a href="global.html#Feed">Feed</a></li><li><a href="global.html#FloatingActionButton">FloatingActionButton</a></li><li><a href="global.html#ForYou">ForYou</a></li><li><a href="global.html#GeneroSelect">GeneroSelect</a></li><li><a href="global.html#InitialPage">InitialPage</a></li><li><a href="global.html#ParticipatePage">ParticipatePage</a></li><li><a href="global.html#StarRater">StarRater</a></li><li><a href="global.html#UploadArea">UploadArea</a></li><li><a href="global.html#UploadPostForm">UploadPostForm</a></li><li><a href="global.html#authAPI">authAPI</a></li><li><a href="global.html#avaliacoesAPI">avaliacoesAPI</a></li><li><a href="global.html#comentariosAPI">comentariosAPI</a></li><li><a href="global.html#createComment">createComment</a></li><li><a href="global.html#createDesafio">createDesafio</a></li><li><a href="global.html#createParticipacao">createParticipacao</a></li><li><a href="global.html#createPost">createPost</a></li><li><a href="global.html#createPostWithUpload">createPostWithUpload</a></li><li><a href="global.html#deleteComment">deleteComment</a></li><li><a href="global.html#deleteDesafio">deleteDesafio</a></li><li><a href="global.html#deleteParticipacao">deleteParticipacao</a></li><li><a href="global.html#deletePost">deletePost</a></li><li><a href="global.html#fetchCommentsByPost">fetchCommentsByPost</a></li><li><a href="global.html#fetchDesafioById">fetchDesafioById</a></li><li><a href="global.html#fetchDesafios">fetchDesafios</a></li><li><a href="global.html#fetchFollowCounts">fetchFollowCounts</a></li><li><a href="global.html#fetchFollowersList">fetchFollowersList</a></li><li><a href="global.html#fetchFollowingList">fetchFollowingList</a></li><li><a href="global.html#fetchIsFollowing">fetchIsFollowing</a></li><li><a href="global.html#fetchMyRatingForPost">fetchMyRatingForPost</a></li><li><a href="global.html#fetchParticipacoes">fetchParticipacoes</a></li><li><a href="global.html#fetchParticipacoesByDesafio">fetchParticipacoesByDesafio</a></li><li><a href="global.html#fetchPostRating">fetchPostRating</a></li><li><a href="global.html#fetchPosts">fetchPosts</a></li><li><a href="global.html#fetchPostsByUser">fetchPostsByUser</a></li><li><a href="global.html#fetchUsuarios">fetchUsuarios</a></li><li><a href="global.html#fetchWithAuth">fetchWithAuth</a></li><li><a href="global.html#followUser">followUser</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#makeSelectRankingByStars">makeSelectRankingByStars</a></li><li><a href="global.html#patchDesafio">patchDesafio</a></li><li><a href="global.html#postsAPI">postsAPI</a></li><li><a href="global.html#removeRating">removeRating</a></li><li><a href="global.html#seguidoresAPI">seguidoresAPI</a></li><li><a href="global.html#selectAuthToken">selectAuthToken</a></li><li><a href="global.html#selectCommentsState">selectCommentsState</a></li><li><a href="global.html#selectCurrentUser">selectCurrentUser</a></li><li><a href="global.html#selectDesafioById">selectDesafioById</a></li><li><a href="global.html#selectDesafios">selectDesafios</a></li><li><a href="global.html#selectFollowCounts">selectFollowCounts</a></li><li><a href="global.html#selectIsFollowing">selectIsFollowing</a></li><li><a href="global.html#selectMyFollowingList">selectMyFollowingList</a></li><li><a href="global.html#selectParticipacoes">selectParticipacoes</a></li><li><a href="global.html#selectParticipacoesByDesafio">selectParticipacoesByDesafio</a></li><li><a href="global.html#selectParticipacoesByUsuario">selectParticipacoesByUsuario</a></li><li><a href="global.html#selectRatingState">selectRatingState</a></li><li><a href="global.html#selectUserError">selectUserError</a></li><li><a href="global.html#selectUserLoading">selectUserLoading</a></li><li><a href="global.html#selectUsuarios">selectUsuarios</a></li><li><a href="global.html#setUserFromStorage">setUserFromStorage</a></li><li><a href="global.html#store">store</a></li><li><a href="global.html#unfollowUser">unfollowUser</a></li><li><a href="global.html#updateComment">updateComment</a></li><li><a href="global.html#updatePost">updatePost</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#upsertRating">upsertRating</a></li><li><a href="global.html#usuariosAPI">usuariosAPI</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Dec 16 2025 13:21:09 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

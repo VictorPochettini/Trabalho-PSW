@@ -1,7 +1,6 @@
 /**
  * @fileoverview Componente React para exibir as Políticas de Privacidade da aplicação ArtBeat.
  * @module PoliticasPrivacidade
- * @author Gemini
  */
 import React, { useEffect, useState } from "react";
 import "../css/termosPoliticas.css";

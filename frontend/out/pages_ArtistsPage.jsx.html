@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/ArtistsPage.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/ArtistsPage.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// src/pages/DiscoverArtistPublic.jsx
+import React, { useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import NavbarAL from '../components/NavbarAL';
+import { fetchUsuarios } from '../redux/usuariosSlice';
+import { fetchPosts } from '../redux/postsSlice';
+import { useNavigate } from 'react-router-dom';
+import FooterAL from '../components/FooterAL';
+import '../css/InitialPage.css';
+
+/**
+ * @typedef {object} Usuario
+ * @property {string} _id ID do MongoDB do usuário.
+ * @property {string} [id] ID alternativo.
+ * @property {string} username Nome de usuário.
+ * @property {string} [nome] Nome de exibição.
+ * @property {string} [bio] Biografia.
+ * @property {string} [fotoUrl] URL da foto de perfil.
+ */
+
+/**
+ * @typedef {object} Post
+ * @property {string} _id ID do MongoDB do post.
+ * @property {string} [tipo] Categoria do post ('musica', 'texto', 'visual').
+ * @property {string} [usuarioId] ID do autor (usuário) do post.
+ * @property {string} [userId] ID alternativo do autor.
+ * // ... outras propriedades de post
+ */
+
+/**
+ * @typedef {object} ArtistWithCount
+ * @property {number} postCount Número de posts recentes do artista na categoria.
+ * @augments Usuario
+ */
+
+/**
+ * Página pública para descoberta aleatória de artistas por categoria.
+ *
+ * O componente carrega a lista de usuários e posts (através do Redux) e,
+ * em seguida, permite que o usuário gire uma "roleta" para encontrar um
+ * artista aleatório em uma das categorias de conteúdo (Música, Texto, Visual).
+ * Como é uma página pública, as interações de "Seguir" redirecionam para o login.
+ *
+ * @returns {JSX.Element} A página de descoberta de artistas.
+ */
+
+const ArtistPage = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // Redux State Selectors
+  /** @type {Usuario[]} */
+  const { usuarios = [] } = useSelector((s) => s.user) || {};
+  /** @type {{lista: Post[], loading: boolean}} */
+  const { lista: posts = [], loading: loadingPosts } = useSelector((s) => s.posts) || {};
+
+  // Estado local para a roleta
+  /** @type {[ArtistWithCount | null, React.Dispatch&lt;React.SetStateAction&lt;ArtistWithCount | null>>]} */
+  const [currentArtist, setCurrentArtist] = useState(null);
+  const [isRouletteSpinning, setIsRouletteSpinning] = useState(false);
+  /** @type {['musica'|'texto'|'visual'|null, React.Dispatch&lt;React.SetStateAction&lt;'musica'|'texto'|'visual'|null>>]} */
+  const [currentCategory, setCurrentCategory] = useState(null);
+
+  // Carrega base: Busca usuários e posts se o Redux estiver vazio.
+  useEffect(() => {
+    if (!Array.isArray(usuarios) || usuarios.length === 0) dispatch(fetchUsuarios());
+    if (!Array.isArray(posts) || posts.length === 0) dispatch(fetchPosts());
+  }, [dispatch]);
+
+  // Agrupa artistas por categoria
+  /**
+   * Agrupa e conta posts de artistas por categoria.
+   * A computação é memorizada (useMemo) e re-executada apenas quando 'posts' ou 'usuarios' mudam.
+   * @type {{musica: ArtistWithCount[], texto: ArtistWithCount[], visual: ArtistWithCount[]}}
+   */
+  const artistsByCategory = useMemo(() => {
+    const map = { musica: new Map(), texto: new Map(), visual: new Map() };
+
+    for (const p of posts) {
+      const tipo = p?.tipo;
+      if (!['musica', 'texto', 'visual'].includes(tipo)) continue;
+
+      // ✅ CORREÇÃO: Usar _id ou id (MongoDB usa _id)
+      const author = usuarios.find((u) => {
+        const uid = String(u._id || u.id);
+        const puid = String(p.usuarioId || p.userId);
+        return uid === puid;
+      });
+      if (!author) continue;
+
+      const key = String(author._id || author.id);
+      if (!map[tipo].has(key)) {
+        map[tipo].set(key, { ...author, postCount: 1 });
+      } else {
+        const prev = map[tipo].get(key);
+        map[tipo].set(key, { ...prev, postCount: (prev.postCount || 0) + 1 });
+      }
+    }
+
+    return {
+      musica: Array.from(map.musica.values()),
+      texto: Array.from(map.texto.values()),
+      visual: Array.from(map.visual.values()),
+    };
+  }, [posts, usuarios]);
+
+  /**
+   * @private
+   * Seleciona um elemento aleatório de um array.
+   * @param {Array&lt;any>} arr O array de entrada.
+   * @returns {any | null} Um elemento aleatório ou null se o array estiver vazio.
+   */
+  const pickRandom = (arr) => (!arr || arr.length === 0) ? null : arr[Math.floor(Math.random() * arr.length)];
+
+  /**
+   * Inicia o processo de "roleta" para escolher um artista aleatório na categoria.
+   * Atualiza o estado para mostrar o spinner e, após um timeout (900ms), revela o artista escolhido.
+   * @param {'musica'|'texto'|'visual'} category A categoria a ser sorteada.
+   * @returns {void}
+   */
+  const getRandomArtist = (category) => {
+    setCurrentCategory(category);
+    setIsRouletteSpinning(true);
+    setCurrentArtist(null);
+    setTimeout(() => {
+      const list = artistsByCategory[category] || [];
+      const chosen = pickRandom(list);
+      setCurrentArtist(chosen || null);
+      setIsRouletteSpinning(false);
+    }, 900);
+  };
+
+  /**
+   * Navega para a página de perfil do artista atualmente selecionado.
+   * @private
+   * @returns {void}
+   */
+  const goToProfile = () => {
+    if (currentArtist?.username) navigate(`/user/${currentArtist.username}`);
+  };
+
+  /**
+   * Gera um fallback SVG para a imagem do perfil do artista.
+   * @private
+   * @returns {string} URL de dados do SVG codificado.
+   */
+  const avatarUrl = () => {
+    const svg = encodeURIComponent(`
+      &lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300">
+        &lt;defs>
+          &lt;linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            &lt;stop offset="0%" stop-color="#6a5ae0"/>
+            &lt;stop offset="100%" stop-color="#8c7ff2"/>
+          &lt;/linearGradient>
+        &lt;/defs>
+        &lt;rect width="100%" height="100%" rx="150" ry="150" fill="url(#g)"/>
+        &lt;g fill="#ffffff">
+          &lt;circle cx="150" cy="120" r="60"/>
+          &lt;path d="M60 260c0-50 40-90 90-90s90 40 90 90"/>
+        &lt;/g>
+      &lt;/svg>
+    `);
+    return `data:image/svg+xml;utf8,${svg}`;
+  };
+
+  /**
+   * Gera uma biografia simplificada e derivada do artista, baseada na contagem de posts na categoria atual.
+   * @private
+   * @param {Usuario | ArtistWithCount | null} u O objeto usuário.
+   * @returns {string} A string da biografia.
+   */
+  const derivedBio = (u) => {
+    if (!u) return '';
+    const count = currentCategory
+      ? (artistsByCategory[currentCategory]?.find(a => String(a._id || a.id) === String(u._id || u.id))?.postCount || 0)
+      : 0;
+    return `Artista com ${count} publicação${count === 1 ? '' : 's'} recente${count === 1 ? '' : 's'}.`;
+  };
+
+  const isEmptyState =
+    !loadingPosts &amp;&amp;
+    (!artistsByCategory.musica.length &amp;&amp;
+      !artistsByCategory.texto.length &amp;&amp;
+      !artistsByCategory.visual.length);
+
+  /**
+   * Handler de clique no botão "Seguir" (para a versão deslogada).
+   * Redireciona o usuário para a página de login.
+   * @private
+   * @returns {void}
+   */
+  const handleFollowClick = () => navigate('/login');
+
+  return (
+    &lt;>
+    &lt;div className="artistas-page">
+      &lt;NavbarAL />
+      &lt;section className="hero-artistas py-5">
+      &lt;div className="container mt-5 pt-4">
+        &lt;div className="row justify-content-center">
+          &lt;div className="col-12 text-center">
+            &lt;h1 className="display-5 fw-bold gradient-text mb-4">Descubra um Artista&lt;/h1>
+
+            &lt;div className="d-flex flex-wrap gap-3 justify-content-center mb-5">
+              &lt;button
+                className="btn cat-btn px-4 py-3"
+                onClick={() => getRandomArtist('musica')}
+                disabled={artistsByCategory.musica.length === 0}
+                title={artistsByCategory.musica.length ? 'Sortear artista de Música' : 'Sem artistas nessa categoria'}
+              >
+                &lt;i className="fa-solid fa-music me-2">&lt;/i> Música
+              &lt;/button>
+              &lt;button
+                className="btn cat-btn px-4 py-3"
+                onClick={() => getRandomArtist('texto')}
+                disabled={artistsByCategory.texto.length === 0}
+                title={artistsByCategory.texto.length ? 'Sortear artista de Texto' : 'Sem artistas nessa categoria'}
+              >
+                &lt;i className="fa-solid fa-pen-nib me-2">&lt;/i> Texto
+              &lt;/button>
+              &lt;button
+                className="btn cat-btn px-4 py-3"
+                onClick={() => getRandomArtist('visual')}
+                disabled={artistsByCategory.visual.length === 0}
+                title={artistsByCategory.visual.length ? 'Sortear artista Visual' : 'Sem artistas nessa categoria'}
+              >
+                &lt;i className="fas fa-image me-2">&lt;/i> Visual
+              &lt;/button>
+            &lt;/div>
+
+            {isRouletteSpinning &amp;&amp; &lt;div className="roulette mb-4">🎲 Sorteando artista...&lt;/div>}
+
+            {!isRouletteSpinning &amp;&amp; isEmptyState &amp;&amp; (
+              &lt;div className="empty-card mx-auto p-4">
+                &lt;p className="mb-0">Ainda não há artistas com publicações. Tente novamente mais tarde.&lt;/p>
+              &lt;/div>
+            )}
+
+            {currentArtist &amp;&amp; (
+              &lt;div className="artist-card mx-auto p-4">
+                &lt;div className="artist-avatar-wrap" role="button" title="Ver perfil" onClick={goToProfile}>
+                  &lt;img
+                    src={avatarUrl()}
+                    alt={currentArtist.nome || currentArtist.username}
+                    className="artist-img"
+                  />
+                &lt;/div>
+
+                &lt;h2 className="artist-name mb-1 clickable" onClick={goToProfile} title="Abrir perfil">
+                  {currentArtist.nome || currentArtist.username}
+                &lt;/h2>
+                &lt;div className="artist-username">@{currentArtist.username}&lt;/div>
+
+                &lt;p className="artist-bio mb-3">{derivedBio(currentArtist)}&lt;/p>
+
+                &lt;div className="d-flex gap-2 justify-content-center">
+                  &lt;button
+                    className="btn follow-btn px-4 notfollowing"
+                    onClick={handleFollowClick}
+                    title="Faça login para seguir"
+                  >
+                    Seguir
+                  &lt;/button>
+                  &lt;button className="btn profile-btn px-4" onClick={goToProfile}>
+                    Ver perfil
+                  &lt;/button>
+                &lt;/div>
+              &lt;/div>
+            )}
+          &lt;/div>
+        &lt;/div>
+      &lt;/div>
+      &lt;/section>
+      &lt;FooterAL>&lt;/FooterAL>
+      &lt;/div>
+
+      {/* estilos (mantendo o design do seu componente logado) */}
+      &lt;style>{`
+        .gradient-text {
+          background: linear-gradient(90deg, #c9d1ff, #ffffff);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          text-shadow: 0 6px 24px rgba(0,0,0,.18);
+        }
+
+        .cat-btn {
+          border-radius: 40px;
+          background: linear-gradient(135deg, rgba(94,23,235,.9), rgba(29,20,124,.9));
+          color: white;
+          font-weight: 600;
+          border: 1px solid rgba(255,255,255,.14);
+          box-shadow: 0 8px 22px rgba(0,0,0,.22);
+          transition: transform .2s ease, filter .2s ease, box-shadow .25s ease;
+        }
+        .cat-btn:hover { transform: translateY(-1px); filter: brightness(1.03); box-shadow: 0 12px 28px rgba(0,0,0,.26); }
+        .cat-btn:disabled { opacity: .55; filter: grayscale(.2); cursor: not-allowed; }
+
+        .artist-card {
+          background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+          border: 1px solid rgba(255,255,255,.16);
+          backdrop-filter: blur(10px) saturate(1.05);
+          -webkit-backdrop-filter: blur(10px) saturate(1.05);
+          border-radius: 20px;
+          width: 100%;
+          max-width: 380px;
+          text-align: center;
+          padding: 25px;
+          box-shadow: 0 14px 30px rgba(0,0,0,.22);
+          animation: fadeIn .5s ease forwards;
+          color: #fff;
+        }
+
+        .artist-avatar-wrap {
+          width: 120px; height: 120px; margin: 0 auto 12px; position: relative;
+          border-radius: 999px; padding: 4px;
+          background: linear-gradient(135deg, rgba(106,90,224,.55), rgba(140,127,242,.45));
+          box-shadow: 0 10px 24px rgba(106,90,224,.28);
+        }
+        .artist-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 50%;
+          border: 3px solid rgba(255,255,255,.8);
+          display: block;
+        }
+
+        .artist-name {
+          font-size: 1.4rem;
+          font-weight: 700;
+          color: #fff;
+          text-shadow: 0 2px 12px rgba(0,0,0,.25);
+        }
+        .artist-username { color: rgba(255,255,255,.85); margin-bottom: 6px; }
+        .artist-bio { color: rgba(255,255,255,.85); font-size: .96rem; }
+
+        .follow-btn, .profile-btn {
+          border-radius: 30px;
+          border: 1px solid rgba(255,255,255,.18);
+          color: #fff;
+          font-weight: 600;
+          transition: transform .15s ease, background .2s ease, box-shadow .25s ease, border-color .2s ease;
+        }
+        .follow-btn.notfollowing { background: linear-gradient(135deg, rgba(94,23,235,.9), rgba(123,63,242,.9)); }
+        .follow-btn:hover, .profile-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 10px 24px rgba(0,0,0,.25);
+          border-color: rgba(255,255,255,.28);
+        }
+        .profile-btn { background: linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.12)); }
+
+        .roulette {
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: #fff;
+          animation: blink .3s infinite alternate;
+          text-shadow: 0 1px 10px rgba(0,0,0,.22);
+        }
+
+        .empty-card {
+          background: rgba(255,255,255,.08);
+          border: 1px solid rgba(255,255,255,.14);
+          border-radius: 16px;
+          color: #fff;
+          backdrop-filter: blur(6px);
+          max-width: 520px;
+        }
+
+        .clickable { cursor: pointer; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes blink { from { opacity: .6; } to { opacity: 1; } }
+
+        @media (prefers-reduced-motion: reduce) {
+          .cat-btn, .artist-card, .follow-btn, .profile-btn { transition: none !important; }
+          .roulette { animation: none !important; }
+        }
+      `}&lt;/style>
+    &lt;/>
+  );
+};
+
+export default ArtistPage;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CommentsPopup.html">CommentsPopup</a></li><li><a href="module-FooterAL.html">FooterAL</a></li><li><a href="module-Header.html">Header</a></li><li><a href="module-HeaderForYou.html">HeaderForYou</a></li><li><a href="module-MonetizationPopup.html">MonetizationPopup</a></li><li><a href="module-NavbarAL.html">NavbarAL</a></li><li><a href="module-NavbarLog.html">NavbarLog</a></li><li><a href="module-PoliticasPrivacidade.html">PoliticasPrivacidade</a></li><li><a href="module-PostCard.html">PostCard</a></li><li><a href="module-ProtectedRoute.html">ProtectedRoute</a></li><li><a href="module-PublicarImagem.html">PublicarImagem</a></li><li><a href="module-PublicarLayout.html">PublicarLayout</a></li><li><a href="module-PublicarLetra.html">PublicarLetra</a></li><li><a href="module-PublicarMusica.html">PublicarMusica</a></li><li><a href="module-TermosDeUso.html">TermosDeUso</a></li><li><a href="module-UserProfile.html">UserProfile</a></li><li><a href="module-VerificaLogin.html">VerificaLogin</a></li><li><a href="module-api_axios.html">api/axios</a></li></ul><h3>Global</h3><ul><li><a href="global.html#API_BASE_URL">API_BASE_URL</a></li><li><a href="global.html#ArtistPage">ArtistPage</a></li><li><a href="global.html#BackButton">BackButton</a></li><li><a href="global.html#DescricaoInput">DescricaoInput</a></li><li><a href="global.html#DiscoverArtist">DiscoverArtist</a></li><li><a href="global.html#EdicaoDeConta">EdicaoDeConta</a></li><li><a href="global.html#Feed">Feed</a></li><li><a href="global.html#FloatingActionButton">FloatingActionButton</a></li><li><a href="global.html#ForYou">ForYou</a></li><li><a href="global.html#GeneroSelect">GeneroSelect</a></li><li><a href="global.html#InitialPage">InitialPage</a></li><li><a href="global.html#ParticipatePage">ParticipatePage</a></li><li><a href="global.html#StarRater">StarRater</a></li><li><a href="global.html#UploadArea">UploadArea</a></li><li><a href="global.html#UploadPostForm">UploadPostForm</a></li><li><a href="global.html#authAPI">authAPI</a></li><li><a href="global.html#avaliacoesAPI">avaliacoesAPI</a></li><li><a href="global.html#comentariosAPI">comentariosAPI</a></li><li><a href="global.html#createComment">createComment</a></li><li><a href="global.html#createDesafio">createDesafio</a></li><li><a href="global.html#createParticipacao">createParticipacao</a></li><li><a href="global.html#createPost">createPost</a></li><li><a href="global.html#createPostWithUpload">createPostWithUpload</a></li><li><a href="global.html#deleteComment">deleteComment</a></li><li><a href="global.html#deleteDesafio">deleteDesafio</a></li><li><a href="global.html#deleteParticipacao">deleteParticipacao</a></li><li><a href="global.html#deletePost">deletePost</a></li><li><a href="global.html#fetchCommentsByPost">fetchCommentsByPost</a></li><li><a href="global.html#fetchDesafioById">fetchDesafioById</a></li><li><a href="global.html#fetchDesafios">fetchDesafios</a></li><li><a href="global.html#fetchFollowCounts">fetchFollowCounts</a></li><li><a href="global.html#fetchFollowersList">fetchFollowersList</a></li><li><a href="global.html#fetchFollowingList">fetchFollowingList</a></li><li><a href="global.html#fetchIsFollowing">fetchIsFollowing</a></li><li><a href="global.html#fetchMyRatingForPost">fetchMyRatingForPost</a></li><li><a href="global.html#fetchParticipacoes">fetchParticipacoes</a></li><li><a href="global.html#fetchParticipacoesByDesafio">fetchParticipacoesByDesafio</a></li><li><a href="global.html#fetchPostRating">fetchPostRating</a></li><li><a href="global.html#fetchPosts">fetchPosts</a></li><li><a href="global.html#fetchPostsByUser">fetchPostsByUser</a></li><li><a href="global.html#fetchUsuarios">fetchUsuarios</a></li><li><a href="global.html#fetchWithAuth">fetchWithAuth</a></li><li><a href="global.html#followUser">followUser</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#makeSelectRankingByStars">makeSelectRankingByStars</a></li><li><a href="global.html#patchDesafio">patchDesafio</a></li><li><a href="global.html#postsAPI">postsAPI</a></li><li><a href="global.html#removeRating">removeRating</a></li><li><a href="global.html#seguidoresAPI">seguidoresAPI</a></li><li><a href="global.html#selectAuthToken">selectAuthToken</a></li><li><a href="global.html#selectCommentsState">selectCommentsState</a></li><li><a href="global.html#selectCurrentUser">selectCurrentUser</a></li><li><a href="global.html#selectDesafioById">selectDesafioById</a></li><li><a href="global.html#selectDesafios">selectDesafios</a></li><li><a href="global.html#selectFollowCounts">selectFollowCounts</a></li><li><a href="global.html#selectIsFollowing">selectIsFollowing</a></li><li><a href="global.html#selectMyFollowingList">selectMyFollowingList</a></li><li><a href="global.html#selectParticipacoes">selectParticipacoes</a></li><li><a href="global.html#selectParticipacoesByDesafio">selectParticipacoesByDesafio</a></li><li><a href="global.html#selectParticipacoesByUsuario">selectParticipacoesByUsuario</a></li><li><a href="global.html#selectRatingState">selectRatingState</a></li><li><a href="global.html#selectUserError">selectUserError</a></li><li><a href="global.html#selectUserLoading">selectUserLoading</a></li><li><a href="global.html#selectUsuarios">selectUsuarios</a></li><li><a href="global.html#setUserFromStorage">setUserFromStorage</a></li><li><a href="global.html#store">store</a></li><li><a href="global.html#unfollowUser">unfollowUser</a></li><li><a href="global.html#updateComment">updateComment</a></li><li><a href="global.html#updatePost">updatePost</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#upsertRating">upsertRating</a></li><li><a href="global.html#usuariosAPI">usuariosAPI</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Dec 16 2025 13:21:09 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

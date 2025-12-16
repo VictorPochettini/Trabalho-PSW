@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/ForYou.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/ForYou.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import React, { useEffect, useMemo, useState, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+import HeaderForYou from "../components/Header2";
+import MonetizationPopup from "../components/MonetizationPopup";
+
+import { fetchPosts } from "../redux/postsSlice";
+import { fetchUsuarios } from "../redux/usuariosSlice";
+import {
+  followUser,
+  unfollowUser,
+  fetchFollowCounts
+} from "../redux/followsSlice";
+
+/**
+ * @typedef {object} Usuario
+ * @property {string} [_id] ID do MongoDB do usuário.
+ * @property {string} [id] ID alternativo do usuário.
+ * @property {string} [username] Nome de usuário.
+ * @property {string} [nome] Nome de exibição.
+ * @property {string} [fotoPerfil] Caminho/URL da foto de perfil.
+ * @property {number} [ratingAvgRecebida] Avaliação média recebida (do servidor).
+ * @property {number} [followersCount] Contagem de seguidores (do servidor).
+ */
+
+/**
+ * @typedef {object} Post
+ * @property {string} [usuarioId] ID do autor do post.
+ * @property {string} [userId] ID do autor do post (alternativo).
+ * @property {('texto' | 'musica' | 'visual' | 'letra' | 'arte')} tipo Tipo do post.
+ * @property {number} [ratingAvg] Avaliação média do post.
+ */
+
+/**
+ * @typedef {object} ArtistData Dados processados de um artista para exibição no feed ForYou.
+ * @property {string} id ID padronizado do artista.
+ * @property {string} name Nome de exibição.
+ * @property {string} username Nome de usuário.
+ * @property {string | null} fotoPerfil Caminho/URL da foto de perfil.
+ * @property {('musica' | 'visual' | 'texto' | 'outros')} categoryKey Chave da categoria principal.
+ * @property {string} category Nome de exibição da categoria principal.
+ * @property {number} followers Número de seguidores (pode ser o valor local otimista).
+ * @property {number} works Número de obras publicadas.
+ * @property {number} rating Avaliação média calculada.
+ */
+
+/**
+ * @typedef {object} FollowCounts
+ * @property {number} followersCount Número de seguidores.
+ * @property {number} followingCount Número de seguidos.
+ */
+
+/**
+ * Componente ForYou (Recomendado para Você).
+ * Exibe uma grade de artistas, permitindo busca, filtragem por categoria
+ * e ordenação por rating, seguidores ou obras. Gerencia as interações
+ * de follow/unfollow com atualização otimista da UI.
+ *
+ * @returns {JSX.Element} A interface completa do ForYou.
+ */
+const ForYou = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // --- Redux State ---
+  /** @type {Post[]} Lista de todos os posts carregados. */
+  const posts = useSelector((s) => s.posts.lista || []);
+  /** @type {Usuario[]} Lista de todos os usuários carregados. */
+  const usuarios = useSelector((s) => s.user.usuarios || []);
+  const loadingUsuarios = useSelector((s) => s.user.loading);
+  const currentUserState = useSelector((s) => s.user.currentUser);
+  /** @type {Usuario | null} Objeto do usuário logado. */
+  const currentUser = currentUserState?.user ?? null;
+  /** @type {string | null} ID do usuário logado. */
+  const viewerId = currentUser?._id ?? currentUser?.id ?? null;
+  /** @type {Object.&lt;string, FollowCounts>} Contagens de seguidores/seguindo do Redux. */
+  const followsCounts = useSelector((s) => s.follows?.counts || {});
+
+  // --- Estado Local
+  /** @type {Set&lt;string>} IDs dos usuários que o viewerId está seguindo. */
+  const [myFollowingIds, setMyFollowingIds] = useState(new Set());
+  /** @type {Object.&lt;string, number>} Contagens de seguidores temporárias/otimistas. */
+  const [localFollowerCounts, setLocalFollowerCounts] = useState({});
+  /** @type {ArtistData[]} Lista processada de artistas para exibição. */
+  const [artistsData, setArtistsData] = useState([]);
+  
+  // --- UI State
+  const [showMonetization, setShowMonetization] = useState(false);
+  const [monetizationUsername, setMonetizationUsername] = useState("");
+  /** @type {('all' | 'musica' | 'texto' | 'visual')} Filtro ativo. */
+  const [activeFilter, setActiveFilter] = useState("all");
+  /** @type {('rating' | 'followers' | 'works')} Critério de ordenação. */
+  const [sortBy, setSortBy] = useState("rating");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+
+  // ✅ Ref para evitar requisições duplicadas de contagem de seguidores.
+  /** @type {React.MutableRefObject&lt;Set&lt;string>>} */
+  const countsRequested = useRef(new Set());
+
+  // 1. Carregar Dados Iniciais (Posts, Usuários)
+  useEffect(() => {
+    dispatch(fetchPosts());
+    dispatch(fetchUsuarios());
+  }, [dispatch]);
+
+  // 2. Atualização periódica para pegar novas avaliações (agora o backend retorna ratings)
+  useEffect(() => {
+    // Polling leve a cada 60 segundos
+    const interval = setInterval(() => {
+      dispatch(fetchPosts());
+    }, 60000); // 1 minuto
+
+    return () => clearInterval(interval);
+  }, [dispatch]);
+
+  // 3. Sincroniza lista de "Quem eu sigo"
+  useEffect(() => {
+    const fetchMyFollowing = async () => {
+      if (!viewerId) return;
+      try {
+        const res = await axios.get(`http://localhost:5000/follows/following/${viewerId}`);
+        const ids = res.data.following.map(u => String(u._id || u.id));
+        setMyFollowingIds(new Set(ids));
+      } catch (error) {
+        console.error("Erro ao buscar lista de seguindo:", error);
+      }
+    };
+    fetchMyFollowing();
+  }, [viewerId]);
+
+  // 4. Buscar contagens de seguidores para os usuários listados
+  useEffect(() => {
+    if (!usuarios.length) return;
+
+    usuarios.forEach(u => {
+      const uid = String(u._id || u.id);
+      
+      // Se não temos a contagem no Redux E ainda não pedimos ao servidor
+      if (followsCounts[uid] === undefined &amp;&amp; !countsRequested.current.has(uid)) {
+        // Marca como pedido para não pedir de novo no próximo render
+        countsRequested.current.add(uid);
+        // Dispara a busca
+        dispatch(fetchFollowCounts({ userId: uid }));
+      }
+    });
+  }, [usuarios, followsCounts, dispatch]);
+
+  // 5. Processar Artistas e Montar Dados
+  useEffect(() => {
+    // Não bloqueamos se loadingUsuarios for true, pois queremos atualizações progressivas
+    
+    // Helper para média de estrelas
+    const calculateRatingFromPosts = (userPosts) => {
+      if (!userPosts?.length) return 0;
+      const ratings = userPosts.map(p => Number(p.ratingAvg || 0)).filter(r => r > 0);
+      return ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+    };
+
+    const processed = usuarios.map((usuario) => {
+      const uid = String(usuario._id || usuario.id);
+      const userPosts = posts.filter((p) => String(p.usuarioId || p.userId) === uid);
+
+      // Rating
+      let finalRating = Number(usuario.ratingAvgRecebida || 0);
+      if (finalRating === 0) finalRating = calculateRatingFromPosts(userPosts);
+
+      // Categoria
+      const counts = { musica: 0, visual: 0, texto: 0 };
+      userPosts.forEach(p => {
+        const t = (p.tipo || "").toLowerCase();
+        if (t === "musica") counts.musica++;
+        else if (t === "visual" || t === "arte") counts.visual++;
+        else counts.texto++;
+      });
+      
+      let catKey = "outros";
+      if (counts.musica >= counts.visual &amp;&amp; counts.musica >= counts.texto &amp;&amp; counts.musica > 0) catKey = "musica";
+      else if (counts.visual >= counts.musica &amp;&amp; counts.visual >= counts.texto &amp;&amp; counts.visual > 0) catKey = "visual";
+      else if (counts.texto > 0) catKey = "texto";
+
+      // ✅ Lógica de Prioridade de Contagem:
+      // 1. Local (Otimista - clicou agora)
+      // 2. Redux (Veio do servidor via fetchFollowCounts)
+      // 3. Objeto Usuário (Fallback, geralmente desatualizado)
+      // 4. Zero
+      let followers = 0;
+      
+      if (localFollowerCounts[uid] !== undefined) {
+        followers = localFollowerCounts[uid];
+      } else if (followsCounts[uid]?.followersCount !== undefined) {
+        followers = followsCounts[uid].followersCount;
+      } else {
+        followers = usuario.followersCount || 0;
+      }
+
+      return {
+        id: uid,
+        name: usuario.nome || usuario.username || "Artista",
+        username: usuario.username,
+        fotoPerfil: usuario.fotoPerfil,
+        categoryKey: catKey,
+        category: catKey === "musica" ? "Música" : catKey === "visual" ? "Arte Visual" : catKey === "texto" ? "Texto/Letra" : "Variados",
+        followers: Number(followers),
+        works: userPosts.length,
+        rating: finalRating
+      };
+    });
+
+    setArtistsData(processed);
+  }, [usuarios, posts, followsCounts, localFollowerCounts]);
+
+  // --- Handlers ---
+
+  /**
+   * @private
+   * Gerencia a ação de seguir/deixar de seguir um artista.
+   * Implementa uma atualização otimista na UI (`myFollowingIds`, `localFollowerCounts`)
+   * e tenta a operação no servidor, revertendo a UI em caso de falha.
+   * * @async
+   * @param {string} targetId ID do usuário a ser seguido/deixado de seguir.
+   * @param {number} currentCount Contagem atual de seguidores (passada do `ArtistData`).
+   * @param {React.MouseEvent} e Evento do clique para parar a propagação.
+   */
+  const handleFollowClick = async (targetId, currentCount, e) => {
+    e.stopPropagation();
+    if (!viewerId) return alert("Faça login para seguir.");
+    
+    const targetIdString = String(targetId);
+    if (String(viewerId) === targetIdString) return;
+
+    const isFollowing = myFollowingIds.has(targetIdString);
+
+    // Atualização Visual Imediata (Botão)
+    setMyFollowingIds(prev => {
+      const newSet = new Set(prev);
+      if (isFollowing) newSet.delete(targetIdString);
+      else newSet.add(targetIdString);
+      return newSet;
+    });
+
+    // Atualização Visual Imediata (Número)
+    setLocalFollowerCounts(prev => ({
+      ...prev,
+      [targetIdString]: (prev[targetIdString] ?? currentCount) + (isFollowing ? -1 : 1)
+    }));
+
+    try {
+      if (isFollowing) {
+        await dispatch(unfollowUser({ followerId: viewerId, followingId: targetId })).unwrap();
+      } else {
+        await dispatch(followUser({ followerId: viewerId, followingId: targetId })).unwrap();
+      }
+      
+      // ✅ Sincroniza com o servidor para garantir o número real final
+      dispatch(fetchFollowCounts({ userId: targetId }));
+      
+    } catch (err) {
+      console.error("Erro follow:", err);
+      // Reverter em caso de erro
+      setMyFollowingIds(prev => {
+        const newSet = new Set(prev);
+        if (isFollowing) newSet.add(targetIdString);
+        else newSet.delete(targetIdString);
+        return newSet;
+      });
+      setLocalFollowerCounts(prev => ({
+        ...prev,
+        [targetIdString]: (prev[targetIdString] ?? currentCount) // volta ao valor original
+      }));
+    }
+  };
+
+  /**
+   * @private
+   * Renderiza os ícones de estrela para a avaliação.
+   * @param {number} rating O valor da avaliação (0 a 5).
+   * @returns {JSX.Element} Span com estrelas sólidas, meias estrelas e vazias.
+   */
+  const renderStars = (rating) => {
+    const r = Math.max(0, Math.min(5, Number(rating) || 0));
+    return &lt;span style={{color: '#f5c542'}}>{"★".repeat(Math.floor(r))}{r % 1 >= 0.5 ? "½" : ""}{"☆".repeat(5 - Math.ceil(r))}&lt;/span>;
+  };
+
+  /**
+   * Lista filtrada e ordenada de artistas.
+   * Utiliza `useMemo` para evitar recálculos desnecessários a cada render.
+   *
+   * @returns {ArtistData[]} Lista final para renderização.
+   */
+  const filteredList = useMemo(() => {
+    let list = isSearching ? artistsData : artistsData.filter(a => a.rating >= 0);
+    
+    if (activeFilter !== "all") {
+      list = list.filter(a => a.categoryKey === activeFilter);
+    }
+    
+    if (isSearching &amp;&amp; searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      list = list.filter(a => 
+        a.name.toLowerCase().includes(term) || 
+        (a.username || "").toLowerCase().includes(term)
+      );
+    }
+    
+    return list.sort((a, b) => {
+      if (sortBy === "rating") return b.rating - a.rating;
+      if (sortBy === "followers") return b.followers - a.followers;
+      if (sortBy === "works") return b.works - a.works;
+      return 0;
+    });
+  }, [artistsData, activeFilter, searchTerm, isSearching, sortBy]);
+
+  if (loadingUsuarios &amp;&amp; !artistsData.length) {
+    return &lt;div style={{color:'#fff', padding: 50, textAlign:'center'}}>Carregando artistas...&lt;/div>;
+  }
+
+  return (
+    &lt;>
+      &lt;HeaderForYou />
+      &lt;div className="fy-container">
+        &lt;h1 className="fy-title">Artistas em Destaque&lt;/h1>
+        
+        &lt;div className="fy-search-container">
+          &lt;input 
+            type="text" 
+            className="fy-search-input" 
+            placeholder="Buscar..." 
+            value={searchTerm}
+            onChange={e => { setSearchTerm(e.target.value); setIsSearching(!!e.target.value); }}
+            style={{padding: '12px', width: '100%', borderRadius: '12px', border: 'none', background: 'rgba(255,255,255,0.1)', color: 'white'}}
+          />
+        &lt;/div>
+        
+        &lt;div className="fy-filters" style={{marginBottom: '30px', display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'space-between', alignItems: 'center'}}>
+           &lt;div style={{display: 'flex', gap: '8px'}}>
+             {['all', 'musica', 'texto', 'visual'].map(f => (
+               &lt;button 
+                key={f} 
+                onClick={() => setActiveFilter(f)} 
+                style={{
+                  padding: '8px 16px', 
+                  borderRadius: 20, 
+                  border: '1px solid rgba(255,255,255,0.2)', 
+                  background: activeFilter === f ? '#5e17eb' : 'rgba(255,255,255,0.05)', 
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: activeFilter === f ? 'bold' : 'normal'
+                }}
+               >
+                 {f === 'all' ? 'Todos' : f.charAt(0).toUpperCase() + f.slice(1)}
+               &lt;/button>
+             ))}
+           &lt;/div>
+           
+           &lt;div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+             &lt;span style={{color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem'}}>Ordenar:&lt;/span>
+             &lt;select 
+              value={sortBy} 
+              onChange={e => setSortBy(e.target.value)} 
+              style={{
+                borderRadius: 8, 
+                padding: '8px', 
+                background: 'rgba(0,0,0,0.3)', 
+                color: 'white', 
+                border: '1px solid rgba(255,255,255,0.2)',
+                cursor: 'pointer'
+              }}
+             >
+               &lt;option value="rating">Avaliação&lt;/option>
+               &lt;option value="followers">Seguidores&lt;/option>
+               &lt;option value="works">Obras&lt;/option>
+             &lt;/select>
+           &lt;/div>
+        &lt;/div>
+
+        &lt;div className="fy-grid">
+          {filteredList.map((artist) => {
+            const isFollowing = myFollowingIds.has(String(artist.id));
+            const isMe = String(viewerId) === String(artist.id);
+
+            return (
+              &lt;div key={artist.id} className="fy-card" onClick={() => navigate(`/user/${artist.username}`)}>
+                &lt;div className="fy-card-header">
+                  &lt;div className="fy-avatar">
+                    {artist.fotoPerfil ? &lt;img src={artist.fotoPerfil} alt={artist.name} /> : &lt;i className="fas fa-user">&lt;/i>}
+                  &lt;/div>
+                &lt;/div>
+                &lt;div className="fy-card-info">
+                  &lt;h3 className="fy-name">{artist.name}&lt;/h3>
+                  &lt;span className="fy-category">{artist.category}&lt;/span>
+                  
+                  &lt;div className="fy-stats">
+                    &lt;div className="fy-stat">
+                      &lt;div className="fy-stat-value">{artist.followers}&lt;/div>
+                      &lt;div className="fy-stat-label">Seguidores&lt;/div>
+                    &lt;/div>
+                    &lt;div className="fy-stat">
+                      &lt;div className="fy-stat-value">{artist.works}&lt;/div>
+                      &lt;div className="fy-stat-label">Obras&lt;/div>
+                    &lt;/div>
+                  &lt;/div>
+                  
+                  &lt;div className="fy-rating">
+                    &lt;div className="fy-stars">{renderStars(artist.rating)}&lt;/div>
+                    &lt;span className="fy-rating-value">{artist.rating.toFixed(1)}&lt;/span>
+                  &lt;/div>
+                  
+                  &lt;div className="fy-actions">
+                    {!isMe &amp;&amp; (
+                      &lt;button
+                        className={`fy-btn-follow ${isFollowing ? "is-following" : ""}`}
+                        // ✅ Passamos artist.followers para manter a referência correta na atualização otimista
+                        onClick={(e) => handleFollowClick(artist.id, artist.followers, e)}
+                      >
+                        {isFollowing ? "Seguindo" : "Seguir"}
+                      &lt;/button>
+                    )}
+                    
+                    {!isMe &amp;&amp; (
+                      &lt;button 
+                        className="fy-btn-monetize" 
+                        onClick={(e) => { e.stopPropagation(); setMonetizationUsername(artist.username); setShowMonetization(true); }}
+                      >
+                        &lt;i className="fas fa-dollar-sign">&lt;/i>
+                      &lt;/button>
+                    )}
+                  &lt;/div>
+                &lt;/div>
+              &lt;/div>
+            );
+          })}
+        &lt;/div>
+      &lt;/div>
+
+      &lt;MonetizationPopup
+        show={showMonetization}
+        onClose={() => setShowMonetization(false)}
+        username={monetizationUsername}
+      />
+      
+      &lt;style jsx>{`
+        /* Mesmos estilos anteriores para consistência */
+        :root {
+          --accent: #5e17eb; --accent-2: #7b3ff2;
+          --surface-glass: rgba(18, 20, 38, 0.50);
+          --surface-border: rgba(255, 255, 255, 0.18);
+          --text-strong: #f7f8ff; --text-soft: rgba(255,255,255,.9); --muted: rgba(255,255,255,.75);
+          --ok: #34c759; --gold: #f5c542;
+        }
+
+        .fy-container { max-width: 1100px; margin: 0 auto; padding: 48px 20px 60px; }
+        .fy-title{ margin:0 0 6px; font-weight:800; font-size:clamp(26px,2.4vw,34px); background:linear-gradient(90deg,#ffffff,#d6d9ff 40%,#bfc6ff 70%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .fy-subtitle{ margin:0 0 22px; color:var(--text-soft); }
+
+        .fy-search-container{ max-width:600px; margin:0 auto 30px; }
+        .fy-search-box{ display:flex; align-items:center; background:var(--surface-glass); border:1px solid var(--surface-border); border-radius:16px; padding:12px 20px; backdrop-filter: blur(10px); }
+        .fy-search-input{ flex:1; border:none; background:transparent; color:var(--text-strong); font-size:1rem; outline:none; margin: 0 10px; }
+        .fy-search-clear, .fy-search-icon { color: var(--muted); background: none; border: none; cursor: pointer;}
+
+        .fy-filters{ display:grid; grid-template-columns:1fr auto; gap:14px; margin-bottom:22px; }
+        .fy-filter-buttons{ display:flex; flex-wrap:wrap; gap:10px; }
+        .fy-filter-btn{ border:1px solid var(--surface-border); color:#fff; background: rgba(255,255,255,.1); padding:8px 16px; border-radius:99px; transition:all .2s; cursor: pointer; }
+        .fy-filter-btn:hover, .fy-filter-btn.active{ background: var(--accent); border-color: var(--accent); transform: translateY(-1px); }
+        
+        .fy-sort select{ background:var(--surface-glass); color:#fff; border:1px solid var(--surface-border); border-radius:12px; padding:8px 12px; margin-left: 8px; cursor: pointer; }
+
+        .fy-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:18px; }
+        .fy-card{ background:var(--surface-glass); color:var(--text-strong); border:1px solid var(--surface-border); border-radius:18px; padding:18px 16px; backdrop-filter: blur(10px); transition: transform .2s; cursor: pointer; }
+        .fy-card:hover{ transform: translateY(-4px); box-shadow: 0 12px 26px rgba(0,0,0,.28); border-color: rgba(255,255,255,0.3); }
+
+        .fy-card-header{ display:flex; justify-content:center; margin-bottom:12px; }
+        .fy-avatar{ width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--accent-2)); display:flex; align-items:center; justify-content:center; font-size:32px; color:#fff; overflow: hidden; border: 3px solid rgba(255,255,255,0.8); }
+        .fy-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .fy-name{ text-align:center; font-size:1.2rem; font-weight:700; margin-bottom:4px; }
+        .fy-category{ display:block; text-align:center; color:var(--muted); font-size:0.9rem; margin-bottom:12px; }
+
+        .fy-stats{ display:flex; justify-content:center; gap:12px; margin-bottom:12px; }
+        .fy-stat{ text-align:center; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:10px; min-width: 80px; }
+        .fy-stat-value{ font-weight:700; font-size:1.1rem; }
+        .fy-stat-label{ font-size:0.75rem; color:var(--muted); }
+
+        .fy-rating{ display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:16px; background:rgba(255,255,255,0.05); padding:6px 12px; border-radius:20px; width: fit-content; margin-left: auto; margin-right: auto; }
+        .fy-rating-value{ font-weight:bold; color: var(--gold); }
+
+        .fy-actions{ display:flex; justify-content:center; gap:10px; }
+        .fy-btn-follow{ background:var(--accent); color:white; border:none; padding:8px 20px; border-radius:10px; font-weight:600; cursor:pointer; transition: background .2s; }
+        .fy-btn-follow.is-following{ background:var(--ok); }
+        .fy-btn-monetize{ background:var(--gold); color:#000; border:none; width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+        
+        .no-results-msg { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 40px; font-size: 1.1rem; }
+
+        @media (max-width: 600px) {
+          .fy-filters { grid-template-columns: 1fr; }
+        }
+      `}&lt;/style>
+    &lt;/>
+  );
+};
+
+export default ForYou;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CommentsPopup.html">CommentsPopup</a></li><li><a href="module-FooterAL.html">FooterAL</a></li><li><a href="module-Header.html">Header</a></li><li><a href="module-HeaderForYou.html">HeaderForYou</a></li><li><a href="module-MonetizationPopup.html">MonetizationPopup</a></li><li><a href="module-NavbarAL.html">NavbarAL</a></li><li><a href="module-NavbarLog.html">NavbarLog</a></li><li><a href="module-PoliticasPrivacidade.html">PoliticasPrivacidade</a></li><li><a href="module-PostCard.html">PostCard</a></li><li><a href="module-ProtectedRoute.html">ProtectedRoute</a></li><li><a href="module-PublicarImagem.html">PublicarImagem</a></li><li><a href="module-PublicarLayout.html">PublicarLayout</a></li><li><a href="module-PublicarLetra.html">PublicarLetra</a></li><li><a href="module-PublicarMusica.html">PublicarMusica</a></li><li><a href="module-TermosDeUso.html">TermosDeUso</a></li><li><a href="module-UserProfile.html">UserProfile</a></li><li><a href="module-VerificaLogin.html">VerificaLogin</a></li><li><a href="module-api_axios.html">api/axios</a></li></ul><h3>Global</h3><ul><li><a href="global.html#API_BASE_URL">API_BASE_URL</a></li><li><a href="global.html#ArtistPage">ArtistPage</a></li><li><a href="global.html#BackButton">BackButton</a></li><li><a href="global.html#DescricaoInput">DescricaoInput</a></li><li><a href="global.html#DiscoverArtist">DiscoverArtist</a></li><li><a href="global.html#EdicaoDeConta">EdicaoDeConta</a></li><li><a href="global.html#Feed">Feed</a></li><li><a href="global.html#FloatingActionButton">FloatingActionButton</a></li><li><a href="global.html#ForYou">ForYou</a></li><li><a href="global.html#GeneroSelect">GeneroSelect</a></li><li><a href="global.html#InitialPage">InitialPage</a></li><li><a href="global.html#ParticipatePage">ParticipatePage</a></li><li><a href="global.html#StarRater">StarRater</a></li><li><a href="global.html#UploadArea">UploadArea</a></li><li><a href="global.html#UploadPostForm">UploadPostForm</a></li><li><a href="global.html#authAPI">authAPI</a></li><li><a href="global.html#avaliacoesAPI">avaliacoesAPI</a></li><li><a href="global.html#comentariosAPI">comentariosAPI</a></li><li><a href="global.html#createComment">createComment</a></li><li><a href="global.html#createDesafio">createDesafio</a></li><li><a href="global.html#createParticipacao">createParticipacao</a></li><li><a href="global.html#createPost">createPost</a></li><li><a href="global.html#createPostWithUpload">createPostWithUpload</a></li><li><a href="global.html#deleteComment">deleteComment</a></li><li><a href="global.html#deleteDesafio">deleteDesafio</a></li><li><a href="global.html#deleteParticipacao">deleteParticipacao</a></li><li><a href="global.html#deletePost">deletePost</a></li><li><a href="global.html#fetchCommentsByPost">fetchCommentsByPost</a></li><li><a href="global.html#fetchDesafioById">fetchDesafioById</a></li><li><a href="global.html#fetchDesafios">fetchDesafios</a></li><li><a href="global.html#fetchFollowCounts">fetchFollowCounts</a></li><li><a href="global.html#fetchFollowersList">fetchFollowersList</a></li><li><a href="global.html#fetchFollowingList">fetchFollowingList</a></li><li><a href="global.html#fetchIsFollowing">fetchIsFollowing</a></li><li><a href="global.html#fetchMyRatingForPost">fetchMyRatingForPost</a></li><li><a href="global.html#fetchParticipacoes">fetchParticipacoes</a></li><li><a href="global.html#fetchParticipacoesByDesafio">fetchParticipacoesByDesafio</a></li><li><a href="global.html#fetchPostRating">fetchPostRating</a></li><li><a href="global.html#fetchPosts">fetchPosts</a></li><li><a href="global.html#fetchPostsByUser">fetchPostsByUser</a></li><li><a href="global.html#fetchUsuarios">fetchUsuarios</a></li><li><a href="global.html#fetchWithAuth">fetchWithAuth</a></li><li><a href="global.html#followUser">followUser</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#makeSelectRankingByStars">makeSelectRankingByStars</a></li><li><a href="global.html#patchDesafio">patchDesafio</a></li><li><a href="global.html#postsAPI">postsAPI</a></li><li><a href="global.html#removeRating">removeRating</a></li><li><a href="global.html#seguidoresAPI">seguidoresAPI</a></li><li><a href="global.html#selectAuthToken">selectAuthToken</a></li><li><a href="global.html#selectCommentsState">selectCommentsState</a></li><li><a href="global.html#selectCurrentUser">selectCurrentUser</a></li><li><a href="global.html#selectDesafioById">selectDesafioById</a></li><li><a href="global.html#selectDesafios">selectDesafios</a></li><li><a href="global.html#selectFollowCounts">selectFollowCounts</a></li><li><a href="global.html#selectIsFollowing">selectIsFollowing</a></li><li><a href="global.html#selectMyFollowingList">selectMyFollowingList</a></li><li><a href="global.html#selectParticipacoes">selectParticipacoes</a></li><li><a href="global.html#selectParticipacoesByDesafio">selectParticipacoesByDesafio</a></li><li><a href="global.html#selectParticipacoesByUsuario">selectParticipacoesByUsuario</a></li><li><a href="global.html#selectRatingState">selectRatingState</a></li><li><a href="global.html#selectUserError">selectUserError</a></li><li><a href="global.html#selectUserLoading">selectUserLoading</a></li><li><a href="global.html#selectUsuarios">selectUsuarios</a></li><li><a href="global.html#setUserFromStorage">setUserFromStorage</a></li><li><a href="global.html#store">store</a></li><li><a href="global.html#unfollowUser">unfollowUser</a></li><li><a href="global.html#updateComment">updateComment</a></li><li><a href="global.html#updatePost">updatePost</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#upsertRating">upsertRating</a></li><li><a href="global.html#usuariosAPI">usuariosAPI</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Dec 16 2025 13:21:09 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -36,8 +36,9 @@ await conectaDB();
 const app = express();
 
 // Swagger
+// import swaggerUi from 'swagger-ui-express';
 import swaggerUi from 'swagger-ui-express';
-import swaggerSpec from './swagger.js';
+import swaggerDocument from './swagger.js';
 
 // Preparar diretórios de upload
 ['uploads/image', 'uploads/audio'].forEach(dir => {
@@ -123,7 +124,7 @@ app.use('/api/auth', authLimiter);
 app.get('/', (req, res) => res.send('API ArtBeat rodando 🚀'));
 
 // Swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Auth routes
 app.use('/api/auth', authRoutes);
@@ -633,7 +634,7 @@ app.delete('/posts/:id', requireAuth, async (req, res) => {
 * tags: [Desafios]
 * responses:
 * 200:
-* description: Lista de desafios
+*   description: Lista de desafios
 */
 app.get('/desafios', async (req, res) => {
   try {
@@ -658,9 +659,9 @@ app.get('/desafios', async (req, res) => {
 * type: string
 * responses:
 * 200:
-* description: Desafio encontrado
+*   description: Desafio encontrado
 * 404:
-* description: Desafio não encontrado
+*   description: Desafio não encontrado
 */
 app.get('/desafios/:id', async (req, res) => {
   try {
@@ -777,11 +778,11 @@ app.post('/desafios', requireAuth, async (req, res) => {
 * type: string
 * responses:
 * 200:
-* description: Desafio excluído
+*   description: Desafio excluído
 * 403:
-* description: Sem permissão
+*   description: Sem permissão
 * 404:
-* description: Desafio não encontrado
+*   description: Desafio não encontrado
 */
 // DELETE /desafios/:id - Excluir desafio (apenas criador ou admin)
 app.delete('/desafios/:id', requireAuth, async (req, res) => {
@@ -816,24 +817,25 @@ app.delete('/desafios/:id', requireAuth, async (req, res) => {
 // /participacoes
 
 /**
-* @swagger
-* /participacoes:
-* get:
-* summary: Listar participações
-* tags: [Participacoes]
-* parameters:
-* - in: query
-* name: desafioId
-* schema:
-* type: string
-* - in: query
-* name: usuarioId
-* schema:
-* type: string
-* responses:
-* 200:
-* description: Lista de participações
-*/
+ * @swagger
+ * /participacoes:
+ *   get:
+ *     summary: Listar participações
+ *     tags: [Participacoes]
+ *     parameters:
+ *       - in: query
+ *         name: desafioId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: usuarioId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lista de participações
+ */
+
 app.get('/participacoes', async (req, res) => {
   try {
     const { desafioId, usuarioId } = req.query;

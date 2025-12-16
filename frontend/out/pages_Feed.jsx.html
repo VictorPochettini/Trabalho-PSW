@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/Feed.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/Feed.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// src/pages/Feed.jsx
+import React, { useEffect, useState, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
+import { fetchPosts, updatePost } from "../redux/postsSlice"; 
+import { fetchUsuarios } from "../redux/usuariosSlice";
+
+import Header from "../components/Header2";
+import PostCard from "../components/PostCard";
+import MonetizationPopup from "../components/MonetizationPopup";
+import CommentsPopup from "../components/CommentsPopup";
+import FloatingActionButton from "../components/FloatingActionButton";
+
+/**
+ * @typedef {object} Usuario
+ * @property {string} [_id] ID do MongoDB do usuário.
+ * @property {string} [id] ID alternativo do usuário.
+ * @property {string} [username] Nome de usuário.
+ * @property {string} [nome] Nome de exibição.
+ * @property {string} [fotoPerfil] Caminho/URL da foto de perfil.
+ */
+
+/**
+ * @typedef {object} CurrentUserState
+ * @property {Usuario | null} [user] O objeto do usuário logado.
+ * @property {string | null} [token] O token de autenticação JWT.
+ */
+
+/**
+ * @typedef {object} Post
+ * @property {string} [_id] ID do MongoDB do post.
+ * @property {string} [id] ID alternativo do post.
+ * @property {string} [usuarioId] ID do autor do post.
+ * @property {string} [userId] ID do autor do post (alternativo).
+ * @property {('texto' | 'musica' | 'visual' | 'letra')} tipo Tipo do post.
+ * @property {string} [titulo] Título do post.
+ * @property {string} [conteudo] Conteúdo principal (texto ou letra).
+ * @property {string} [texto] Conteúdo principal (alternativo).
+ * @property {string} [content] Conteúdo principal (alternativo).
+ * @property {string} [mediaPath] Caminho do arquivo de mídia no servidor.
+ * @property {string} [data] Data de criação.
+ * @property {string} [createdAt] Data de criação (alternativo).
+ */
+
+/**
+ * @typedef {object} CombinedPost Extensão de Post com dados do autor processados para exibição.
+ * @augments Post
+ * @property {string} id ID principal do post.
+ * @property {string} content Conteúdo do post (prioritário).
+ * @property {string} texto Conteúdo do post (alternativo).
+ * @property {string} usuarioId ID do autor (padronizado para string).
+ * @property {string} authorName Nome de exibição do autor.
+ * @property {string} authorUsername Username do autor.
+ * @property {string | null} authorPhoto Caminho/URL da foto de perfil do autor.
+ * @property {('audio' | 'image' | 'text')} mediaType Tipo de mídia padronizado.
+ * @property {string | null} mediaSrc URL completa da mídia.
+ * @property {string | null} mediaAlt Texto alternativo para mídia visual.
+ * @property {string} time Data/hora formatada.
+ */
+
+/**
+ * @typedef {object} UpdatePostPayload
+ * @property {string} id ID do post a ser atualizado.
+ * @property {object} data Os campos do post a serem modificados (ex: { titulo: string, conteudo: string }).
+ */
+
+
+/**
+ * Componente principal da página Feed.
+ * * Exibe um feed personalizado contendo posts dos usuários seguidos
+ * e posts do próprio usuário logado. Gerencia o carregamento de dados,
+ * filtros, e as interações de edição, comentários e monetização.
+ *
+ * @returns {JSX.Element} A interface completa do Feed.
+ */
+const Feed = () => {
+  const dispatch = useDispatch();
+
+  /** @type {Post[]} Lista de todos os posts carregados. */
+  const posts = useSelector((state) => state.posts.lista || []);
+  const loadingPosts = useSelector((state) => state.posts.loading);
+  const errorPosts = useSelector((state) => state.posts.error);
+
+  /** @type {CurrentUserState | undefined} Estado completo do usuário logado no Redux. */
+  const currentUserState = useSelector((state) => state.user?.currentUser);
+  /** @type {Usuario | null} Objeto do usuário logado. */
+  const currentUser = currentUserState?.user ?? null;
+  /** @type {string | null} ID do usuário logado. */
+  const viewerId = currentUser?._id ?? currentUser?.id ?? null;
+
+  /** @type {Usuario[]} Lista de todos os usuários carregados. */
+  const usuarios = useSelector((state) => state.user.usuarios || []);
+  const loadingUsuarios = useSelector((state) => state.user.loading);
+
+  // --- Estados Derivados
+  /** @type {CombinedPost[]} Posts combinados com dados de autor. */
+  const [postsComUsuario, setPostsComUsuario] = useState([]);
+  /** @type {CombinedPost[]} Posts filtrados: apenas de usuários seguidos ou próprios. */
+  const [postsDosSeguidos, setPostsDosSeguidos] = useState([]);
+  /** @type {string[]} IDs dos usuários que o usuário logado está seguindo. */
+  const [seguindoIds, setSeguindoIds] = useState([]); 
+  const [loadingSeguindo, setLoadingSeguindo] = useState(true);
+
+  // --- Estados de Pop-up
+  const [showMonetization, setShowMonetization] = useState(false);
+  const [monetizationUsername, setMonetizationUsername] = useState("");
+  const [showComments, setShowComments] = useState(false);
+  const [currentPostIdForComments, setCurrentPostIdForComments] = useState(null);
+
+  // --- Estados de Edição de Post
+  /** @type {string | null} ID do post atualmente em modo de edição. */
+  const [editingPost, setEditingPost] = useState(null);
+  /** @type {string} Conteúdo/texto sendo editado. */
+  const [editText, setEditText] = useState('');
+  /** @type {string} Título sendo editado (para posts de texto). */
+  const [editTitle, setEditTitle] = useState('');
+
+  /** @type {boolean} Estado para refresh manual em andamento. */
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  /**
+   * @private
+   * Função para acionar a recarga manual do feed (posts e usuários).
+   * @type {() => Promise&lt;void>}
+   */
+  const handleRefreshFeed = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        dispatch(fetchPosts()).unwrap(),
+        dispatch(fetchUsuarios()).unwrap()
+      ]);
+      console.log('✅ Feed atualizado manualmente');
+    } catch (error) {
+      console.error('❌ Erro ao atualizar feed:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [dispatch]);
+
+  // --- Funções de Seguir ---
+  useEffect(() => {
+    const fetchSeguindo = async () => {
+      if (viewerId) {
+        try {
+          setLoadingSeguindo(true);
+          const res = await axios.get(`http://localhost:5000/seguidores?followerId=${viewerId}`);
+          const ids = Array.isArray(res.data) 
+            ? res.data.map((item) => String(item.followingId))
+            : [];
+          setSeguindoIds(ids);
+          try {
+            localStorage.setItem(`seguindoIds_${viewerId}`, JSON.stringify(ids));
+          } catch (e) { console.warn(e); }
+        } catch (err) {
+          console.error("❌ Erro ao buscar seguindo:", err);
+          try {
+            const saved = localStorage.getItem(`seguindoIds_${viewerId}`);
+            if (saved) setSeguindoIds(JSON.parse(saved));
+            else setSeguindoIds([]);
+          } catch (e) { setSeguindoIds([]); }
+        } finally {
+          setLoadingSeguindo(false);
+        }
+      } else {
+        setSeguindoIds([]);
+        setLoadingSeguindo(false);
+      }
+    };
+    fetchSeguindo();
+  }, [viewerId]); // ✅ Só executa quando viewerId muda
+
+  // ✅ OTIMIZADO: Carrega posts apenas uma vez na montagem
+  useEffect(() => {
+    console.log('🔄 Feed - Carregando posts e usuários (apenas uma vez)');
+    dispatch(fetchPosts());
+    dispatch(fetchUsuarios());
+  }, []); // ✅ Array vazio = executa apenas na montagem do componente
+
+  // --- Combinação de Posts com foto de perfil ---
+  useEffect(() => {
+    if (!loadingPosts &amp;&amp; !loadingUsuarios &amp;&amp; usuarios.length >= 0) {
+      const API_URL = import.meta?.env?.VITE_API_URL ||
+        (typeof process !== 'undefined' &amp;&amp; process.env?.REACT_APP_API_URL) ||
+        'http://localhost:5000';
+      
+      const combinados = (posts || []).map((post) => {
+        const usuario = usuarios.find((u) => {
+          const uid = u?._id ?? u?.id;
+          const postUserId = post.usuarioId ?? post.userId;
+          return String(uid) === String(postUserId);
+        });
+        
+        // ✅ CORREÇÃO: Construir mediaSrc corretamente
+        let mediaSrc = null;
+        if (post.tipo === "musica" || post.tipo === "visual") {
+          if (post.mediaPath) {
+            const normalizedPath = post.mediaPath.replace(/\\/g, '/');
+            mediaSrc = `${API_URL}/${normalizedPath}`;
+          }
+        }
+        
+        return {
+          ...post,
+          id: post._id ?? post.id,
+          content: post.titulo ?? post.content ?? "",
+          texto: post.conteudo ?? post.texto ?? "",
+          username: usuario ? (usuario.nome || usuario.username) : "@desconhecido",
+          // ✅ ADICIONADO: Foto de perfil do autor
+          authorName: usuario ? (usuario.nome || usuario.username) : "@desconhecido",
+          authorUsername: usuario?.username || "",
+          authorPhoto: usuario?.fotoPerfil || null,
+          usuarioId: String(post.usuarioId ?? post.userId),
+          mediaType:
+            post.tipo === "musica" ? "audio" : post.tipo === "visual" ? "image" : "text",
+          mediaSrc: mediaSrc,
+          mediaAlt: post.tipo === "visual" ? post.titulo : null,
+          time: post.data ? new Date(post.data).toLocaleString() : 
+            (post.createdAt ? new Date(post.createdAt).toLocaleString() : "")
+        };
+      });
+
+      const getDate = (p) => p?.data ?? p?.createdAt ?? p?.time;
+      combinados.sort((a, b) => new Date(getDate(b)) - new Date(getDate(a)));
+      setPostsComUsuario(combinados);
+      
+      console.log('📊 Feed - Posts processados:', combinados.length);
+    }
+  }, [loadingPosts, loadingUsuarios, posts, usuarios]);
+
+  // --- Filtro de Feed ---
+  useEffect(() => {
+    if (postsComUsuario.length > 0) {
+      const viewerIdString = String(viewerId);
+      const filtrados = postsComUsuario.filter((post) => {
+        const postUserId = String(post.usuarioId);
+        const isSeguindo = seguindoIds.includes(postUserId);
+        const isProprioPost = viewerId &amp;&amp; (postUserId === viewerIdString);
+        return isSeguindo || isProprioPost;
+      });
+      setPostsDosSeguidos(filtrados);
+      console.log('📊 Feed - Posts filtrados:', filtrados.length, 'de', postsComUsuario.length);
+    } else {
+      setPostsDosSeguidos([]);
+    }
+  }, [postsComUsuario, seguindoIds, viewerId]);
+
+  /**
+   * @private
+   * Abre o pop-up de monetização para um usuário específico.
+   * @param {string} username O nome de usuário para quem a monetização é solicitada.
+   */
+  const handleMonetizeClick = (username) => {
+    setMonetizationUsername(username);
+    setShowMonetization(true);
+    document.body.style.overflow = "hidden";
+  };
+
+  /** @private Fecha o pop-up de monetização. */
+  const handleCloseMonetization = () => {
+    setShowMonetization(false);
+    document.body.style.overflow = "";
+  };
+
+    /**
+   * @private
+   * Abre o pop-up de comentários para um post específico.
+   * @param {string} postId O ID do post.
+   */
+  const handleCommentClick = (postId) => {
+    setCurrentPostIdForComments(postId);
+    setShowComments(true);
+    document.body.style.overflow = "hidden";
+  };
+
+  /** @private Fecha o pop-up de comentários. */
+  const handleCloseComments = () => {
+    setShowComments(false);
+    setCurrentPostIdForComments(null);
+    document.body.style.overflow = "";
+  };
+
+  /**
+   * @private
+   * Inicia o modo de edição para um post.
+   * Preenche os estados `editText` e `editTitle` com o conteúdo atual do post.
+   * @param {CombinedPost} post O objeto de post a ser editado.
+   */
+  const handleEditClick = (post) => {
+    const postId = post._id || post.id;
+    setEditingPost(postId);
+    
+    let textToEdit = '';
+    let titleToEdit = '';
+    
+    if (post.tipo === 'texto' || post.tipo === 'letra') {
+      // Para posts de texto: pegar título e conteúdo separadamente
+      titleToEdit = post.titulo || '';
+      textToEdit = post.texto || post.conteudo || post.content || '';
+    } else if (post.tipo === 'musica' || post.tipo === 'visual') {
+      // Para posts de mídia: apenas o título
+      textToEdit = post.titulo || post.content || '';
+    } else {
+      // Fallback
+      textToEdit = post.content || post.texto || post.titulo || '';
+    }
+    
+    setEditText(textToEdit);
+    setEditTitle(titleToEdit);
+  };
+
+  /**
+   * @private
+   * Salva a edição de um post específico enviando os dados atualizados para o Redux/API.
+   * @async
+   * @param {string} postId O ID do post a ser salvo.
+   */
+  const handleSaveEdit = async (postId) => {
+    const postToUpdate = posts.find(p => String(p._id || p.id) === String(postId));
+    
+    if (!postToUpdate) {
+      alert('Post não encontrado');
+      return;
+    }
+
+    // Validação específica para posts de texto
+    if (postToUpdate.tipo === 'texto' || postToUpdate.tipo === 'letra') {
+      if (!editTitle.trim() || !editText.trim()) {
+        alert('Título e letra não podem estar vazios!');
+        return;
+      }
+    } else {
+      if (!editText.trim()) {
+        alert('O texto não pode estar vazio!');
+        return;
+      }
+    }
+
+    try {
+      let updateData = {};
+      
+      if (postToUpdate.tipo === 'texto' || postToUpdate.tipo === 'letra') {
+        // Para posts de texto: atualizar título e conteúdo separadamente
+        updateData = {
+          titulo: editTitle.trim(),
+          conteudo: editText.trim(),
+        };
+      } else if (postToUpdate.tipo === 'musica' || postToUpdate.tipo === 'visual') {
+        // Para posts de mídia: apenas o título
+        updateData = {
+          titulo: editText.trim(),
+        };
+      } else {
+        updateData = {
+          conteudo: editText.trim(),
+          titulo: editText.trim().substring(0, 100),
+        };
+      }
+
+      await dispatch(updatePost({ 
+        id: postId, 
+        data: updateData 
+      })).unwrap();
+
+      setEditingPost(null);
+      setEditText('');
+      setEditTitle('');
+      
+      console.log('✅ Post editado com sucesso');
+      
+    } catch (error) {
+      console.error('❌ Erro ao editar post:', error);
+      alert('Erro ao salvar a edição.');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPost(null);
+    setEditText('');
+    setEditTitle('');
+  };
+
+
+  if (loadingPosts || loadingUsuarios || loadingSeguindo) {
+    return (
+      &lt;div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', color: 'white' }}>
+        &lt;p>Carregando feed...&lt;/p>
+      &lt;/div>
+    );
+  }
+  
+  if (errorPosts) return &lt;p>{errorPosts}&lt;/p>;
+
+  return (
+    &lt;>
+      &lt;Header />
+
+      &lt;div className="feed-content-wrapper">
+        {/* ✅ NOVO: Botão de Refresh Manual */}
+        &lt;div className="feed-header">
+          &lt;button 
+            className="refresh-button"
+            onClick={handleRefreshFeed}
+            disabled={isRefreshing}
+            title="Atualizar feed"
+          >
+            &lt;i className={`fas fa-sync-alt ${isRefreshing ? 'spinning' : ''}`}>&lt;/i>
+            &lt;span>{isRefreshing ? 'Atualizando...' : 'Atualizar'}&lt;/span>
+          &lt;/button>
+        &lt;/div>
+
+        {postsDosSeguidos.length === 0 ? (
+          &lt;div className="empty-feed-message">
+            &lt;i className="fas fa-rss fa-3x">&lt;/i>
+            &lt;h3>Nenhuma publicação de pessoas que você segue&lt;/h3>
+            &lt;p>Comece a seguir alguns artistas para ver suas publicações aqui!&lt;/p>
+            &lt;div className="follow-stats">
+              &lt;p>
+                {currentUser 
+                  ? `Você está seguindo ${seguindoIds.length} ${seguindoIds.length === 1 ? 'pessoa' : 'pessoas'}` 
+                  : "Faça login para seguir pessoas"}
+              &lt;/p>
+            &lt;/div>
+          &lt;/div>
+        ) : (
+          &lt;div className="posts-container">
+            {postsDosSeguidos.map((post) => {
+              const currentPostId = post._id || post.id;
+              return (
+                &lt;PostCard
+                  key={currentPostId}
+                  post={post}
+                  onMonetizeClick={handleMonetizeClick}
+                  onCommentClick={handleCommentClick}
+                  onEditClick={handleEditClick}
+                  onSaveEdit={handleSaveEdit}
+                  onCancelEdit={handleCancelEdit}
+                  isEditing={editingPost === currentPostId}
+                  editText={editText}
+                  editTitle={editTitle}
+                  onEditTextChange={setEditText}
+                  onEditTitleChange={setEditTitle}
+                />
+              );
+            })}
+          &lt;/div>
+        )}
+      &lt;/div>
+
+      &lt;MonetizationPopup
+        show={showMonetization}
+        onClose={handleCloseMonetization}
+        username={monetizationUsername}
+      />
+
+      &lt;CommentsPopup
+        show={showComments}
+        onClose={handleCloseComments}
+        postId={currentPostIdForComments}
+      />
+
+      &lt;FloatingActionButton />
+
+      &lt;style jsx>{`
+        .feed-content-wrapper {
+          max-width: 1800px;
+          margin: 0 auto;
+          padding: clamp(16px, 3vw, 20px);
+        }
+
+        /* ✅ Header do Feed com Botão de Refresh */
+        .feed-header {
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          margin-bottom: clamp(16px, 3vw, 24px);
+          padding: 0 clamp(8px, 2vw, 16px);
+        }
+
+        .refresh-button {
+          display: inline-flex;
+          align-items: center;
+          gap: clamp(6px, 1.5vw, 8px);
+          padding: clamp(8px, 1.8vw, 10px) clamp(14px, 2.5vw, 18px);
+          background: linear-gradient(135deg, rgba(94, 23, 235, 0.85), rgba(123, 63, 242, 0.85));
+          border: 1px solid rgba(255, 255, 255, 0.22);
+          border-radius: clamp(12px, 2.5vw, 14px);
+          color: white;
+          font-weight: 700;
+          font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: 0 8px 20px rgba(94, 23, 235, 0.3);
+          backdrop-filter: blur(10px);
+        }
+
+        .refresh-button:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 12px 26px rgba(94, 23, 235, 0.4);
+          border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .refresh-button:active:not(:disabled) {
+          transform: translateY(0);
+        }
+
+        .refresh-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .refresh-button i {
+          font-size: clamp(0.9rem, 2vw, 1rem);
+        }
+
+        .refresh-button i.spinning {
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        /* Posts Container */
+        .posts-container {
+          display: flex;
+          flex-direction: column;
+          gap: clamp(16px, 3vw, 20px);
+        }
+
+        /* Empty Feed Message */
+        .empty-feed-message {
+          text-align: center;
+          padding: clamp(40px, 8vw, 60px) clamp(16px, 3vw, 20px);
+          color: rgba(255, 255, 255, 0.7);
+          max-width: 600px;
+          margin: 0 auto;
+        }
+
+        .empty-feed-message i {
+          color: rgba(94, 23, 235, 0.5);
+          margin-bottom: clamp(16px, 3vw, 24px);
+        }
+
+        .empty-feed-message h3 {
+          margin-bottom: clamp(12px, 2.5vw, 16px);
+          color: rgba(255, 255, 255, 0.9);
+          font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+          font-weight: 700;
+        }
+
+        .empty-feed-message p {
+          font-size: clamp(0.9rem, 2vw, 1rem);
+          line-height: 1.5;
+          margin-bottom: clamp(16px, 3vw, 20px);
+        }
+
+        .follow-stats {
+          margin-top: clamp(16px, 3vw, 20px);
+          padding: clamp(12px, 2.5vw, 16px);
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+          border-radius: clamp(10px, 2vw, 14px);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          backdrop-filter: blur(10px);
+        }
+
+        .follow-stats p { 
+          margin: 0; 
+          color: rgba(255, 255, 255, 0.85);
+          font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+          font-weight: 600;
+        }
+
+        .follow-stats strong { 
+          color: #7b3ff2;
+          font-weight: 800;
+        }
+
+        /* ===== RESPONSIVIDADE ===== */
+
+        /* Tablets */
+        @media (max-width: 768px) {
+          .feed-content-wrapper {
+            padding: 16px 12px;
+          }
+
+          .feed-header {
+            margin-bottom: 16px;
+          }
+        }
+
+        /* Mobile */
+        @media (max-width: 640px) {
+          .feed-content-wrapper {
+            padding: 14px 10px;
+          }
+
+          .feed-header {
+            margin-bottom: 14px;
+            padding: 0 8px;
+          }
+
+          .refresh-button {
+            padding: 8px 12px;
+            font-size: 0.8rem;
+          }
+
+          .refresh-button span {
+            display: none;
+          }
+
+          .refresh-button i {
+            font-size: 1rem;
+            margin: 0;
+          }
+
+          .posts-container {
+            gap: 14px;
+          }
+
+          .empty-feed-message {
+            padding: 40px 16px;
+          }
+
+          .empty-feed-message i {
+            font-size: 2rem !important;
+          }
+
+          .empty-feed-message h3 {
+            font-size: 1.1rem;
+          }
+
+          .empty-feed-message p {
+            font-size: 0.9rem;
+          }
+        }
+
+        /* Mobile 21:9 */
+        @media (max-width: 450px) and (min-aspect-ratio: 9/19) {
+          .feed-content-wrapper {
+            padding: 12px 8px;
+          }
+
+          .feed-header {
+            margin-bottom: 12px;
+          }
+
+          .refresh-button {
+            padding: 7px 10px;
+          }
+
+          .posts-container {
+            gap: 12px;
+          }
+
+          .empty-feed-message {
+            padding: 32px 12px;
+          }
+
+          .follow-stats {
+            padding: 10px;
+          }
+        }
+
+        /* Mobile 21:9 Muito Estreito */
+        @media (max-width: 360px) and (min-aspect-ratio: 9/19) {
+          .feed-content-wrapper {
+            padding: 10px 8px;
+          }
+
+          .refresh-button {
+            padding: 6px 9px;
+          }
+
+          .empty-feed-message {
+            padding: 28px 10px;
+          }
+        }
+      `}&lt;/style>
+    &lt;/>
+  );
+};
+
+export default Feed;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CommentsPopup.html">CommentsPopup</a></li><li><a href="module-FooterAL.html">FooterAL</a></li><li><a href="module-Header.html">Header</a></li><li><a href="module-HeaderForYou.html">HeaderForYou</a></li><li><a href="module-MonetizationPopup.html">MonetizationPopup</a></li><li><a href="module-NavbarAL.html">NavbarAL</a></li><li><a href="module-NavbarLog.html">NavbarLog</a></li><li><a href="module-PoliticasPrivacidade.html">PoliticasPrivacidade</a></li><li><a href="module-PostCard.html">PostCard</a></li><li><a href="module-ProtectedRoute.html">ProtectedRoute</a></li><li><a href="module-PublicarImagem.html">PublicarImagem</a></li><li><a href="module-PublicarLayout.html">PublicarLayout</a></li><li><a href="module-PublicarLetra.html">PublicarLetra</a></li><li><a href="module-PublicarMusica.html">PublicarMusica</a></li><li><a href="module-TermosDeUso.html">TermosDeUso</a></li><li><a href="module-UserProfile.html">UserProfile</a></li><li><a href="module-VerificaLogin.html">VerificaLogin</a></li><li><a href="module-api_axios.html">api/axios</a></li></ul><h3>Global</h3><ul><li><a href="global.html#API_BASE_URL">API_BASE_URL</a></li><li><a href="global.html#ArtistPage">ArtistPage</a></li><li><a href="global.html#BackButton">BackButton</a></li><li><a href="global.html#DescricaoInput">DescricaoInput</a></li><li><a href="global.html#DiscoverArtist">DiscoverArtist</a></li><li><a href="global.html#EdicaoDeConta">EdicaoDeConta</a></li><li><a href="global.html#Feed">Feed</a></li><li><a href="global.html#FloatingActionButton">FloatingActionButton</a></li><li><a href="global.html#ForYou">ForYou</a></li><li><a href="global.html#GeneroSelect">GeneroSelect</a></li><li><a href="global.html#InitialPage">InitialPage</a></li><li><a href="global.html#ParticipatePage">ParticipatePage</a></li><li><a href="global.html#StarRater">StarRater</a></li><li><a href="global.html#UploadArea">UploadArea</a></li><li><a href="global.html#UploadPostForm">UploadPostForm</a></li><li><a href="global.html#authAPI">authAPI</a></li><li><a href="global.html#avaliacoesAPI">avaliacoesAPI</a></li><li><a href="global.html#comentariosAPI">comentariosAPI</a></li><li><a href="global.html#createComment">createComment</a></li><li><a href="global.html#createDesafio">createDesafio</a></li><li><a href="global.html#createParticipacao">createParticipacao</a></li><li><a href="global.html#createPost">createPost</a></li><li><a href="global.html#createPostWithUpload">createPostWithUpload</a></li><li><a href="global.html#deleteComment">deleteComment</a></li><li><a href="global.html#deleteDesafio">deleteDesafio</a></li><li><a href="global.html#deleteParticipacao">deleteParticipacao</a></li><li><a href="global.html#deletePost">deletePost</a></li><li><a href="global.html#fetchCommentsByPost">fetchCommentsByPost</a></li><li><a href="global.html#fetchDesafioById">fetchDesafioById</a></li><li><a href="global.html#fetchDesafios">fetchDesafios</a></li><li><a href="global.html#fetchFollowCounts">fetchFollowCounts</a></li><li><a href="global.html#fetchFollowersList">fetchFollowersList</a></li><li><a href="global.html#fetchFollowingList">fetchFollowingList</a></li><li><a href="global.html#fetchIsFollowing">fetchIsFollowing</a></li><li><a href="global.html#fetchMyRatingForPost">fetchMyRatingForPost</a></li><li><a href="global.html#fetchParticipacoes">fetchParticipacoes</a></li><li><a href="global.html#fetchParticipacoesByDesafio">fetchParticipacoesByDesafio</a></li><li><a href="global.html#fetchPostRating">fetchPostRating</a></li><li><a href="global.html#fetchPosts">fetchPosts</a></li><li><a href="global.html#fetchPostsByUser">fetchPostsByUser</a></li><li><a href="global.html#fetchUsuarios">fetchUsuarios</a></li><li><a href="global.html#fetchWithAuth">fetchWithAuth</a></li><li><a href="global.html#followUser">followUser</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#makeSelectRankingByStars">makeSelectRankingByStars</a></li><li><a href="global.html#patchDesafio">patchDesafio</a></li><li><a href="global.html#postsAPI">postsAPI</a></li><li><a href="global.html#removeRating">removeRating</a></li><li><a href="global.html#seguidoresAPI">seguidoresAPI</a></li><li><a href="global.html#selectAuthToken">selectAuthToken</a></li><li><a href="global.html#selectCommentsState">selectCommentsState</a></li><li><a href="global.html#selectCurrentUser">selectCurrentUser</a></li><li><a href="global.html#selectDesafioById">selectDesafioById</a></li><li><a href="global.html#selectDesafios">selectDesafios</a></li><li><a href="global.html#selectFollowCounts">selectFollowCounts</a></li><li><a href="global.html#selectIsFollowing">selectIsFollowing</a></li><li><a href="global.html#selectMyFollowingList">selectMyFollowingList</a></li><li><a href="global.html#selectParticipacoes">selectParticipacoes</a></li><li><a href="global.html#selectParticipacoesByDesafio">selectParticipacoesByDesafio</a></li><li><a href="global.html#selectParticipacoesByUsuario">selectParticipacoesByUsuario</a></li><li><a href="global.html#selectRatingState">selectRatingState</a></li><li><a href="global.html#selectUserError">selectUserError</a></li><li><a href="global.html#selectUserLoading">selectUserLoading</a></li><li><a href="global.html#selectUsuarios">selectUsuarios</a></li><li><a href="global.html#setUserFromStorage">setUserFromStorage</a></li><li><a href="global.html#store">store</a></li><li><a href="global.html#unfollowUser">unfollowUser</a></li><li><a href="global.html#updateComment">updateComment</a></li><li><a href="global.html#updatePost">updatePost</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#upsertRating">upsertRating</a></li><li><a href="global.html#usuariosAPI">usuariosAPI</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Dec 16 2025 13:21:09 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

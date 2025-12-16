@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/L_ChallengePage.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/L_ChallengePage.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import React, { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchDesafios } from "../redux/desafiosSlice";
+import { useNavigate } from "react-router-dom";
+import HeaderForYou from "../components/Header2";
+
+/**
+ * @typedef {object} Desafio
+ * @property {string} id ID único do desafio.
+ * @property {string} [_id] ID único do desafio (alternativo).
+ * @property {('oficial' | 'comunidade')} tipo Tipo do desafio.
+ * @property {('rascunho' | 'aberto' | 'encerrado')} status Status no servidor.
+ * @property {string} titulo Título do desafio.
+ * @property {string} descricao Descrição breve.
+ * @property {string} [thumbUrl] URL da imagem de miniatura.
+ * @property {string} [dataInicio] Data de início (ISO 8601).
+ * @property {string} [dataFim] Data de encerramento (ISO 8601).
+ * @property {string} [criadorId] ID do usuário que criou o desafio (para tipo 'comunidade').
+ */
+
+/**
+ * @typedef {object} CurrentUser Objeto do usuário autenticado.
+ * @property {string} [_id] ID do MongoDB do usuário logado.
+ * @property {string} [id] ID alternativo do usuário logado.
+ * // ... outras propriedades
+ */
+
+/**
+ * Componente ChallengesPage.
+ *
+ * Exibe uma lista de desafios da plataforma, permitindo ao usuário:
+ * 1. Filtrar por tipo (Oficiais, Comunidade, Meus Desafios).
+ * 2. Ordenar por data (Recentes, Próximos de Encerrar, Encerrados).
+ * 3. Buscar por texto no título ou descrição.
+ * 4. Navegar para a visualização ou criação de um desafio.
+ *
+ * @returns {JSX.Element} A interface da página de Desafios.
+ */
+export default function ChallengesPage() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // --- Redux State ---
+  /** @type {Desafio[]} Lista de todos os desafios carregados via Redux. */
+  const desafios = useSelector((s) => s.desafios.lista || []);
+  /** @type {boolean} Status de carregamento dos desafios. */
+  const loadingDesafios = useSelector((s) => s.desafios.loading);
+
+  /** @type {{user: CurrentUser | null, token: string | null} | null} Estado do usuário logado. */
+  const currentUserState = useSelector((s) => s.user?.currentUser);
+  /** @type {CurrentUser | null} Objeto do usuário logado. */
+  const currentUser = currentUserState?.user ?? null;
+  /** @type {string | null} ID do usuário logado. */
+  const currentUserId = currentUser ? (currentUser._id || currentUser.id) : null;
+
+  // --- Estado Local ---
+  /** @type {('oficiais' | 'comunidade' | 'meus')} A aba de filtro ativa. */
+  const [activeTab, setActiveTab] = useState("oficiais");
+  /** @type {('recentes' | 'proximos' | 'encerrados')} O critério de ordenação ativo. */
+  const [sortBy, setSortBy] = useState("recentes");
+  /** @type {string} O termo de pesquisa atual. */
+  const [searchTerm, setSearchTerm] = useState("");
+  /** @type {boolean} Indica se a busca por texto está ativa. */
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Efeito 1: Carrega os desafios ao montar o componente
+  useEffect(() => { dispatch(fetchDesafios()); }, [dispatch]);
+
+  /**
+   * @private
+   * Filtra um desafio com base na aba ativa (`activeTab`).
+   * Desafios com status "rascunho" são excluídos, exceto na aba "Meus".
+   *
+   * @param {Desafio} d O objeto desafio a ser verificado.
+   * @returns {boolean} `true` se o desafio deve ser exibido na aba ativa.
+   */
+  const matchesTab = (d) => {
+    if (activeTab === "oficiais") return d.tipo === "oficial" &amp;&amp; d.status !== "rascunho";
+    if (activeTab === "comunidade") return d.tipo === "comunidade" &amp;&amp; d.status !== "rascunho";
+    // Aba "Meus" mostra desafios da comunidade criados pelo usuário logado.
+    if (activeTab === "meus") return d.tipo === "comunidade" &amp;&amp; String(d.criadorId) === String(currentUserId);
+    return true;
+  };
+
+  /**
+   * @private
+   * Atualiza o termo de busca e o estado `isSearching`.
+   * @param {string} term O novo termo de pesquisa.
+   */
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setIsSearching(!!term.trim());
+  };
+
+  // ===== Helpers para status derivado "finalizado" quando dataFim já passou =====
+  
+  /**
+   * @private
+   * Converte uma string de data para um timestamp.
+   * @param {string | undefined} v String de data.
+   * @returns {number} Timestamp ou 0.
+   */
+  const toTime = (v) => (v ? new Date(v).getTime() : 0);
+  
+  /**
+   * @private
+   * Verifica se o desafio já expirou com base em `dataFim`.
+   * @param {Desafio} d O objeto desafio.
+   * @returns {boolean} `true` se a data de fim já passou.
+   */
+  const isExpired = (d) => (d?.dataFim ? toTime(d.dataFim) &lt; Date.now() : false);
+  
+  /**
+   * @private
+   * Obtém o status final para exibição, considerando a expiração da data.
+   * @param {Desafio} d O objeto desafio.
+   * @returns {('rascunho' | 'aberto' | 'encerrado' | 'finalizado')} O status final.
+   */
+  const getDerivedStatus = (d) => (isExpired(d) ? "finalizado" : (d.status || "aberto"));
+
+  const filteredAndSorted = useMemo(() => {
+    let list = desafios.filter(matchesTab);
+    if (isSearching) {
+      const term = searchTerm.toLowerCase();
+      list = list.filter(
+        (d) =>
+          String(d.titulo || "").toLowerCase().includes(term) ||
+          String(d.descricao || "").toLowerCase().includes(term)
+      );
+    }
+    const now = Date.now();
+    const sorted = [...list];
+    if (sortBy === "recentes") {
+      sorted.sort((a, b) => toTime(b.dataInicio) - toTime(a.dataInicio) || String(b.id).localeCompare(String(a.id)));
+    } else if (sortBy === "proximos") {
+      sorted.sort((a, b) => (toTime(a.dataFim) - now) - (toTime(b.dataFim) - now));
+    } else if (sortBy === "encerrados") {
+      const closed = (x) => {
+        const s = getDerivedStatus(x);
+        return s === "finalizado" || s === "encerrado";
+      };
+      // Primeiro os encerrados/finalizados, depois por dataFim mais recente
+      sorted.sort((a, b) => (closed(b) - closed(a)) || toTime(b.dataFim) - toTime(a.dataFim));
+    }
+    return sorted;
+  }, [desafios, activeTab, sortBy, isSearching, searchTerm, currentUserId]);
+
+  const loading = loadingDesafios;
+
+  // Usa o status derivado para classe; "finalizado" herda o estilo de "encerrado"
+  const statusBadgeClass = (d) => {
+    const s = getDerivedStatus(d);
+    const isClosed = s === "finalizado" || s === "encerrado";
+    return `ch-badge status ${isClosed ? "encerrado" : "aberto"}`;
+  };
+  const tipoBadgeClass  = (d) => `ch-badge ${d.tipo === "oficial" ? "oficial" : "comunidade"}`;
+
+  return (
+    &lt;>
+      &lt;HeaderForYou />
+
+      &lt;div className="fy-container">
+        &lt;h1 className="fy-title">Desafios em Destaque&lt;/h1>
+        &lt;p className="fy-subtitle">Participe dos desafios &lt;b>oficiais&lt;/b> e da &lt;b>comunidade&lt;/b>, mostre sua arte e suba no ranking ⭐&lt;/p>
+
+        {/* casca translúcida clara */}
+        &lt;div className="content-shell">
+          {/* busca */}
+          &lt;div className="fy-search-container">
+            &lt;div className="fy-search-box">
+              &lt;i className="fas fa-search fy-search-icon">&lt;/i>
+              &lt;input
+                type="text"
+                className="fy-search-input"
+                placeholder="Pesquisar desafios por título ou descrição..."
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+              {searchTerm &amp;&amp; (
+                &lt;button className="fy-search-clear" onClick={() => handleSearch("")}>
+                  &lt;i className="fas fa-times">&lt;/i>
+                &lt;/button>
+              )}
+            &lt;/div>
+
+            {isSearching &amp;&amp; (
+              &lt;div className="fy-search-results-info">
+                &lt;span>{filteredAndSorted.length} resultado(s) para "{searchTerm}"&lt;/span>
+                &lt;button className="fy-search-clear-btn" onClick={() => handleSearch("")}>Limpar pesquisa&lt;/button>
+              &lt;/div>
+            )}
+          &lt;/div>
+
+          {/* filtros + ordenação + CRIAR DESAFIO */}
+          &lt;div className="fy-filters">
+            &lt;div className="fy-filter-buttons">
+              &lt;button className={`fy-filter-btn ${activeTab === "oficiais" ? "active" : ""}`} onClick={() => setActiveTab("oficiais")}>Oficiais&lt;/button>
+              &lt;button className={`fy-filter-btn ${activeTab === "comunidade" ? "active" : ""}`} onClick={() => setActiveTab("comunidade")}>Comunidade&lt;/button>
+              &lt;button className={`fy-filter-btn ${activeTab === "meus" ? "active" : ""}`} onClick={() => setActiveTab("meus")} disabled={!currentUser}>Meus&lt;/button>
+            &lt;/div>
+
+            &lt;div className="right-tools">
+              &lt;div className="fy-sort">
+                &lt;label htmlFor="sort-by">Ordenar por:&lt;/label>
+                &lt;select id="sort-by" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                  &lt;option value="recentes">Mais Recentes&lt;/option>
+                  &lt;option value="proximos">Encerrando em breve&lt;/option>
+                  &lt;option value="encerrados">Encerrados&lt;/option>
+                &lt;/select>
+              &lt;/div>
+
+              {/* ➕ Botão Criar Desafio (comunidade) */}
+              &lt;button
+                className="ch-create-btn"
+                onClick={() => navigate("/desafios/criar")}
+                disabled={!currentUser}
+                title={currentUser ? "Criar desafio da comunidade" : "Faça login para criar um desafio"}
+              >
+                &lt;i className="fa-solid fa-plus">&lt;/i>
+                &lt;span className="btn-text">Criar desafio&lt;/span>
+              &lt;/button>
+            &lt;/div>
+          &lt;/div>
+
+          {/* grid */}
+          {loading ? (
+            &lt;div className="fy-loading">Carregando…&lt;/div>
+          ) : filteredAndSorted.length === 0 ? (
+            &lt;div className="fy-no-results">
+              &lt;i className="fas fa-search fa-3x mb-3">&lt;/i>
+              &lt;h4>{isSearching ? `Nenhum desafio encontrado para "${searchTerm}"` : "Nenhum desafio disponível no momento"}&lt;/h4>
+              &lt;p>{isSearching ? "Tente outros termos de pesquisa." : "Volte mais tarde para novas oportunidades!"}&lt;/p>
+            &lt;/div>
+          ) : (
+            &lt;div className="fy-grid">
+              {filteredAndSorted.map((d) => (
+                &lt;div key={d.id} className="ch-card">
+                  {d.thumbUrl &amp;&amp; (
+                    &lt;div className="ch-thumb">
+                      &lt;img src={d.thumbUrl} alt="" loading="lazy" />
+                    &lt;/div>
+                  )}
+
+                  &lt;div className="ch-info">
+                    &lt;div className="ch-badges">
+                      &lt;span className={tipoBadgeClass(d)}>{d.tipo}&lt;/span>
+                      {/* Usa o status derivado aqui */}
+                      &lt;span className={statusBadgeClass(d)}>{getDerivedStatus(d)}&lt;/span>
+                    &lt;/div>
+
+                    &lt;h3 className="ch-title">{d.titulo}&lt;/h3>
+                    &lt;p className="ch-desc">{d.descricao}&lt;/p>
+
+                    &lt;div className="ch-meta">
+                      {d.dataInicio &amp;&amp; (
+                        &lt;div className="ch-meta-item">
+                          &lt;i className="fa-regular fa-calendar">&lt;/i>
+                          &lt;span>Início: {new Date(d.dataInicio).toLocaleDateString()}&lt;/span>
+                        &lt;/div>
+                      )}
+                      {d.dataFim &amp;&amp; (
+                        &lt;div className="ch-meta-item">
+                          &lt;i className="fa-regular fa-hourglass-half">&lt;/i>
+                          &lt;span>Fim: {new Date(d.dataFim).toLocaleDateString()}&lt;/span>
+                        &lt;/div>
+                      )}
+                    &lt;/div>
+
+                    &lt;div className="ch-actions">
+                      &lt;button className="fy-btn-follow ch-cta" onClick={() => navigate(`/desafios/${d._id}`)}>Ver desafio&lt;/button>
+                    &lt;/div>
+                  &lt;/div>
+                &lt;/div>
+              ))}
+            &lt;/div>
+          )}
+        &lt;/div>
+      &lt;/div>
+
+      {/* estilos - ULTRA RESPONSIVO */}
+      &lt;style>{`
+        :root{ 
+          --accent:#5e17eb; 
+          --accent-2:#7b3ff2; 
+          --surface-border: rgba(255,255,255,0.16); 
+          --surface-hover-border: rgba(255,255,255,0.26); 
+          --text-strong:#f7f8ff; 
+          --text-soft:rgba(255,255,255,.9); 
+          --muted:rgba(255,255,255,.72); 
+          --shadow-1:0 10px 24px rgba(0,0,0,.20); 
+          --shadow-2:0 18px 40px rgba(0,0,0,.28);
+        } 
+        
+        * {
+          box-sizing: border-box;
+        }
+
+        html {
+          scroll-behavior: smooth;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .fy-container{ 
+          max-width:1100px; 
+          margin:0 auto; 
+          padding:clamp(16px, 3vw, 28px) clamp(12px, 3vw, 20px) 60px; 
+          color:var(--text-strong); 
+          background:transparent;
+          width: 100%;
+        }
+        
+        .fy-title{ 
+          margin:clamp(6px, 1.5vw, 8px) 0 clamp(4px, 1vw, 6px); 
+          font-weight:800; 
+          letter-spacing:.2px; 
+          font-size:clamp(1.3rem, 4.5vw, 2.125rem); 
+          background:linear-gradient(90deg,#fff,#e9eaff 50%,#d4d9ff 85%); 
+          -webkit-background-clip:text; 
+          -webkit-text-fill-color:transparent; 
+          background-clip:text; 
+          text-shadow:0 2px 16px rgba(0,0,0,.25);
+          line-height: 1.2;
+        } 
+        
+        .fy-subtitle{ 
+          margin:0 0 clamp(14px, 2.5vw, 18px); 
+          color:var(--text-soft); 
+          text-shadow:0 1px 10px rgba(0,0,0,.20); 
+          font-size:clamp(0.85rem, 2vw, 1.1rem);
+          line-height: 1.4;
+        } 
+        
+        .content-shell{ 
+          background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.10)); 
+          border:1px solid rgba(255,255,255,.22); 
+          border-radius: clamp(16px, 4vw, 28px); 
+          backdrop-filter: blur(18px) saturate(1.15); 
+          -webkit-backdrop-filter: blur(18px) saturate(1.15); 
+          box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255,255,255,.22); 
+          padding: clamp(14px, 3vw, 18px) clamp(12px, 2.5vw, 16px) clamp(16px, 3vw, 20px);
+          width: 100%;
+        } 
+        
+        .fy-search-container{ 
+          max-width:700px; 
+          margin:clamp(4px, 1vw, 6px) auto clamp(14px, 2.5vw, 18px); 
+        } 
+        
+        .fy-search-box{ 
+          display:flex; 
+          align-items:center; 
+          background: rgba(255,255,255,.14); 
+          border:1px solid rgba(255,255,255,.28); 
+          border-radius: clamp(16px, 3vw, 22px); 
+          padding:clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 16px); 
+          backdrop-filter: blur(14px); 
+          transition:all .25s ease; 
+          box-shadow: 0 8px 20px rgba(0,0,0,.15);
+        } 
+        
+        .fy-search-box:focus-within{ 
+          border-color:rgba(255,255,255,.38); 
+          box-shadow: 0 10px 26px rgba(0,0,0,.20); 
+        } 
+        
+        .fy-search-icon{ 
+          color:var(--muted); 
+          margin-right:clamp(10px, 2vw, 12px); 
+          font-size:clamp(1rem, 2vw, 1.1rem); 
+          flex-shrink:0;
+        } 
+        
+        .fy-search-input{ 
+          flex:1; 
+          border:none; 
+          background:transparent; 
+          color:#fff; 
+          font-size:clamp(0.9rem, 1.8vw, 1rem); 
+          outline:none; 
+          min-width:0;
+        } 
+        
+        .fy-search-input::placeholder{ 
+          color:rgba(255,255,255,.7); 
+        } 
+        
+        .fy-search-clear{ 
+          background:rgba(255,255,255,.10); 
+          border:1px solid rgba(255,255,255,.26); 
+          color:#fff; 
+          cursor:pointer; 
+          padding:clamp(5px, 1.2vw, 6px) clamp(8px, 1.8vw, 10px); 
+          border-radius:clamp(8px, 1.8vw, 10px); 
+          transition:all .2s ease; 
+          flex-shrink:0;
+          font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+        } 
+        
+        .fy-search-clear:hover{ 
+          background:rgba(255,255,255,.18); 
+        } 
+        
+        .fy-search-results-info{ 
+          display:flex; 
+          align-items:center; 
+          justify-content:center; 
+          gap:clamp(8px, 1.8vw, 10px); 
+          margin-top:clamp(8px, 1.8vw, 10px); 
+          color:var(--text-soft); 
+          flex-wrap:wrap;
+          font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+        } 
+        
+        .fy-search-clear-btn{ 
+          background: rgba(255,255,255,.12); 
+          border:1px solid rgba(255,255,255,.24); 
+          color:#fff; 
+          padding:clamp(5px, 1.2vw, 6px) clamp(10px, 2vw, 12px); 
+          border-radius:clamp(10px, 2vw, 12px); 
+          font-size:clamp(0.8rem, 1.8vw, 0.9rem); 
+          cursor:pointer; 
+          transition:all .2s ease; 
+        } 
+        
+        .fy-search-clear-btn:hover{ 
+          background:rgba(255,255,255,.18); 
+          border-color:rgba(255,255,255,.30); 
+        } 
+        
+        .fy-filters{ 
+          display:grid; 
+          grid-template-columns:1fr auto; 
+          align-items:center; 
+          gap:clamp(12px, 2.5vw, 14px); 
+          margin-bottom:clamp(12px, 2.5vw, 16px); 
+        } 
+        
+        .fy-filter-buttons{ 
+          display:flex; 
+          flex-wrap:wrap; 
+          gap:clamp(8px, 1.8vw, 10px); 
+        } 
+        
+        .fy-filter-btn{ 
+          border:1px solid rgba(255,255,255,.22); 
+          color:#fff; 
+          background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.10)); 
+          padding:clamp(8px, 1.8vw, 10px) clamp(14px, 2.5vw, 18px); 
+          border-radius: 999px; 
+          font-weight:700; 
+          letter-spacing:.2px; 
+          backdrop-filter: blur(10px); 
+          transition: transform .15s ease, border-color .2s ease, box-shadow .25s ease, background .25s ease; 
+          cursor:pointer; 
+          white-space:nowrap;
+          font-size: clamp(0.8rem, 1.8vw, 0.95rem);
+        } 
+        
+        .fy-filter-btn:hover{ 
+          transform:translateY(-1px); 
+          border-color:rgba(255,255,255,.30); 
+          background:linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.12)); 
+          box-shadow: 0 12px 28px rgba(0,0,0,.20); 
+        } 
+        
+        .fy-filter-btn.active{ 
+          background:linear-gradient(135deg, var(--accent), var(--accent-2)); 
+          border-color:rgba(255,255,255,.28); 
+          box-shadow:0 12px 26px rgba(94,23,235,.32); 
+        } 
+        
+        .fy-filter-btn:disabled{ 
+          opacity:.55; 
+          cursor:not-allowed; 
+        } 
+        
+        .right-tools{ 
+          display:flex; 
+          align-items:center; 
+          gap:clamp(10px, 2vw, 12px); 
+          flex-wrap:wrap;
+        } 
+        
+        .fy-sort{ 
+          display:flex; 
+          align-items:center; 
+          gap:clamp(8px, 1.8vw, 10px); 
+          color:var(--text-soft); 
+          font-weight:700; 
+        } 
+        
+        .fy-sort label{ 
+          display:none;
+          font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+        } 
+        
+        .fy-sort select{ 
+          background: rgba(255,255,255,.14); 
+          color:#fff; 
+          border:1px solid rgba(255,255,255,.26); 
+          border-radius:clamp(12px, 2.5vw, 14px); 
+          padding:clamp(7px, 1.5vw, 8px) clamp(10px, 2vw, 12px); 
+          outline:none; 
+          box-shadow: 0 8px 18px rgba(0,0,0,.14); 
+          cursor:pointer;
+          font-size: clamp(0.8rem, 1.8vw, 0.95rem);
+        } 
+        
+        .ch-create-btn{ 
+          display:inline-flex; 
+          align-items:center; 
+          gap:clamp(6px, 1.5vw, 8px); 
+          border-radius:clamp(12px, 2.5vw, 14px); 
+          border:1px solid rgba(255,255,255,.28); 
+          color:#fff; 
+          font-weight:800; 
+          letter-spacing:.2px; 
+          padding:clamp(8px, 1.8vw, 10px) clamp(12px, 2.5vw, 16px); 
+          background:linear-gradient(135deg, var(--accent), var(--accent-2)); 
+          box-shadow:0 12px 26px rgba(94,23,235,.28); 
+          transition: transform .12s ease, filter .2s ease, box-shadow .25s ease, border-color .2s ease; 
+          cursor:pointer; 
+          white-space:nowrap;
+          font-size: clamp(0.8rem, 1.8vw, 0.95rem);
+        } 
+        
+        .ch-create-btn:hover:not(:disabled){ 
+          transform:translateY(-1px); 
+          filter:brightness(1.05); 
+          border-color:rgba(255,255,255,.34); 
+          box-shadow:0 16px 32px rgba(94,23,235,.36); 
+        } 
+        
+        .ch-create-btn:disabled{ 
+          opacity:.55; 
+          cursor:not-allowed; 
+        } 
+        
+        .ch-create-btn i {
+          font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+        }
+
+        .fy-loading{ 
+          color:var(--text-soft); 
+          text-align:center; 
+          padding:clamp(32px, 5vw, 40px) clamp(16px, 3vw, 20px);
+          font-size: clamp(0.95rem, 2vw, 1.05rem);
+        } 
+        
+        .fy-no-results{ 
+          background: rgba(255,255,255,.12); 
+          border:1px solid rgba(255,255,255,.24); 
+          border-radius: clamp(16px, 3vw, 22px); 
+          padding:clamp(32px, 5vw, 40px) clamp(16px, 3vw, 20px); 
+          backdrop-filter: blur(14px); 
+          text-align:center; 
+          color:var(--text-soft); 
+        } 
+        
+        .fy-no-results h4{ 
+          color:#fff; 
+          margin-bottom:clamp(8px, 1.8vw, 10px); 
+          font-size:clamp(1rem, 2.2vw, 1.3rem);
+        } 
+
+        .fy-no-results p {
+          font-size: clamp(0.9rem, 2vw, 1rem);
+        }
+
+        .fy-no-results i {
+          font-size: clamp(2rem, 5vw, 3rem) !important;
+          margin-bottom: clamp(12px, 2.5vw, 16px);
+        }
+        
+        .fy-grid{ 
+          display:grid; 
+          grid-template-columns: repeat(auto-fill, minmax(clamp(240px, 40vw, 280px), 1fr)); 
+          gap:clamp(14px, 2.5vw, 18px); 
+        }
+
+        /* Scroll otimizado para grid longo em telas 21:9 */
+        @supports (aspect-ratio: 9/19) {
+          .fy-grid {
+            max-height: 70vh;
+            overflow-y: auto;
+            padding-right: 4px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+          }
+
+          .fy-grid::-webkit-scrollbar {
+            width: 6px;
+          }
+
+          .fy-grid::-webkit-scrollbar-track {
+            background: transparent;
+          }
+
+          .fy-grid::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+          }
+
+          .fy-grid::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+          }
+        }
+        
+        .ch-card{ 
+          display:grid; 
+          grid-template-rows:auto 1fr; 
+          background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.10)); 
+          color:#fff; 
+          border:1px solid rgba(255,255,255,.22); 
+          border-radius: clamp(16px, 3vw, 22px); 
+          box-shadow: var(--shadow-1); 
+          backdrop-filter: blur(14px) saturate(1.08); 
+          overflow:hidden; 
+          transition: transform .18s ease, box-shadow .25s ease, border-color .22s ease; 
+        } 
+        
+        .ch-card:hover{ 
+          transform:translateY(-2px); 
+          box-shadow: var(--shadow-2); 
+          border-color: var(--surface-hover-border); 
+        } 
+        
+        .ch-thumb{ 
+          position:relative; 
+          aspect-ratio:16/9; 
+          overflow:hidden; 
+          background: linear-gradient(135deg, rgba(94,23,235,.2), rgba(123,63,242,.15));
+        } 
+        
+        .ch-thumb img{ 
+          width:100%; 
+          height:100%; 
+          object-fit:cover; 
+          display:block; 
+          transition:transform .5s ease; 
+        } 
+        
+        .ch-card:hover .ch-thumb img{ 
+          transform:scale(1.04); 
+        } 
+        
+        .ch-info{ 
+          padding:clamp(12px, 2.5vw, 14px); 
+          display:grid; 
+          gap:clamp(8px, 1.8vw, 10px); 
+        } 
+        
+        .ch-badges{ 
+          display:flex; 
+          gap:clamp(6px, 1.5vw, 8px); 
+          flex-wrap:wrap; 
+        } 
+        
+        .ch-badge{ 
+          font-size:clamp(0.65rem, 1.4vw, 0.72rem); 
+          padding:clamp(0.3rem, 0.7vw, 0.35rem) clamp(0.5rem, 1.2vw, 0.6rem); 
+          border-radius:999px; 
+          border:1px solid rgba(255,255,255,.28); 
+          background: rgba(255,255,255,.14); 
+          letter-spacing:.2px; 
+          text-transform:capitalize; 
+          font-weight:600;
+          white-space: nowrap;
+        } 
+        
+        .ch-badge.oficial{ 
+          background:linear-gradient(135deg, rgba(99,102,241,.30), rgba(59,130,246,.26)); 
+          border-color:rgba(147,197,253,.45); 
+        } 
+        
+        .ch-badge.comunidade{ 
+          background:linear-gradient(135deg, rgba(168,85,247,.28), rgba(236,72,153,.24)); 
+          border-color:rgba(232,121,249,.42); 
+        } 
+        
+        .ch-badge.status.aberto, .ch-badge.status.publicado{ 
+          background:rgba(34,197,94,.24); 
+          border-color:rgba(134,239,172,.45); 
+        } 
+        
+        .ch-badge.status.encerrado, .ch-badge.status.finalizado{ 
+          background:rgba(148,163,184,.24); 
+          border-color:rgba(148,163,184,.45); 
+        } 
+        
+        .ch-badge.status.rascunho{ 
+          background:rgba(251,191,36,.24); 
+          border-color:rgba(253,224,71,.45); 
+        } 
+        
+        .ch-title{ 
+          font-weight:800; 
+          margin:clamp(1px, 0.5vw, 2px) 0 0; 
+          font-size:clamp(0.95rem, 2.2vw, 1.2rem); 
+          line-height:1.3;
+          word-break: break-word;
+        } 
+        
+        .ch-desc{ 
+          margin:0; 
+          color:rgba(255,255,255,.92); 
+          min-height:2.6em; 
+          font-size:clamp(0.85rem, 1.8vw, 0.95rem); 
+          line-height:1.5;
+          word-break: break-word;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        } 
+        
+        .ch-meta{ 
+          display:flex; 
+          gap:clamp(10px, 2vw, 14px); 
+          flex-wrap:wrap; 
+          color:rgba(255,255,255,.85); 
+          font-size:clamp(0.8rem, 1.8vw, 0.9rem);
+        } 
+        
+        .ch-meta-item{ 
+          display:flex; 
+          align-items:center; 
+          gap:clamp(6px, 1.5vw, 8px); 
+        } 
+        
+        .ch-meta-item i{ 
+          flex-shrink:0;
+          font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+        } 
+        
+        .ch-actions{ 
+          display:flex; 
+          justify-content:flex-end; 
+        } 
+        
+        .ch-cta{ 
+          border-radius:clamp(12px, 2.5vw, 14px); 
+          border:1px solid rgba(255,255,255,.28); 
+          color:#fff; 
+          font-weight:800; 
+          letter-spacing:.2px; 
+          padding:clamp(8px, 1.8vw, 10px) clamp(12px, 2.5vw, 16px); 
+          background:linear-gradient(135deg, var(--accent), var(--accent-2)); 
+          box-shadow:0 12px 26px rgba(94,23,235,.28); 
+          transition: transform .12s ease, filter .2s ease, box-shadow .25s ease, border-color .2s ease; 
+          cursor:pointer; 
+          text-decoration:none; 
+          display:inline-flex; 
+          align-items:center; 
+          gap:clamp(6px, 1.5vw, 8px);
+          font-size: clamp(0.8rem, 1.8vw, 0.95rem);
+        } 
+        
+        .ch-cta:hover{ 
+          transform:translateY(-1px); 
+          filter:brightness(1.05); 
+          border-color:rgba(255,255,255,.34); 
+          box-shadow:0 16px 32px rgba(94,23,235,.36); 
+        } 
+        
+        /* ===== MEDIA QUERIES RESPONSIVAS ===== */
+        
+        /* Tablets */
+        @media (max-width: 820px) {
+          .fy-container{ 
+            padding:clamp(16px, 3vw, 20px) clamp(14px, 2.5vw, 16px) 50px;
+          }
+          
+          .content-shell{ 
+            padding:14px 12px 16px; 
+            border-radius:20px;
+          }
+          
+          .fy-filters{ 
+            grid-template-columns:1fr; 
+            gap:12px; 
+          }
+          
+          .fy-filter-buttons{ 
+            gap:8px;
+          }
+          
+          .fy-filter-btn{ 
+            padding:8px 14px; 
+            font-size:0.85rem;
+          }
+          
+          .right-tools{ 
+            width:100%; 
+            justify-content:space-between; 
+            flex-wrap:wrap;
+          }
+          
+          .fy-sort{ 
+            flex:1; 
+            min-width:150px;
+          }
+          
+          .fy-sort label{ 
+            display:inline; 
+            font-size:0.85rem;
+          }
+          
+          .ch-create-btn{ 
+            padding:9px 14px; 
+            font-size:0.85rem;
+          }
+          
+          .fy-search-container{ 
+            margin-bottom:14px; 
+          }
+          
+          .fy-search-box{ 
+            padding:10px 14px;
+          }
+          
+          .fy-grid{ 
+            grid-template-columns: 1fr; 
+            gap:14px;
+          }
+          
+          .ch-meta{ 
+            gap:10px; 
+            font-size:0.8rem;
+          }
+          
+          .ch-meta-item span{ 
+            font-size:0.8rem;
+          }
+        }
+        
+        /* Mobile */
+        @media (max-width: 640px) {
+          .fy-title{ 
+            font-size:1.3rem; 
+            margin:4px 0;
+          }
+          
+          .fy-subtitle{ 
+            font-size:0.85rem; 
+            margin-bottom:14px;
+          }
+          
+          .content-shell{ 
+            padding:14px 10px;
+            border-radius:18px;
+          }
+          
+          .fy-filter-btn{ 
+            padding:7px 12px; 
+            font-size:0.8rem;
+          }
+          
+          .ch-card{ 
+            border-radius:16px;
+          }
+          
+          .ch-info{ 
+            padding:12px;
+          }
+          
+          .ch-title{ 
+            font-size:0.95rem;
+          }
+          
+          .ch-desc{ 
+            font-size:0.85rem;
+          }
+          
+          .ch-cta{ 
+            padding:9px 14px; 
+            font-size:0.85rem;
+          }
+
+          .ch-create-btn .btn-text {
+            display: none;
+          }
+
+          .ch-create-btn {
+            padding: 9px 12px;
+          }
+        }
+        
+        /* Mobile pequeno */
+        @media (max-width: 480px) {
+          .fy-title{ 
+            font-size:1.2rem;
+          }
+          
+          .fy-subtitle{ 
+            font-size:0.8rem;
+          }
+          
+          .content-shell{ 
+            padding:12px 10px;
+          }
+          
+          .fy-filter-btn{ 
+            padding:7px 10px; 
+            font-size:0.75rem;
+          }
+          
+          .ch-badge {
+            font-size: 0.65rem;
+            padding: 0.25rem 0.5rem;
+          }
+          
+          .ch-title{ 
+            font-size:0.9rem;
+          }
+          
+          .ch-desc{ 
+            font-size:0.8rem;
+          }
+          
+          .ch-meta {
+            font-size: 0.75rem;
+          }
+          
+          .ch-cta{ 
+            padding:8px 12px; 
+            font-size:0.8rem;
+          }
+
+          .fy-search-input {
+            font-size: 0.85rem;
+          }
+
+          .fy-sort select {
+            font-size: 0.8rem;
+            padding: 6px 10px;
+          }
+        }
+
+        /* ===== DISPOSITIVOS 21:9 VERTICAIS ===== */
+        
+        @media (max-width: 450px) and (min-aspect-ratio: 9/19) {
+          .fy-container {
+            padding: 12px 10px 60px;
+          }
+
+          .fy-title {
+            font-size: 1.15rem;
+            margin: 4px 0 3px;
+          }
+
+          .fy-subtitle {
+            font-size: 0.8rem;
+            margin-bottom: 12px;
+          }
+
+          .content-shell {
+            padding: 12px 10px 14px;
+            border-radius: 16px;
+          }
+
+          .fy-search-container {
+            margin-bottom: 12px;
+          }
+
+          .fy-search-box {
+            padding: 9px 12px;
+            border-radius: 16px;
+          }
+
+          .fy-search-icon {
+            font-size: 0.95rem;
+            margin-right: 10px;
+          }
+
+          .fy-search-input {
+            font-size: 0.8rem;
+          }
+
+          .fy-search-clear {
+            padding: 5px 8px;
+            font-size: 0.8rem;
+          }
+
+          .fy-filters {
+            gap: 10px;
+            margin-bottom: 12px;
+          }
+
+          .fy-filter-buttons {
+            gap: 6px;
+          }
+
+          .fy-filter-btn {
+            padding: 6px 10px;
+            font-size: 0.75rem;
+          }
+
+          .right-tools {
+            gap: 8px;
+          }
+
+          .fy-sort select {
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            border-radius: 10px;
+          }
+
+          .ch-create-btn {
+            padding: 7px 10px;
+            font-size: 0.75rem;
+            border-radius: 10px;
+          }
+
+          .ch-create-btn .btn-text {
+            display: none;
+          }
+
+          .fy-grid {
+            gap: 10px;
+          }
+
+          .ch-card {
+            border-radius: 14px;
+          }
+
+          .ch-info {
+            padding: 10px;
+            gap: 6px;
+          }
+
+          .ch-badges {
+            gap: 5px;
+          }
+
+          .ch-badge {
+            font-size: 0.6rem;
+            padding: 0.25rem 0.45rem;
+          }
+
+          .ch-title {
+            font-size: 0.85rem;
+          }
+
+          .ch-desc {
+            font-size: 0.75rem;
+            min-height: 2.4em;
+          }
+
+          .ch-meta {
+            gap: 8px;
+            font-size: 0.7rem;
+          }
+
+          .ch-meta-item {
+            gap: 5px;
+          }
+
+          .ch-meta-item i {
+            font-size: 0.7rem;
+          }
+
+          .ch-cta {
+            padding: 7px 12px;
+            font-size: 0.75rem;
+            border-radius: 10px;
+          }
+
+          .fy-no-results {
+            padding: 24px 12px;
+            border-radius: 14px;
+          }
+
+          .fy-no-results h4 {
+            font-size: 0.95rem;
+          }
+
+          .fy-no-results p {
+            font-size: 0.8rem;
+          }
+        }
+
+        /* Dispositivos 21:9 muito estreitos */
+        @media (max-width: 360px) and (min-aspect-ratio: 9/19) {
+          .fy-container {
+            padding: 10px 8px 50px;
+          }
+
+          .fy-title {
+            font-size: 1.05rem;
+          }
+
+          .fy-subtitle {
+            font-size: 0.75rem;
+          }
+
+          .content-shell {
+            padding: 10px 8px 12px;
+            border-radius: 14px;
+          }
+
+          .fy-search-box {
+            padding: 8px 10px;
+          }
+
+          .fy-search-input {
+            font-size: 0.75rem;
+          }
+
+          .fy-filter-btn {
+            padding: 6px 9px;
+            font-size: 0.7rem;
+          }
+
+          .fy-sort select {
+            font-size: 0.7rem;
+            padding: 5px 8px;
+          }
+
+          .ch-create-btn {
+            padding: 6px 9px;
+            font-size: 0.7rem;
+          }
+
+          .ch-info {
+            padding: 9px;
+          }
+
+          .ch-badge {
+            font-size: 0.55rem;
+            padding: 0.2rem 0.4rem;
+          }
+
+          .ch-title {
+            font-size: 0.8rem;
+          }
+
+          .ch-desc {
+            font-size: 0.7rem;
+          }
+
+          .ch-meta {
+            font-size: 0.65rem;
+          }
+
+          .ch-cta {
+            padding: 6px 10px;
+            font-size: 0.7rem;
+          }
+        }
+
+        /* Landscape mobile */
+        @media (max-width: 900px) and (orientation: landscape) {
+          .fy-container {
+            padding-top: 12px;
+            padding-bottom: 40px;
+          }
+
+          .fy-title {
+            margin: 4px 0;
+          }
+
+          .fy-subtitle {
+            margin-bottom: 12px;
+          }
+
+          .fy-filters {
+            grid-template-columns: 1fr auto;
+          }
+
+          .right-tools {
+            width: auto;
+          }
+
+          .fy-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        /* Altura limitada */
+        @media (max-height: 600px) {
+          .fy-container {
+            padding-top: 10px;
+            padding-bottom: 30px;
+          }
+
+          .fy-title {
+            margin: 4px 0;
+          }
+
+          .fy-subtitle {
+            margin-bottom: 10px;
+          }
+
+          .content-shell {
+            padding: 12px 14px;
+          }
+
+          .fy-grid {
+            max-height: 55vh;
+          }
+        }
+
+        @media (max-height: 500px) and (max-width: 900px) {
+          .content-shell {
+            padding: 10px 12px;
+          }
+
+          .fy-search-box {
+            padding: 8px 12px;
+          }
+
+          .fy-filters {
+            margin-bottom: 10px;
+          }
+        }
+      `}&lt;/style>
+    &lt;/>
+  );
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CommentsPopup.html">CommentsPopup</a></li><li><a href="module-FooterAL.html">FooterAL</a></li><li><a href="module-Header.html">Header</a></li><li><a href="module-HeaderForYou.html">HeaderForYou</a></li><li><a href="module-MonetizationPopup.html">MonetizationPopup</a></li><li><a href="module-NavbarAL.html">NavbarAL</a></li><li><a href="module-NavbarLog.html">NavbarLog</a></li><li><a href="module-PoliticasPrivacidade.html">PoliticasPrivacidade</a></li><li><a href="module-PostCard.html">PostCard</a></li><li><a href="module-ProtectedRoute.html">ProtectedRoute</a></li><li><a href="module-PublicarImagem.html">PublicarImagem</a></li><li><a href="module-PublicarLayout.html">PublicarLayout</a></li><li><a href="module-PublicarLetra.html">PublicarLetra</a></li><li><a href="module-PublicarMusica.html">PublicarMusica</a></li><li><a href="module-TermosDeUso.html">TermosDeUso</a></li><li><a href="module-UserProfile.html">UserProfile</a></li><li><a href="module-VerificaLogin.html">VerificaLogin</a></li><li><a href="module-api_axios.html">api/axios</a></li></ul><h3>Global</h3><ul><li><a href="global.html#API_BASE_URL">API_BASE_URL</a></li><li><a href="global.html#ArtistPage">ArtistPage</a></li><li><a href="global.html#BackButton">BackButton</a></li><li><a href="global.html#DescricaoInput">DescricaoInput</a></li><li><a href="global.html#DiscoverArtist">DiscoverArtist</a></li><li><a href="global.html#EdicaoDeConta">EdicaoDeConta</a></li><li><a href="global.html#Feed">Feed</a></li><li><a href="global.html#FloatingActionButton">FloatingActionButton</a></li><li><a href="global.html#ForYou">ForYou</a></li><li><a href="global.html#GeneroSelect">GeneroSelect</a></li><li><a href="global.html#InitialPage">InitialPage</a></li><li><a href="global.html#ParticipatePage">ParticipatePage</a></li><li><a href="global.html#StarRater">StarRater</a></li><li><a href="global.html#UploadArea">UploadArea</a></li><li><a href="global.html#UploadPostForm">UploadPostForm</a></li><li><a href="global.html#authAPI">authAPI</a></li><li><a href="global.html#avaliacoesAPI">avaliacoesAPI</a></li><li><a href="global.html#comentariosAPI">comentariosAPI</a></li><li><a href="global.html#createComment">createComment</a></li><li><a href="global.html#createDesafio">createDesafio</a></li><li><a href="global.html#createParticipacao">createParticipacao</a></li><li><a href="global.html#createPost">createPost</a></li><li><a href="global.html#createPostWithUpload">createPostWithUpload</a></li><li><a href="global.html#deleteComment">deleteComment</a></li><li><a href="global.html#deleteDesafio">deleteDesafio</a></li><li><a href="global.html#deleteParticipacao">deleteParticipacao</a></li><li><a href="global.html#deletePost">deletePost</a></li><li><a href="global.html#fetchCommentsByPost">fetchCommentsByPost</a></li><li><a href="global.html#fetchDesafioById">fetchDesafioById</a></li><li><a href="global.html#fetchDesafios">fetchDesafios</a></li><li><a href="global.html#fetchFollowCounts">fetchFollowCounts</a></li><li><a href="global.html#fetchFollowersList">fetchFollowersList</a></li><li><a href="global.html#fetchFollowingList">fetchFollowingList</a></li><li><a href="global.html#fetchIsFollowing">fetchIsFollowing</a></li><li><a href="global.html#fetchMyRatingForPost">fetchMyRatingForPost</a></li><li><a href="global.html#fetchParticipacoes">fetchParticipacoes</a></li><li><a href="global.html#fetchParticipacoesByDesafio">fetchParticipacoesByDesafio</a></li><li><a href="global.html#fetchPostRating">fetchPostRating</a></li><li><a href="global.html#fetchPosts">fetchPosts</a></li><li><a href="global.html#fetchPostsByUser">fetchPostsByUser</a></li><li><a href="global.html#fetchUsuarios">fetchUsuarios</a></li><li><a href="global.html#fetchWithAuth">fetchWithAuth</a></li><li><a href="global.html#followUser">followUser</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#makeSelectRankingByStars">makeSelectRankingByStars</a></li><li><a href="global.html#patchDesafio">patchDesafio</a></li><li><a href="global.html#postsAPI">postsAPI</a></li><li><a href="global.html#removeRating">removeRating</a></li><li><a href="global.html#seguidoresAPI">seguidoresAPI</a></li><li><a href="global.html#selectAuthToken">selectAuthToken</a></li><li><a href="global.html#selectCommentsState">selectCommentsState</a></li><li><a href="global.html#selectCurrentUser">selectCurrentUser</a></li><li><a href="global.html#selectDesafioById">selectDesafioById</a></li><li><a href="global.html#selectDesafios">selectDesafios</a></li><li><a href="global.html#selectFollowCounts">selectFollowCounts</a></li><li><a href="global.html#selectIsFollowing">selectIsFollowing</a></li><li><a href="global.html#selectMyFollowingList">selectMyFollowingList</a></li><li><a href="global.html#selectParticipacoes">selectParticipacoes</a></li><li><a href="global.html#selectParticipacoesByDesafio">selectParticipacoesByDesafio</a></li><li><a href="global.html#selectParticipacoesByUsuario">selectParticipacoesByUsuario</a></li><li><a href="global.html#selectRatingState">selectRatingState</a></li><li><a href="global.html#selectUserError">selectUserError</a></li><li><a href="global.html#selectUserLoading">selectUserLoading</a></li><li><a href="global.html#selectUsuarios">selectUsuarios</a></li><li><a href="global.html#setUserFromStorage">setUserFromStorage</a></li><li><a href="global.html#store">store</a></li><li><a href="global.html#unfollowUser">unfollowUser</a></li><li><a href="global.html#updateComment">updateComment</a></li><li><a href="global.html#updatePost">updatePost</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#upsertRating">upsertRating</a></li><li><a href="global.html#usuariosAPI">usuariosAPI</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Dec 16 2025 13:21:09 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

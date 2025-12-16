@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/TermosDeUso.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/TermosDeUso.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @fileoverview Componente React para exibir os Termos de Uso da aplicação ArtBeat.
+ * @module TermosDeUso
+ * @author Gemini
+ */
+import React, { useEffect, useState } from "react";
+import logo from "../images/ArtBeat_Branco.png";
+import "../css/termosPoliticas.css";
+
+/**
+ * @function TermosDeUso
+ * @description Componente funcional React que exibe o conteúdo detalhado dos Termos de Uso da plataforma ArtBeat.
+ * Ele carrega a data atual, mas exibe uma data de "Última atualização" fixa no conteúdo.
+ * @returns {JSX.Element} O componente de Termos de Uso renderizado.
+ */
+export default function TermosDeUso() {
+  /**
+   * @type {[string, function(string): void]} Estado para armazenar a data atual formatada.
+   */
+  const [data, setData] = useState("");
+
+  /**
+   * @effect
+   * Hook useEffect que é executado uma vez após a montagem do componente.
+   * Obtém a data atual e a formata para o padrão 'pt-BR' (dia/mês/ano),
+   * armazenando-a no estado `data`.
+   */
+  useEffect(() => {
+    const currentDate = new Date();
+    setData(currentDate.toLocaleDateString("pt-BR"));
+  }, []);
+
+  return (
+    &lt;div className="pagina-termos">
+      &lt;header className="topo">
+        &lt;img src={logo} alt="Logo ArtBeat" class = "logo"/>
+        &lt;h1>Termos de Uso&lt;/h1>
+      &lt;/header>
+
+      &lt;main className="esp">
+        &lt;h6>Última atualização: &lt;span>25/10/2025&lt;/span>&lt;/h6>
+        &lt;p>Ao utilizar o site ArtBeat, você concorda com as regras estabelecidas neste documento. Recomendamos que leia atentamente todos os termos antes de utilizar nossos serviços.&lt;/p>
+         
+        &lt;section>
+                &lt;h2>Objetivo do Site&lt;/h2>
+                &lt;p>ArtBeat é uma plataforma digital que permite a artistas (músicos, desenhistas, escritores e outros criadores) divulgar suas obras, interagir com outros usuários e participar de desafios semanais temáticos.&lt;/p>
+            &lt;/section>
+            
+            &lt;section>
+                &lt;h2>Cadastro e Responsabilidades do Usuário&lt;/h2>
+                
+                &lt;h3>Requisitos para Cadastro:&lt;/h3>
+                &lt;p>Para postar conteúdos, o usuário deve criar uma conta fornecendo informações verdadeiras, completas e atualizadas.&lt;/p>
+                
+                &lt;h3>Responsabilidades:&lt;/h3>
+                &lt;ul>
+                    &lt;li>O usuário é integralmente responsável pela confidencialidade de sua senha e por todas as atividades que ocorram em sua conta.&lt;/li>
+                    &lt;li>É obrigatório notificar imediatamente a administração do site sobre qualquer uso não autorizado de sua conta.&lt;/li>
+                    &lt;li>É expressamente proibido criar múltiplas contas com o objetivo de manipular rankings, interações ou sistemas de recompensa.&lt;/li>
+                &lt;/ul>
+                
+                &lt;p>&lt;strong>Importante:&lt;/strong> Violações dessas regras podem resultar na suspensão ou exclusão permanente da(s) conta(s).&lt;/p>
+            &lt;/section>
+            
+            &lt;section>
+                &lt;h2>Conteúdos Permitidos e Proibidos&lt;/h2>
+                
+                &lt;h3>Conteúdos Permitidos&lt;/h3>
+                &lt;ul>
+                    &lt;li>Obras originais de autoria do próprio usuário&lt;/li>
+                    &lt;li>Conteúdo que respeite os direitos autorais de terceiros&lt;/li>
+                    &lt;li>Materiais que estejam em conformidade com a legislação brasileira&lt;/li>
+                &lt;/ul>
+                
+                &lt;h3>Conteúdos Expressamente Proibidos&lt;/h3>
+                &lt;ul>
+                    &lt;li>Plagiar, copiar ou publicar conteúdos de terceiros sem autorização prévia e expressa&lt;/li>
+                    &lt;li>Postar conteúdos ofensivos, discriminatórios, obscenos ou ilegais&lt;/li>
+                    &lt;li>Materiais que violem direitos autorais, marcas registradas ou outros direitos de propriedade intelectual&lt;/li>
+                    &lt;li>Manipular sistemas de avaliação, comentários ou doações de forma fraudulenta&lt;/li>
+                    &lt;li>Conteúdo que promova atividades ilegais ou que possa causar danos a outros usuários&lt;/li>
+                &lt;/ul>
+            &lt;/section>
+            
+            &lt;section>
+                &lt;h2>Direitos Autorais e Propriedade Intelectual&lt;/h2>
+                
+                &lt;h3>Direitos do Autor&lt;/h3>
+                &lt;p>O usuário mantém todos os direitos autorais sobre as obras que postar em nossa plataforma.&lt;/p>
+                
+                &lt;h3>Licença de Uso&lt;/h3>
+                &lt;p>Ao publicar conteúdo no ArtBeat, o usuário concede à plataforma uma licença não exclusiva, mundial, irrevogável e isenta de royalties para exibir, distribuir, reproduzir e adaptar suas obras exclusivamente para os fins de operação e promoção do site.&lt;/p>
+                
+                &lt;p>&lt;strong>Nota importante:&lt;/strong> O site não reivindica a propriedade das obras publicadas pelos usuários. Os autores mantêm todos os direitos sobre suas criações.&lt;/p>
+            &lt;/section>
+            
+            &lt;section>
+                &lt;h2>Sistema de Doações&lt;/h2>
+                
+                &lt;h3>Funcionamento&lt;/h3>
+                &lt;p>Usuários podem apoiar financeiramente artistas por meio de doações voluntárias através de nossa plataforma.&lt;/p>
+                
+                &lt;h3>Política de Reembolsos&lt;/h3>
+                &lt;p>As doações são voluntárias e consideradas não reembolsáveis, exceto em casos de erro comprovado de procesamento ou transação fraudulenta, que serão analisados individualmente.&lt;/p>
+                
+                &lt;h3>Taxas Administrativas&lt;/h3>
+                &lt;p>O site pode reter taxas administrativas sobre as transações, que serão claramente informadas previamente à confirmação de qualquer doação.&lt;/p>
+            &lt;/section>
+            
+            &lt;section>
+                &lt;h2>Desafios Semanais&lt;/h2>
+                
+                &lt;h3>Participação&lt;/h3>
+                &lt;p>Artistas podem se inscrever voluntariamente nos desafios semanais oferecidos pela plataforma.&lt;/p>
+                
+                &lt;h3>Avaliação e Ranking&lt;/h3>
+                &lt;p>O ranking é definido com base nas interações da comunidade (notas, comentários, reações) e critérios técnicos estabelecidos pelo site para cada desafio.&lt;/p>
+                
+                &lt;h3>Alterações nas Regras&lt;/h3>
+                &lt;p>O site reserva-se o direito de alterar as regras dos desafios a qualquer momento, com comunicação prévia aos participantes sempre que possível.&lt;/p>
+            &lt;/section>
+            
+            &lt;section>
+                &lt;h2>Suspensão e Exclusão de Contas&lt;/h2>
+                
+                &lt;h3>Motivos para Suspensão ou Exclusão&lt;/h3>
+                &lt;p>O ArtBeat pode suspender ou excluir contas que violem estes Termos de Uso, incluindo mas não limitado a:&lt;/p>
+                &lt;ul>
+                    &lt;li>Prática de plágio ou violação de direitos autorais&lt;/li>
+                    &lt;li>Fraude em sistemas de doação ou interação&lt;/li>
+                    &lt;li>Comportamento ofensivo ou assédio a outros usuários&lt;/li>
+                    &lt;li>Qualquer forma de manipulação indevida da plataforma&lt;/li>
+                &lt;/ul>
+                
+                &lt;h3>Processo de Moderação&lt;/h3>
+                &lt;p>Embora possamos tomar medidas sem aviso prévio em casos graves, geralmente notificaremos o usuário sobre violações e daremos oportunidade para defesa ou retificação quando apropriado.&lt;/p>
+            &lt;/section>
+            
+            &lt;section>
+                &lt;h2>Limitação de Responsabilidade&lt;/h2>
+                
+                &lt;p>O ArtBeat atua como uma plataforma de hospedagem de conteúdo e não se responsabiliza pelo material postado pelos usuários, embora reserve-se o direito de moderar e remover conteúdo inadequado.&lt;/p>
+                
+                &lt;p>O site não garante prêmios, ganhos ou resultados específicos além do que for expressamente informado nas regras de cada desafio ou funcionalidade.&lt;/p>
+                
+                &lt;p>Os usuários são responsáveis por verificar a autenticidade e originalidade do conteúdo que publicam, isentando a plataforma de quaisquer reclamações de violação de direitos autorais.&lt;/p>
+            &lt;/section>
+            
+            &lt;section>
+                &lt;h2>Alterações nos Termos de Uso&lt;/h2>
+                
+                &lt;p>Podemos alterar estes Termos de Uso a qualquer momento para refletir mudanças em nossos serviços ou por requisitos legais. A versão atualizada sempre estará disponível nesta página, com a data da última atualização revisada.&lt;/p>
+                
+                &lt;p>O uso continuado da plataforma após alterações significativas nos Termos constitui aceitação das novas condições.&lt;/p>
+            &lt;/section>
+            
+            &lt;section>
+                &lt;h2>Lei Aplicável e Foro&lt;/h2>
+                
+                &lt;p>Este contrato é regido pelas leis da República Federativa do Brasil.&lt;/p>
+                
+                &lt;p>Fica eleito o foro da comarca de Rio de Janeiro - RJ para dirimir qualquer questão oriunda do presente termo, com renúncia expressa a qualquer outro, por mais privilegiado que seja.&lt;/p>
+            &lt;/section>
+            
+            &lt;section>
+                &lt;h2>Dúvidas e Contato&lt;/h2>
+                &lt;p>Se você tiver qualquer dúvida sobre estes Termos de Uso, entre em contato conosco pelo e-mail: &lt;a href = "https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=suporteArtBeat@gmail.com" target="_blank"  title="Email de contato">suporteArtBeat@gmail.com&lt;/a>&lt;/p>
+            &lt;/section>
+        
+      &lt;/main>
+
+    &lt;/div>
+  );
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CommentsPopup.html">CommentsPopup</a></li><li><a href="module-FooterAL.html">FooterAL</a></li><li><a href="module-Header.html">Header</a></li><li><a href="module-HeaderForYou.html">HeaderForYou</a></li><li><a href="module-MonetizationPopup.html">MonetizationPopup</a></li><li><a href="module-NavbarAL.html">NavbarAL</a></li><li><a href="module-NavbarLog.html">NavbarLog</a></li><li><a href="module-PoliticasPrivacidade.html">PoliticasPrivacidade</a></li><li><a href="module-PostCard.html">PostCard</a></li><li><a href="module-ProtectedRoute.html">ProtectedRoute</a></li><li><a href="module-PublicarImagem.html">PublicarImagem</a></li><li><a href="module-PublicarLayout.html">PublicarLayout</a></li><li><a href="module-PublicarLetra.html">PublicarLetra</a></li><li><a href="module-PublicarMusica.html">PublicarMusica</a></li><li><a href="module-TermosDeUso.html">TermosDeUso</a></li><li><a href="module-UserProfile.html">UserProfile</a></li><li><a href="module-VerificaLogin.html">VerificaLogin</a></li><li><a href="module-api_axios.html">api/axios</a></li></ul><h3>Global</h3><ul><li><a href="global.html#API_BASE_URL">API_BASE_URL</a></li><li><a href="global.html#ArtistPage">ArtistPage</a></li><li><a href="global.html#BackButton">BackButton</a></li><li><a href="global.html#DescricaoInput">DescricaoInput</a></li><li><a href="global.html#DiscoverArtist">DiscoverArtist</a></li><li><a href="global.html#EdicaoDeConta">EdicaoDeConta</a></li><li><a href="global.html#Feed">Feed</a></li><li><a href="global.html#FloatingActionButton">FloatingActionButton</a></li><li><a href="global.html#ForYou">ForYou</a></li><li><a href="global.html#GeneroSelect">GeneroSelect</a></li><li><a href="global.html#InitialPage">InitialPage</a></li><li><a href="global.html#ParticipatePage">ParticipatePage</a></li><li><a href="global.html#StarRater">StarRater</a></li><li><a href="global.html#UploadArea">UploadArea</a></li><li><a href="global.html#UploadPostForm">UploadPostForm</a></li><li><a href="global.html#authAPI">authAPI</a></li><li><a href="global.html#avaliacoesAPI">avaliacoesAPI</a></li><li><a href="global.html#comentariosAPI">comentariosAPI</a></li><li><a href="global.html#createComment">createComment</a></li><li><a href="global.html#createDesafio">createDesafio</a></li><li><a href="global.html#createParticipacao">createParticipacao</a></li><li><a href="global.html#createPost">createPost</a></li><li><a href="global.html#createPostWithUpload">createPostWithUpload</a></li><li><a href="global.html#deleteComment">deleteComment</a></li><li><a href="global.html#deleteDesafio">deleteDesafio</a></li><li><a href="global.html#deleteParticipacao">deleteParticipacao</a></li><li><a href="global.html#deletePost">deletePost</a></li><li><a href="global.html#fetchCommentsByPost">fetchCommentsByPost</a></li><li><a href="global.html#fetchDesafioById">fetchDesafioById</a></li><li><a href="global.html#fetchDesafios">fetchDesafios</a></li><li><a href="global.html#fetchFollowCounts">fetchFollowCounts</a></li><li><a href="global.html#fetchFollowersList">fetchFollowersList</a></li><li><a href="global.html#fetchFollowingList">fetchFollowingList</a></li><li><a href="global.html#fetchIsFollowing">fetchIsFollowing</a></li><li><a href="global.html#fetchMyRatingForPost">fetchMyRatingForPost</a></li><li><a href="global.html#fetchParticipacoes">fetchParticipacoes</a></li><li><a href="global.html#fetchParticipacoesByDesafio">fetchParticipacoesByDesafio</a></li><li><a href="global.html#fetchPostRating">fetchPostRating</a></li><li><a href="global.html#fetchPosts">fetchPosts</a></li><li><a href="global.html#fetchPostsByUser">fetchPostsByUser</a></li><li><a href="global.html#fetchUsuarios">fetchUsuarios</a></li><li><a href="global.html#fetchWithAuth">fetchWithAuth</a></li><li><a href="global.html#followUser">followUser</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#makeSelectRankingByStars">makeSelectRankingByStars</a></li><li><a href="global.html#patchDesafio">patchDesafio</a></li><li><a href="global.html#postsAPI">postsAPI</a></li><li><a href="global.html#removeRating">removeRating</a></li><li><a href="global.html#seguidoresAPI">seguidoresAPI</a></li><li><a href="global.html#selectAuthToken">selectAuthToken</a></li><li><a href="global.html#selectCommentsState">selectCommentsState</a></li><li><a href="global.html#selectCurrentUser">selectCurrentUser</a></li><li><a href="global.html#selectDesafioById">selectDesafioById</a></li><li><a href="global.html#selectDesafios">selectDesafios</a></li><li><a href="global.html#selectFollowCounts">selectFollowCounts</a></li><li><a href="global.html#selectIsFollowing">selectIsFollowing</a></li><li><a href="global.html#selectMyFollowingList">selectMyFollowingList</a></li><li><a href="global.html#selectParticipacoes">selectParticipacoes</a></li><li><a href="global.html#selectParticipacoesByDesafio">selectParticipacoesByDesafio</a></li><li><a href="global.html#selectParticipacoesByUsuario">selectParticipacoesByUsuario</a></li><li><a href="global.html#selectRatingState">selectRatingState</a></li><li><a href="global.html#selectUserError">selectUserError</a></li><li><a href="global.html#selectUserLoading">selectUserLoading</a></li><li><a href="global.html#selectUsuarios">selectUsuarios</a></li><li><a href="global.html#setUserFromStorage">setUserFromStorage</a></li><li><a href="global.html#store">store</a></li><li><a href="global.html#unfollowUser">unfollowUser</a></li><li><a href="global.html#updateComment">updateComment</a></li><li><a href="global.html#updatePost">updatePost</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#upsertRating">upsertRating</a></li><li><a href="global.html#usuariosAPI">usuariosAPI</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Dec 16 2025 13:21:09 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: redux/participacoesSlice.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: redux/participacoesSlice.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// src/redux/participacoesSlice.js
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import api from "../api/axios";
+
+const API_URL = "/participacoes";
+
+// --- AÇÕES ASSÍNCRAS (THUNKS) ---
+
+/**
+ * Busca todas as participações (com filtro opcional por desafioId).
+ * @param {object} filtro - { desafioId: string }
+ */
+export const fetchParticipacoes = createAsyncThunk(
+  "participacoes/fetchAll",
+  async (filtro = {}, { rejectWithValue }) => {
+    try {
+      const params = new URLSearchParams();
+      if (filtro.desafioId) params.append('desafioId', filtro.desafioId);
+      
+      const url = params.toString() ? `${API_URL}?${params}` : API_URL;
+      const res = await api.get(url);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.error || "Erro ao carregar participações");
+    }
+  }
+);
+
+/**
+ * Busca participações de um desafio específico.
+ * @param {string} desafioId
+ */
+export const fetchParticipacoesByDesafio = createAsyncThunk(
+  "participacoes/fetchByDesafio",
+  async (desafioId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`${API_URL}?desafioId=${desafioId}`);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.error || "Erro ao carregar participações");
+    }
+  }
+);
+
+/**
+ * Cria uma nova participação em um desafio.
+ */
+export const createParticipacao = createAsyncThunk(
+  "participacoes/create",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const res = await api.post(API_URL, payload);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.error || "Erro ao criar participação");
+    }
+  }
+);
+
+/**
+ * Exclui uma participação pelo seu ID.
+ */
+export const deleteParticipacao = createAsyncThunk(
+  "participacoes/delete",
+  async (id, { rejectWithValue }) => {
+    try {
+      await api.delete(`${API_URL}/${id}`);
+      return id;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.error || "Erro ao excluir participação");
+    }
+  }
+);
+
+// --- SLICE E REDUCERS ---
+
+const participacoesSlice = createSlice({
+  name: "participacoes",
+  initialState: {
+    lista: [],          // Cache de todas as participações carregadas
+    byDesafio: {},      // Cache normalizado por desafioId: { desafioId: [participacoes] }
+    loading: false,     // Status de carregamento
+    error: null,        // Mensagem de erro
+  },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      // --- fetchParticipacoes (Geral) ---
+      .addCase(fetchParticipacoes.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchParticipacoes.fulfilled, (state, action) => {
+        state.loading = false;
+        // Se a chamada não usou filtro, substitui a lista principal.
+        // NOTA: Se usou filtro, o estado 'lista' pode não refletir todos os dados.
+        // A lógica do seletor é robusta para lidar com isso.
+        state.lista = action.payload; 
+      })
+      .addCase(fetchParticipacoes.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error?.message;
+      })
+
+      // --- fetchParticipacoesByDesafio ---
+      .addCase(fetchParticipacoesByDesafio.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchParticipacoesByDesafio.fulfilled, (state, action) => {
+        state.loading = false;
+        const participacoes = action.payload;
+        
+        if (participacoes.length > 0) {
+          const desafioId = String(participacoes[0].desafioId);
+          // 1. Cacheia no byDesafio (substitui a lista específica)
+          state.byDesafio[desafioId] = participacoes;
+        }
+        
+        // 2. Atualiza lista geral (merge/upsert)
+        participacoes.forEach(p => {
+          const id = String(p._id || p.id);
+          const idx = state.lista.findIndex(x => String(x._id || x.id) === id);
+          if (idx === -1) {
+            state.lista.push(p);
+          } else {
+            state.lista[idx] = p; // Atualiza dado existente
+          }
+        });
+      })
+      .addCase(fetchParticipacoesByDesafio.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error?.message;
+      })
+
+      // --- createParticipacao ---
+      .addCase(createParticipacao.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createParticipacao.fulfilled, (state, action) => {
+        state.loading = false;
+        const novaParticipacao = action.payload;
+        const desafioId = String(novaParticipacao.desafioId);
+
+        // 1. Adiciona à lista geral
+        state.lista.push(novaParticipacao);
+        
+        // 2. Adiciona ao byDesafio
+        if (!state.byDesafio[desafioId]) {
+          state.byDesafio[desafioId] = [];
+        }
+        state.byDesafio[desafioId].push(novaParticipacao);
+      })
+      .addCase(createParticipacao.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error?.message;
+      })
+
+      // --- deleteParticipacao ---
+      .addCase(deleteParticipacao.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteParticipacao.fulfilled, (state, action) => {
+        state.loading = false;
+        const id = String(action.payload);
+        
+        // 1. Remove da lista geral
+        state.lista = state.lista.filter(p => String(p._id || p.id) !== id);
+        
+        // 2. Remove do byDesafio (itera sobre todas as chaves)
+        Object.keys(state.byDesafio).forEach(desafioId => {
+          state.byDesafio[desafioId] = state.byDesafio[desafioId].filter(
+            p => String(p._id || p.id) !== id
+          );
+        });
+      })
+      .addCase(deleteParticipacao.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error?.message;
+      });
+  },
+});
+
+export default participacoesSlice.reducer;
+
+// --- SELECTORS ---
+
+/**
+ * Retorna o array geral de todas as participações carregadas.
+ */
+export const selectParticipacoes = (state) => state.participacoes?.lista || [];
+
+/**
+ * Seletor de fábrica que busca participações pelo desafioId.
+ * Prioriza o cache otimizado 'byDesafio' e usa 'lista' como fallback.
+ * @param {string} desafioId
+ */
+export const selectParticipacoesByDesafio = (desafioId) => (state) => {
+  if (!desafioId) return [];
+  
+  // Tenta primeiro do cache byDesafio (mais rápido se já estiver carregado)
+  if (state.participacoes?.byDesafio?.[desafioId]) {
+    return state.participacoes.byDesafio[desafioId];
+  }
+  
+  // Fallback: filtra da lista geral
+  return (state.participacoes?.lista || []).filter(
+    p => String(p.desafioId) === String(desafioId)
+  );
+};
+
+/**
+ * Seletor de fábrica que busca participações de um usuário específico (filtra da lista geral).
+ * @param {string} usuarioId
+ */
+export const selectParticipacoesByUsuario = (usuarioId) => (state) => {
+  if (!usuarioId) return [];
+  
+  return (state.participacoes?.lista || []).filter(
+    p => String(p.usuarioId) === String(usuarioId)
+  );
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CommentsPopup.html">CommentsPopup</a></li><li><a href="module-FooterAL.html">FooterAL</a></li><li><a href="module-Header.html">Header</a></li><li><a href="module-HeaderForYou.html">HeaderForYou</a></li><li><a href="module-MonetizationPopup.html">MonetizationPopup</a></li><li><a href="module-NavbarAL.html">NavbarAL</a></li><li><a href="module-NavbarLog.html">NavbarLog</a></li><li><a href="module-PoliticasPrivacidade.html">PoliticasPrivacidade</a></li><li><a href="module-PostCard.html">PostCard</a></li><li><a href="module-ProtectedRoute.html">ProtectedRoute</a></li><li><a href="module-PublicarImagem.html">PublicarImagem</a></li><li><a href="module-PublicarLayout.html">PublicarLayout</a></li><li><a href="module-PublicarLetra.html">PublicarLetra</a></li><li><a href="module-PublicarMusica.html">PublicarMusica</a></li><li><a href="module-TermosDeUso.html">TermosDeUso</a></li><li><a href="module-UserProfile.html">UserProfile</a></li><li><a href="module-VerificaLogin.html">VerificaLogin</a></li><li><a href="module-api_axios.html">api/axios</a></li></ul><h3>Global</h3><ul><li><a href="global.html#API_BASE_URL">API_BASE_URL</a></li><li><a href="global.html#ArtistPage">ArtistPage</a></li><li><a href="global.html#BackButton">BackButton</a></li><li><a href="global.html#DescricaoInput">DescricaoInput</a></li><li><a href="global.html#DiscoverArtist">DiscoverArtist</a></li><li><a href="global.html#EdicaoDeConta">EdicaoDeConta</a></li><li><a href="global.html#Feed">Feed</a></li><li><a href="global.html#FloatingActionButton">FloatingActionButton</a></li><li><a href="global.html#ForYou">ForYou</a></li><li><a href="global.html#GeneroSelect">GeneroSelect</a></li><li><a href="global.html#InitialPage">InitialPage</a></li><li><a href="global.html#ParticipatePage">ParticipatePage</a></li><li><a href="global.html#StarRater">StarRater</a></li><li><a href="global.html#UploadArea">UploadArea</a></li><li><a href="global.html#UploadPostForm">UploadPostForm</a></li><li><a href="global.html#authAPI">authAPI</a></li><li><a href="global.html#avaliacoesAPI">avaliacoesAPI</a></li><li><a href="global.html#comentariosAPI">comentariosAPI</a></li><li><a href="global.html#createComment">createComment</a></li><li><a href="global.html#createDesafio">createDesafio</a></li><li><a href="global.html#createParticipacao">createParticipacao</a></li><li><a href="global.html#createPost">createPost</a></li><li><a href="global.html#createPostWithUpload">createPostWithUpload</a></li><li><a href="global.html#deleteComment">deleteComment</a></li><li><a href="global.html#deleteDesafio">deleteDesafio</a></li><li><a href="global.html#deleteParticipacao">deleteParticipacao</a></li><li><a href="global.html#deletePost">deletePost</a></li><li><a href="global.html#fetchCommentsByPost">fetchCommentsByPost</a></li><li><a href="global.html#fetchDesafioById">fetchDesafioById</a></li><li><a href="global.html#fetchDesafios">fetchDesafios</a></li><li><a href="global.html#fetchFollowCounts">fetchFollowCounts</a></li><li><a href="global.html#fetchFollowersList">fetchFollowersList</a></li><li><a href="global.html#fetchFollowingList">fetchFollowingList</a></li><li><a href="global.html#fetchIsFollowing">fetchIsFollowing</a></li><li><a href="global.html#fetchMyRatingForPost">fetchMyRatingForPost</a></li><li><a href="global.html#fetchParticipacoes">fetchParticipacoes</a></li><li><a href="global.html#fetchParticipacoesByDesafio">fetchParticipacoesByDesafio</a></li><li><a href="global.html#fetchPostRating">fetchPostRating</a></li><li><a href="global.html#fetchPosts">fetchPosts</a></li><li><a href="global.html#fetchPostsByUser">fetchPostsByUser</a></li><li><a href="global.html#fetchUsuarios">fetchUsuarios</a></li><li><a href="global.html#fetchWithAuth">fetchWithAuth</a></li><li><a href="global.html#followUser">followUser</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#makeSelectRankingByStars">makeSelectRankingByStars</a></li><li><a href="global.html#patchDesafio">patchDesafio</a></li><li><a href="global.html#postsAPI">postsAPI</a></li><li><a href="global.html#removeRating">removeRating</a></li><li><a href="global.html#seguidoresAPI">seguidoresAPI</a></li><li><a href="global.html#selectAuthToken">selectAuthToken</a></li><li><a href="global.html#selectCommentsState">selectCommentsState</a></li><li><a href="global.html#selectCurrentUser">selectCurrentUser</a></li><li><a href="global.html#selectDesafioById">selectDesafioById</a></li><li><a href="global.html#selectDesafios">selectDesafios</a></li><li><a href="global.html#selectFollowCounts">selectFollowCounts</a></li><li><a href="global.html#selectIsFollowing">selectIsFollowing</a></li><li><a href="global.html#selectMyFollowingList">selectMyFollowingList</a></li><li><a href="global.html#selectParticipacoes">selectParticipacoes</a></li><li><a href="global.html#selectParticipacoesByDesafio">selectParticipacoesByDesafio</a></li><li><a href="global.html#selectParticipacoesByUsuario">selectParticipacoesByUsuario</a></li><li><a href="global.html#selectRatingState">selectRatingState</a></li><li><a href="global.html#selectUserError">selectUserError</a></li><li><a href="global.html#selectUserLoading">selectUserLoading</a></li><li><a href="global.html#selectUsuarios">selectUsuarios</a></li><li><a href="global.html#setUserFromStorage">setUserFromStorage</a></li><li><a href="global.html#store">store</a></li><li><a href="global.html#unfollowUser">unfollowUser</a></li><li><a href="global.html#updateComment">updateComment</a></li><li><a href="global.html#updatePost">updatePost</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#upsertRating">upsertRating</a></li><li><a href="global.html#usuariosAPI">usuariosAPI</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Dec 16 2025 13:21:09 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

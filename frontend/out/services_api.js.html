@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: services/api.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: services/api.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// src/services/api.js
+/**
+ * API Service
+ * Centraliza todas as chamadas para o backend
+ */
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+/**
+ * Helper para fazer requisições autenticadas
+ */
+const fetchWithAuth = async (url, options = {}, token = null) => {
+  const headers = {
+    ...options.headers,
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  // Se não for FormData, adicionar Content-Type
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || errorData.message || `Erro HTTP: ${response.status}`);
+  }
+
+  // Se for 204 No Content, retornar null
+  if (response.status === 204) {
+    return null;
+  }
+
+  return response.json();
+};
+
+/**
+ * API de Posts
+ */
+export const postsAPI = {
+  /**
+   * Criar post com upload de arquivo (imagem ou áudio)
+   */
+  createWithUpload: async (postData, file, token) => {
+    const formData = new FormData();
+    
+    // Adicionar arquivo
+    if (file) {
+      formData.append("media", file);
+    }
+    
+    // Adicionar dados do post
+    Object.keys(postData).forEach((key) => {
+      formData.append(key, postData[key]);
+    });
+
+    return fetchWithAuth("/posts", {
+      method: "POST",
+      body: formData,
+    }, token);
+  },
+
+  /**
+   * Criar post de texto (sem arquivo)
+   */
+  createText: async (postData, token) => {
+    return fetchWithAuth("/posts", {
+      method: "POST",
+      body: JSON.stringify(postData),
+    }, token);
+  },
+
+  /**
+   * Buscar todos os posts
+   */
+  getAll: async () => {
+    return fetchWithAuth("/posts");
+  },
+
+  /**
+   * Buscar post por ID
+   */
+  getById: async (id) => {
+    return fetchWithAuth(`/posts/${id}`);
+  },
+
+  /**
+   * Atualizar post
+   */
+  update: async (id, updates, token) => {
+    return fetchWithAuth(`/posts/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    }, token);
+  },
+
+  /**
+   * Deletar post
+   */
+  delete: async (id, token) => {
+    return fetchWithAuth(`/posts/${id}`, {
+      method: "DELETE",
+    }, token);
+  },
+};
+
+/**
+ * API de Usuários
+ */
+export const usuariosAPI = {
+  getAll: async () => {
+    return fetchWithAuth("/usuarios");
+  },
+
+  getById: async (id) => {
+    return fetchWithAuth(`/usuarios/${id}`);
+  },
+
+  update: async (id, updates, token) => {
+    return fetchWithAuth(`/usuarios/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    }, token);
+  },
+};
+
+/**
+ * API de Autenticação
+ */
+export const authAPI = {
+  register: async (userData) => {
+    return fetchWithAuth("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify(userData),
+    });
+  },
+
+  login: async (credentials) => {
+    return fetchWithAuth("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify(credentials),
+    });
+  },
+
+  refresh: async (refreshToken) => {
+    return fetchWithAuth("/api/auth/token", {
+      method: "POST",
+      body: JSON.stringify({ refreshToken }),
+    });
+  },
+
+  logout: async (token) => {
+    return fetchWithAuth("/api/auth/logout", {
+      method: "POST",
+    }, token);
+  },
+};
+
+/**
+ * API de Comentários
+ */
+export const comentariosAPI = {
+  getByPost: async (postId) => {
+    return fetchWithAuth(`/comentarios?postId=${postId}`);
+  },
+
+  create: async (comentarioData, token) => {
+    return fetchWithAuth("/comentarios", {
+      method: "POST",
+      body: JSON.stringify(comentarioData),
+    }, token);
+  },
+
+  delete: async (id, token) => {
+    return fetchWithAuth(`/comentarios/${id}`, {
+      method: "DELETE",
+    }, token);
+  },
+};
+
+/**
+ * API de Avaliações
+ */
+export const avaliacoesAPI = {
+  getStats: async (postId) => {
+    return fetchWithAuth(`/avaliacoes/stats/${postId}`);
+  },
+
+  getUserRating: async (usuarioId, postId) => {
+    return fetchWithAuth(`/avaliacoes/user/${usuarioId}/post/${postId}`);
+  },
+
+  create: async (avaliacaoData, token) => {
+    return fetchWithAuth("/avaliacoes", {
+      method: "POST",
+      body: JSON.stringify(avaliacaoData),
+    }, token);
+  },
+
+  delete: async (usuarioId, postId, token) => {
+    return fetchWithAuth(`/avaliacoes/user/${usuarioId}/post/${postId}`, {
+      method: "DELETE",
+    }, token);
+  },
+};
+
+/**
+ * API de Seguidores
+ */
+export const seguidoresAPI = {
+  follow: async (seguidoId, token) => {
+    return fetchWithAuth("/seguidores", {
+      method: "POST",
+      body: JSON.stringify({ seguidoId }),
+    }, token);
+  },
+
+  unfollow: async (seguidoId, token) => {
+    return fetchWithAuth(`/seguidores/${seguidoId}`, {
+      method: "DELETE",
+    }, token);
+  },
+
+  getFollowers: async (usuarioId) => {
+    return fetchWithAuth(`/seguidores/followers/${usuarioId}`);
+  },
+
+  getFollowing: async (usuarioId) => {
+    return fetchWithAuth(`/seguidores/following/${usuarioId}`);
+  },
+
+  checkFollowing: async (seguidorId, seguidoId) => {
+    return fetchWithAuth(`/seguidores/check/${seguidorId}/${seguidoId}`);
+  },
+};
+
+export default {
+  posts: postsAPI,
+  usuarios: usuariosAPI,
+  auth: authAPI,
+  comentarios: comentariosAPI,
+  avaliacoes: avaliacoesAPI,
+  seguidores: seguidoresAPI,
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CommentsPopup.html">CommentsPopup</a></li><li><a href="module-FooterAL.html">FooterAL</a></li><li><a href="module-Header.html">Header</a></li><li><a href="module-HeaderForYou.html">HeaderForYou</a></li><li><a href="module-MonetizationPopup.html">MonetizationPopup</a></li><li><a href="module-NavbarAL.html">NavbarAL</a></li><li><a href="module-NavbarLog.html">NavbarLog</a></li><li><a href="module-PoliticasPrivacidade.html">PoliticasPrivacidade</a></li><li><a href="module-PostCard.html">PostCard</a></li><li><a href="module-ProtectedRoute.html">ProtectedRoute</a></li><li><a href="module-PublicarImagem.html">PublicarImagem</a></li><li><a href="module-PublicarLayout.html">PublicarLayout</a></li><li><a href="module-PublicarLetra.html">PublicarLetra</a></li><li><a href="module-PublicarMusica.html">PublicarMusica</a></li><li><a href="module-TermosDeUso.html">TermosDeUso</a></li><li><a href="module-UserProfile.html">UserProfile</a></li><li><a href="module-VerificaLogin.html">VerificaLogin</a></li><li><a href="module-api_axios.html">api/axios</a></li></ul><h3>Global</h3><ul><li><a href="global.html#API_BASE_URL">API_BASE_URL</a></li><li><a href="global.html#ArtistPage">ArtistPage</a></li><li><a href="global.html#BackButton">BackButton</a></li><li><a href="global.html#DescricaoInput">DescricaoInput</a></li><li><a href="global.html#DiscoverArtist">DiscoverArtist</a></li><li><a href="global.html#EdicaoDeConta">EdicaoDeConta</a></li><li><a href="global.html#Feed">Feed</a></li><li><a href="global.html#FloatingActionButton">FloatingActionButton</a></li><li><a href="global.html#ForYou">ForYou</a></li><li><a href="global.html#GeneroSelect">GeneroSelect</a></li><li><a href="global.html#InitialPage">InitialPage</a></li><li><a href="global.html#ParticipatePage">ParticipatePage</a></li><li><a href="global.html#StarRater">StarRater</a></li><li><a href="global.html#UploadArea">UploadArea</a></li><li><a href="global.html#UploadPostForm">UploadPostForm</a></li><li><a href="global.html#authAPI">authAPI</a></li><li><a href="global.html#avaliacoesAPI">avaliacoesAPI</a></li><li><a href="global.html#comentariosAPI">comentariosAPI</a></li><li><a href="global.html#createComment">createComment</a></li><li><a href="global.html#createDesafio">createDesafio</a></li><li><a href="global.html#createParticipacao">createParticipacao</a></li><li><a href="global.html#createPost">createPost</a></li><li><a href="global.html#createPostWithUpload">createPostWithUpload</a></li><li><a href="global.html#deleteComment">deleteComment</a></li><li><a href="global.html#deleteDesafio">deleteDesafio</a></li><li><a href="global.html#deleteParticipacao">deleteParticipacao</a></li><li><a href="global.html#deletePost">deletePost</a></li><li><a href="global.html#fetchCommentsByPost">fetchCommentsByPost</a></li><li><a href="global.html#fetchDesafioById">fetchDesafioById</a></li><li><a href="global.html#fetchDesafios">fetchDesafios</a></li><li><a href="global.html#fetchFollowCounts">fetchFollowCounts</a></li><li><a href="global.html#fetchFollowersList">fetchFollowersList</a></li><li><a href="global.html#fetchFollowingList">fetchFollowingList</a></li><li><a href="global.html#fetchIsFollowing">fetchIsFollowing</a></li><li><a href="global.html#fetchMyRatingForPost">fetchMyRatingForPost</a></li><li><a href="global.html#fetchParticipacoes">fetchParticipacoes</a></li><li><a href="global.html#fetchParticipacoesByDesafio">fetchParticipacoesByDesafio</a></li><li><a href="global.html#fetchPostRating">fetchPostRating</a></li><li><a href="global.html#fetchPosts">fetchPosts</a></li><li><a href="global.html#fetchPostsByUser">fetchPostsByUser</a></li><li><a href="global.html#fetchUsuarios">fetchUsuarios</a></li><li><a href="global.html#fetchWithAuth">fetchWithAuth</a></li><li><a href="global.html#followUser">followUser</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#makeSelectRankingByStars">makeSelectRankingByStars</a></li><li><a href="global.html#patchDesafio">patchDesafio</a></li><li><a href="global.html#postsAPI">postsAPI</a></li><li><a href="global.html#removeRating">removeRating</a></li><li><a href="global.html#seguidoresAPI">seguidoresAPI</a></li><li><a href="global.html#selectAuthToken">selectAuthToken</a></li><li><a href="global.html#selectCommentsState">selectCommentsState</a></li><li><a href="global.html#selectCurrentUser">selectCurrentUser</a></li><li><a href="global.html#selectDesafioById">selectDesafioById</a></li><li><a href="global.html#selectDesafios">selectDesafios</a></li><li><a href="global.html#selectFollowCounts">selectFollowCounts</a></li><li><a href="global.html#selectIsFollowing">selectIsFollowing</a></li><li><a href="global.html#selectMyFollowingList">selectMyFollowingList</a></li><li><a href="global.html#selectParticipacoes">selectParticipacoes</a></li><li><a href="global.html#selectParticipacoesByDesafio">selectParticipacoesByDesafio</a></li><li><a href="global.html#selectParticipacoesByUsuario">selectParticipacoesByUsuario</a></li><li><a href="global.html#selectRatingState">selectRatingState</a></li><li><a href="global.html#selectUserError">selectUserError</a></li><li><a href="global.html#selectUserLoading">selectUserLoading</a></li><li><a href="global.html#selectUsuarios">selectUsuarios</a></li><li><a href="global.html#setUserFromStorage">setUserFromStorage</a></li><li><a href="global.html#store">store</a></li><li><a href="global.html#unfollowUser">unfollowUser</a></li><li><a href="global.html#updateComment">updateComment</a></li><li><a href="global.html#updatePost">updatePost</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#upsertRating">upsertRating</a></li><li><a href="global.html#usuariosAPI">usuariosAPI</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Dec 16 2025 13:21:09 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
