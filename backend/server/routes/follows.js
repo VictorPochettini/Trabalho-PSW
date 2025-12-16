@@ -1,95 +1,230 @@
 // backend/routes/follows.js
 import express from 'express';
 import Seguidor from '../models/Seguidor.js';
-import Usuario from '../models/Usuario.js'; // Ajuste o nome do modelo conforme seu projeto
+import Usuario from '../models/Usuario.js';
 
 const router = express.Router();
 
-// ✅ CRIAR FOLLOW
+/**
+ * @swagger
+ * tags:
+ *   name: Follows
+ *   description: Sistema de seguir e deixar de seguir usuários
+ */
+
+/**
+ * @swagger
+ * /api/follows:
+ *   post:
+ *     summary: Seguir um usuário
+ *     tags: [Follows]
+ *     description: Cria uma relação de seguimento entre dois usuários.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - followerId
+ *               - followingId
+ *             properties:
+ *               followerId:
+ *                 type: string
+ *                 example: 64f1c9a12c9b1c0012a12345
+ *               followingId:
+ *                 type: string
+ *                 example: 64f1c9a12c9b1c0012a67890
+ *     responses:
+ *       201:
+ *         description: Usuário seguido com sucesso
+ *       400:
+ *         description: Dados inválidos ou relação já existente
+ *       500:
+ *         description: Erro interno do servidor
+ */
 router.post('/', async (req, res) => {
   try {
     const { followerId, followingId } = req.body;
 
     if (!followerId || !followingId) {
-      return res.status(400).json({ message: 'followerId e followingId são obrigatórios' });
+      return res
+        .status(400)
+        .json({ message: 'followerId e followingId são obrigatórios' });
     }
 
     if (followerId === followingId) {
-      return res.status(400).json({ message: 'Usuário não pode seguir a si mesmo' });
+      return res
+        .status(400)
+        .json({ message: 'Usuário não pode seguir a si mesmo' });
     }
 
-    // Verifica se já segue
     const existingFollow = await Seguidor.findOne({
       followerId: String(followerId),
-      followingId: String(followingId)
+      followingId: String(followingId),
     });
 
     if (existingFollow) {
-      return res.status(400).json({ message: 'Já está seguindo este usuário' });
+      return res
+        .status(400)
+        .json({ message: 'Já está seguindo este usuário' });
     }
 
-    // Cria novo follow
     const newFollow = new Seguidor({
       followerId: String(followerId),
       followingId: String(followingId),
-      createdAt: Date.now()
+      createdAt: Date.now(),
     });
 
     await newFollow.save();
-    res.status(201).json({ message: 'Seguindo com sucesso', follow: newFollow });
+
+    res.status(201).json({
+      message: 'Seguindo com sucesso',
+      follow: newFollow,
+    });
   } catch (error) {
     console.error('Erro ao seguir:', error);
-    res.status(500).json({ message: 'Erro ao seguir usuário', error: error.message });
+    res.status(500).json({
+      message: 'Erro ao seguir usuário',
+      error: error.message,
+    });
   }
 });
 
-// ✅ REMOVER FOLLOW
+/**
+ * @swagger
+ * /api/follows:
+ *   delete:
+ *     summary: Deixar de seguir um usuário
+ *     tags: [Follows]
+ *     description: Remove a relação de seguimento entre dois usuários.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - followerId
+ *               - followingId
+ *             properties:
+ *               followerId:
+ *                 type: string
+ *               followingId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Deixou de seguir com sucesso
+ *       404:
+ *         description: Relação de seguimento não encontrada
+ *       400:
+ *         description: Dados inválidos
+ *       500:
+ *         description: Erro interno do servidor
+ */
 router.delete('/', async (req, res) => {
   try {
     const { followerId, followingId } = req.body;
 
     if (!followerId || !followingId) {
-      return res.status(400).json({ message: 'followerId e followingId são obrigatórios' });
+      return res
+        .status(400)
+        .json({ message: 'followerId e followingId são obrigatórios' });
     }
 
     const result = await Seguidor.findOneAndDelete({
       followerId: String(followerId),
-      followingId: String(followingId)
+      followingId: String(followingId),
     });
 
     if (!result) {
-      return res.status(404).json({ message: 'Relação de seguimento não encontrada' });
+      return res
+        .status(404)
+        .json({ message: 'Relação de seguimento não encontrada' });
     }
 
     res.json({ message: 'Deixou de seguir com sucesso' });
   } catch (error) {
     console.error('Erro ao deixar de seguir:', error);
-    res.status(500).json({ message: 'Erro ao deixar de seguir', error: error.message });
+    res.status(500).json({
+      message: 'Erro ao deixar de seguir',
+      error: error.message,
+    });
   }
 });
 
-// ✅ VERIFICAR SE ESTÁ SEGUINDO
+/**
+ * @swagger
+ * /api/follows/is-following:
+ *   get:
+ *     summary: Verificar se um usuário segue outro
+ *     tags: [Follows]
+ *     description: Retorna se um usuário está seguindo outro.
+ *     parameters:
+ *       - in: query
+ *         name: followerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: followingId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Resultado da verificação
+ *       400:
+ *         description: Parâmetros ausentes
+ *       500:
+ *         description: Erro interno do servidor
+ */
 router.get('/is-following', async (req, res) => {
   try {
     const { followerId, followingId } = req.query;
 
     if (!followerId || !followingId) {
-      return res.status(400).json({ message: 'followerId e followingId são obrigatórios' });
+      return res
+        .status(400)
+        .json({ message: 'followerId e followingId são obrigatórios' });
     }
 
     const follow = await Seguidor.findOne({
       followerId: String(followerId),
-      followingId: String(followingId)
+      followingId: String(followingId),
     });
 
     res.json({ isFollowing: !!follow });
   } catch (error) {
     console.error('Erro ao verificar seguimento:', error);
-    res.status(500).json({ message: 'Erro ao verificar seguimento', error: error.message });
+    res.status(500).json({
+      message: 'Erro ao verificar seguimento',
+      error: error.message,
+    });
   }
 });
 
-// ✅ BUSCAR CONTAGENS (seguidores + seguindo)
+/**
+ * @swagger
+ * /api/follows/counts/{userId}:
+ *   get:
+ *     summary: Obter contagem de seguidores e seguindo
+ *     tags: [Follows]
+ *     description: Retorna a quantidade de seguidores e de usuários seguidos.
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Contagens retornadas com sucesso
+ *       400:
+ *         description: userId ausente
+ *       500:
+ *         description: Erro interno do servidor
+ */
 router.get('/counts/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -98,29 +233,45 @@ router.get('/counts/:userId', async (req, res) => {
       return res.status(400).json({ message: 'userId é obrigatório' });
     }
 
-    // Conta quantas pessoas seguem este usuário (seguidores)
     const followersCount = await Seguidor.countDocuments({
-      followingId: String(userId)
+      followingId: String(userId),
     });
 
-    // Conta quantas pessoas este usuário segue (seguindo)
     const followingCount = await Seguidor.countDocuments({
-      followerId: String(userId)
+      followerId: String(userId),
     });
 
-    console.log(`✅ Contagens para ${userId}:`, { followersCount, followingCount });
-
-    res.json({ 
-      followersCount, 
-      followingCount 
-    });
+    res.json({ followersCount, followingCount });
   } catch (error) {
-    console.error('❌ Erro ao buscar contagens:', error);
-    res.status(500).json({ message: 'Erro ao buscar contagens', error: error.message });
+    console.error('Erro ao buscar contagens:', error);
+    res.status(500).json({
+      message: 'Erro ao buscar contagens',
+      error: error.message,
+    });
   }
 });
 
-// ✅ BUSCAR LISTA DE SEGUIDORES (quem segue o usuário)
+/**
+ * @swagger
+ * /api/follows/followers/{userId}:
+ *   get:
+ *     summary: Listar seguidores de um usuário
+ *     tags: [Follows]
+ *     description: Retorna os usuários que seguem o usuário informado.
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lista de seguidores
+ *       400:
+ *         description: userId ausente
+ *       500:
+ *         description: Erro interno do servidor
+ */
 router.get('/followers/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -129,31 +280,47 @@ router.get('/followers/:userId', async (req, res) => {
       return res.status(400).json({ message: 'userId é obrigatório' });
     }
 
-    // Busca todos os follows onde followingId = userId
     const follows = await Seguidor.find({
-      followingId: String(userId)
+      followingId: String(userId),
     });
 
-    console.log(`✅ Encontrados ${follows.length} seguidores para ${userId}`);
+    const followerIds = follows.map((f) => f.followerId);
 
-    // Extrai os IDs dos seguidores
-    const followerIds = follows.map(f => f.followerId);
-
-    // Busca os dados dos usuários seguidores
     const followers = await Usuario.find({
-      _id: { $in: followerIds }
+      _id: { $in: followerIds },
     }).select('_id username nome fotoPerfil');
-
-    console.log(`✅ Dados dos seguidores:`, followers);
 
     res.json({ followers });
   } catch (error) {
-    console.error('❌ Erro ao buscar seguidores:', error);
-    res.status(500).json({ message: 'Erro ao buscar seguidores', error: error.message });
+    console.error('Erro ao buscar seguidores:', error);
+    res.status(500).json({
+      message: 'Erro ao buscar seguidores',
+      error: error.message,
+    });
   }
 });
 
-// ✅ BUSCAR LISTA DE SEGUINDO (quem o usuário segue)
+/**
+ * @swagger
+ * /api/follows/following/{userId}:
+ *   get:
+ *     summary: Listar usuários que um usuário segue
+ *     tags: [Follows]
+ *     description: Retorna os usuários que o usuário informado está seguindo.
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lista de usuários seguidos
+ *       400:
+ *         description: userId ausente
+ *       500:
+ *         description: Erro interno do servidor
+ */
 router.get('/following/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -162,27 +329,23 @@ router.get('/following/:userId', async (req, res) => {
       return res.status(400).json({ message: 'userId é obrigatório' });
     }
 
-    // Busca todos os follows onde followerId = userId
     const follows = await Seguidor.find({
-      followerId: String(userId)
+      followerId: String(userId),
     });
 
-    console.log(`✅ Encontrados ${follows.length} seguindo para ${userId}`);
+    const followingIds = follows.map((f) => f.followingId);
 
-    // Extrai os IDs de quem está sendo seguido
-    const followingIds = follows.map(f => f.followingId);
-
-    // Busca os dados dos usuários que estão sendo seguidos
     const following = await Usuario.find({
-      _id: { $in: followingIds }
+      _id: { $in: followingIds },
     }).select('_id username nome fotoPerfil');
-
-    console.log(`✅ Dados de quem está seguindo:`, following);
 
     res.json({ following });
   } catch (error) {
-    console.error('❌ Erro ao buscar seguindo:', error);
-    res.status(500).json({ message: 'Erro ao buscar seguindo', error: error.message });
+    console.error('Erro ao buscar seguindo:', error);
+    res.status(500).json({
+      message: 'Erro ao buscar seguindo',
+      error: error.message,
+    });
   }
 });
 
