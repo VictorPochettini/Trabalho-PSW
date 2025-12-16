@@ -1,11 +1,32 @@
 // src/components/Header.jsx
+
+/**
+ * @fileoverview Cabeçalho simples de navegação.
+ * @module Header
+ * @description
+ * Renderiza o topo com logo e links para as rotas principais.
+ * Realça o link ativo com base no `location.pathname`.
+ */
+
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import logo from '../images/ArtBeat_Branco.png';
 
+/**
+ * Cabeçalho principal (versão simples).
+ *
+ * @component
+ * @returns {JSX.Element} Elemento React do cabeçalho.
+ */
 const Header = () => {
   const location = useLocation();
   
+  /**
+   * Verifica se um link deve ser marcado como ativo (classe `enfase`).
+   *
+   * @param {string} path - Caminho/slug da rota a comparar (ex: `feed`, `discover`, `desafios`).
+   * @returns {boolean} `true` quando a rota atual corresponde ao caminho informado.
+   */
   const isActiveLink = (path) => {
     // Remove a barra inicial e compara os caminhos
     const currentPath = location.pathname.replace('/', '');

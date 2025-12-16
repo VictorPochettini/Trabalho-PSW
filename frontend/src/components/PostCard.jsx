@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Card de Post (feed/perfil) com interações (avaliar, comentar, seguir, apoiar, editar, excluir).
+ * @module PostCard
+ * @description
+ * Este arquivo contém o componente `PostCard`, responsável por renderizar um post e permitir interações
+ * como avaliação por estrelas, seguir autor, abrir comentários e acionar edição/exclusão.
+ */
+
 import React, { useEffect, useRef, useState } from 'react';
 import '../index.css';
 
@@ -104,6 +112,14 @@ const PostCard = ({
   const authorPhoto = post?.authorPhoto || post?.fotoPerfil || null;
   const API_URL = 'http://localhost:5000';
   
+  /**
+   * Resolve a URL final da foto do autor.
+   * - Aceita `data:` URLs
+   * - Aceita URLs absolutas `http(s)`
+   * - Caso contrário, prefixa com `API_URL` (backend local)
+   *
+   * @returns {string|null} URL final da imagem ou `null` se não houver foto.
+   */
   const getAuthorPhotoUrl = () => {
     if (!authorPhoto) return null;
     if (authorPhoto.startsWith('data:')) return authorPhoto;

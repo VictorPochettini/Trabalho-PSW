@@ -2,6 +2,14 @@ import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
 /**
+ * @fileoverview Guard de rota (ProtectedRoute).
+ * @module ProtectedRoute
+ * @description
+ * Componente que renderiza `children` apenas quando há usuário autenticado no Redux.
+ * Caso contrário, redireciona para `/login`.
+ */
+
+/**
  * @typedef {object} ProtectedRouteProps
  * @property {React.ReactNode} children Os elementos filhos (as rotas/componentes protegidos) que serão renderizados se o usuário estiver autenticado.
  */

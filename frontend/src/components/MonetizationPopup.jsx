@@ -1,10 +1,29 @@
 // src/components/MonetizationPopup.jsx
+
+/**
+ * @fileoverview Popup de monetização/doação (simulada) para apoiar um artista.
+ * @module MonetizationPopup
+ * @description
+ * Exibe um modal para o usuário selecionar um valor (pré-definido ou personalizado)
+ * e um método de pagamento (ex: PIX / cartão). Também trata:
+ * - Bloqueio de scroll do `body` enquanto o modal está aberto
+ * - Fechamento via tecla ESC
+ * - Validação de valor mínimo
+ */
+
 import React, { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 /**
- * MonetizationPopup — show, onClose, username
+ * Popup de monetização/doação para apoiar um usuário.
+ *
+ * @component
+ * @param {object} props - Propriedades do componente.
+ * @param {boolean} props.show - Controla a visibilidade do popup.
+ * @param {Function} props.onClose - Callback chamado ao fechar o popup.
+ * @param {string} props.username - Username/nome exibido do recebedor da doação.
+ * @returns {JSX.Element|null} Modal renderizado quando `show=true`, caso contrário `null`.
  */
 const MonetizationPopup = ({ show, onClose, username }) => {
   const navigate = useNavigate();
@@ -45,12 +64,22 @@ const MonetizationPopup = ({ show, onClose, username }) => {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [show, onKeyDown]);
 
+  /**
+   * Seleciona um valor pré-definido para doação.
+   * @param {number} amount - Valor selecionado.
+   * @returns {void}
+   */
   const handleAmountSelect = (amount) => {
     setSelectedAmount(amount);
     setCustomAmount("");
     setError("");
   };
 
+  /**
+   * Atualiza o valor customizado digitado e reflete em `selectedAmount`.
+   * @param {React.ChangeEvent<HTMLInputElement>} e - Evento de change do input.
+   * @returns {void}
+   */
   const handleCustomAmountChange = (e) => {
     const raw = e.target.value;
     const normalized = String(raw).replace(",", ".").replace(/[^\d.]/g, "");
@@ -62,6 +91,12 @@ const MonetizationPopup = ({ show, onClose, username }) => {
 
   const minAmount = 5;
 
+  /**
+   * Processa a doação (fluxo simulado).
+   * Se não houver usuário logado, oferece redirecionamento para login.
+   * Valida valor mínimo antes de confirmar.
+   * @returns {void}
+   */
   const handleDonate = () => {
     setError("");
     const amount = Number(selectedAmount) || 0;

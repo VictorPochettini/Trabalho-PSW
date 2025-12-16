@@ -1,10 +1,25 @@
 // src/components/HeaderForYou.jsx
+
+/**
+ * @fileoverview Cabeçalho responsivo (HeaderForYou) com navegação e ações do usuário.
+ * @module HeaderForYou
+ * @description
+ * Exibe links principais, menu hambúrguer (mobile), acesso ao perfil e ação de logout.
+ * Integra com Redux para obter usuário atual e sincronizar `fotoPerfil`.
+ */
+
 import React, { useState, useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import logo from "../images/ArtBeat_Branco.png";
 import { useSelector, useDispatch } from "react-redux";
 import { logout, fetchUsuarios } from "../redux/usuariosSlice";
 
+/**
+ * Cabeçalho responsivo usado nas páginas autenticadas (versão "ForYou").
+ *
+ * @component
+ * @returns {JSX.Element} Elemento React do cabeçalho.
+ */
 const HeaderForYou = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -59,15 +74,39 @@ const HeaderForYou = () => {
     return () => clearInterval(interval);
   }, [user, dispatch]);
 
+  /**
+   * Alterna o menu mobile.
+   * @function toggle
+   * @returns {void}
+   */
   const toggle = () => setOpen((v) => !v);
+
+  /**
+   * Fecha o menu mobile.
+   * @function close
+   * @returns {void}
+   */
   const close = () => setOpen(false);
 
+  /**
+   * Verifica se um link deve ser marcado como ativo (classe `hf-active`).
+   *
+   * @param {string} path - Caminho/slug da rota a comparar (ex: `feed`, `populares`).
+   * @returns {boolean} `true` quando a rota atual corresponde ao caminho informado.
+   */
   const isActive = (path) => {
     const cur = location.pathname.replace(/^\//, "");
     const p = path.replace(/^\//, "");
     return (cur === "" && path === "feed") || cur === p;
   };
 
+  /**
+   * Realiza logout do usuário, limpando estado Redux e dados persistidos no `localStorage`.
+   * Em seguida, redireciona para a rota de login.
+   *
+   * @function handleLogout
+   * @returns {void}
+   */
   const handleLogout = () => {
     dispatch(logout());
     try {

@@ -2,7 +2,20 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import logo from '../images/ArtBeat_Branco.png';
 
+/**
+ * @fileoverview Navbar para usuários deslogados (landing).
+ * @module NavbarAL
+ * @description
+ * Barra de navegação baseada em Bootstrap que destaca o link ativo via `useLocation()`.
+ * Inclui ações para cadastro e login.
+ */
 
+/**
+ * Navbar principal para visitantes (não autenticados).
+ *
+ * @component
+ * @returns {JSX.Element} Elemento React da navbar.
+ */
 const NavbarAL = () => {
   const location = useLocation(); 
 

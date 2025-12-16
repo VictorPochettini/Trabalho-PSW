@@ -3,6 +3,14 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
 /**
+ * @fileoverview Redirect guard para páginas públicas.
+ * @module VerificaLogin
+ * @description
+ * Exporta o componente `RedirectIfLoggedIn`, que redireciona para `/feed` caso já exista um usuário autenticado.
+ * Útil para impedir que usuários logados acessem páginas como Login/Cadastro.
+ */
+
+/**
  * Componente de Efeito para Redirecionamento Condicional.
  *
  * Este componente verifica o estado de autenticação do usuário através do Redux.

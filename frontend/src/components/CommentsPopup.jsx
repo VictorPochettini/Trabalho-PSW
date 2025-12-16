@@ -1,4 +1,11 @@
-// src/components/CommentsPopup.jsx - COM CORREÇÃO de avaliações
+/**
+ * @fileoverview Componente de popup para exibição e gerenciamento de comentários e avaliações
+ * @module CommentsPopup
+ * @description 
+ * Este componente fornece uma interface para visualizar e adicionar comentários,
+ * além de permitir a avaliação por estrelas (1-5) de uma postagem.
+ * Integra-se com Redux para gerenciamento de estado e persistência de dados.
+ */
 
 import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,6 +26,22 @@ import {
 } from "../redux/ratingsSlice";
 import { fetchUsuarios } from "../redux/usuariosSlice";
 
+/**
+ * Componente de estrela para avaliação
+ * @component
+ * @param {Object} props - Propriedades do componente
+ * @param {boolean} props.filled - Indica se a estrela deve ser exibida preenchida
+ * @param {Function} props.onClick - Função chamada quando a estrela é clicada
+ * @param {boolean} [props.disabled] - Indica se a estrela está desabilitada
+ * @returns {JSX.Element} Componente de estrela de avaliação
+ * 
+ * @example
+ * <Star
+ *   filled={rating >= 3}
+ *   onClick={() => handleRating(3)}
+ *   disabled={isSubmitting}
+ * />
+ */
 const Star = ({ filled, onClick, disabled }) => (
   <button
     type="button"
@@ -31,6 +54,33 @@ const Star = ({ filled, onClick, disabled }) => (
   </button>
 );
 
+/**
+ * Componente de popup para exibição e gerenciamento de comentários e avaliações
+ * 
+ * @component
+ * @param {Object} props - Propriedades do componente
+ * @param {boolean} props.show - Controla a visibilidade do popup
+ * @param {Function} props.onClose - Função chamada quando o popup é fechado
+ * @param {string} props.postId - ID da postagem associada aos comentários
+ * @returns {JSX.Element} Componente de popup de comentários
+ * 
+ * @example
+ * // Exemplo de uso
+ * <CommentsPopup
+ *   show={showComments}
+ *   onClose={() => setShowComments(false)}
+ *   postId="12345"
+ * />
+ * 
+ * @description
+ * Este componente gerencia:
+ * - Exibição de comentários existentes
+ * - Criação de novos comentários
+ * - Edição e exclusão de comentários próprios
+ * - Sistema de avaliação por estrelas (1-5)
+ * - Cálculo e exibição da média de avaliações
+ * - Sincronização com o Redux para gerenciamento de estado
+ */
 const CommentsPopup = ({ show, onClose, postId }) => {
   const dispatch = useDispatch();
   const commentsListRef = useRef(null);
@@ -51,6 +101,11 @@ const CommentsPopup = ({ show, onClose, postId }) => {
 
   const canComment = Boolean(usuarioId);
 
+  /**
+   * Efeito para gerenciar o overflow do body e carregar usuários
+   * @effect
+   * @listens show, usuarios.length
+   */
   useEffect(() => {
     if (!show) {
       document.body.style.overflow = "";
@@ -62,6 +117,11 @@ const CommentsPopup = ({ show, onClose, postId }) => {
     }
   }, [show, usuarios.length, dispatch]);
 
+  /**
+   * Efeito para carregar comentários e avaliações quando o popup é aberto
+   * @effect
+   * @listens show, postId, usuarioId
+   */
   useEffect(() => {
     if (!show || !postId) return;
 
@@ -79,12 +139,22 @@ const CommentsPopup = ({ show, onClose, postId }) => {
     };
   }, [show, postId, usuarioId, dispatch]);
 
+  /**
+   * Efeito para rolar para o topo da lista de comentários quando novos são carregados
+   * @effect
+   * @listens show, comments.length
+   */
   useEffect(() => {
     if (show && comments.length > 0 && commentsListRef.current) {
       commentsListRef.current.scrollTop = 0;
     }
   }, [show, comments.length]);
 
+  /**
+   * Efeito para lidar com a tecla ESC para fechar o popup ou cancelar edição
+   * @effect
+   * @listens show, editingCommentId, onClose
+   */
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape" && show) {
@@ -101,6 +171,13 @@ const CommentsPopup = ({ show, onClose, postId }) => {
     }
   }, [show, editingCommentId, onClose]);
 
+  /**
+   * Adiciona um novo comentário
+   * @async
+   * @function handleAddComment
+   * @param {Event} e - Evento de submissão do formulário
+   * @returns {Promise<void>}
+   */
   const handleAddComment = async (e) => {
     e.preventDefault();
     const texto = newCommentText.trim();
@@ -121,7 +198,13 @@ const CommentsPopup = ({ show, onClose, postId }) => {
     }
   };
 
-  // ✅ CORREÇÃO: Sistema de avaliação com melhor sincronização
+  /**
+   * Atualiza a avaliação por estrelas do usuário
+   * @async
+   * @function handleSetStars
+   * @param {number} value - Valor da avaliação (1-5)
+   * @returns {Promise<void>}
+   */
   const handleSetStars = async (value) => {
     if (!usuarioId || ratingState.saving) return;
 
@@ -143,6 +226,12 @@ const CommentsPopup = ({ show, onClose, postId }) => {
   const ratingAvg = ratingState.postAvg || 0;
   const ratingCount = ratingState.postCount || 0;
 
+  /**
+   * Resolve o nome de usuário a partir do ID
+   * @function resolveUserLabel
+   * @param {string} uid - ID do usuário
+   * @returns {string} Nome de exibição do usuário ou ID formatado
+   */
   const resolveUserLabel = (uid) => {
     const user =
       usuarios.find((u) => {
@@ -153,6 +242,12 @@ const CommentsPopup = ({ show, onClose, postId }) => {
     return user.username || user.nome || `Usuário #${uid}`;
   };
 
+  /**
+   * Formata uma data para um formato relativo (ex: "há 2 min")
+   * @function timeago
+   * @param {string} iso - Data em formato ISO
+   * @returns {string} String formatada com o tempo decorrido
+   */
   const timeago = (iso) => {
     if (!iso) return "";
     const diff = Date.now() - new Date(iso).getTime();
@@ -166,21 +261,45 @@ const CommentsPopup = ({ show, onClose, postId }) => {
     return `há ${d} d`;
   };
 
+  /**
+   * Verifica se o usuário atual pode excluir um comentário
+   * @function canDeleteComment
+   * @param {Object} comment - Objeto do comentário
+   * @returns {boolean} Verdadeiro se o usuário pode excluir o comentário
+   */
   const canDeleteComment = (comment) =>
     !!currentUser &&
     (currentUser.admin === true ||
       currentUser.role === "admin" ||
       String(currentUser._id ?? currentUser.id) === String(comment?.usuarioId));
 
+  /**
+   * Verifica se o usuário atual pode editar um comentário
+   * @function canEditComment
+   * @param {Object} comment - Objeto do comentário
+   * @returns {boolean} Verdadeiro se o usuário pode editar o comentário
+   */
   const canEditComment = (comment) =>
     !!currentUser &&
     String(currentUser._id ?? currentUser.id) === String(comment?.usuarioId);
 
+  /**
+   * Inicia a edição de um comentário
+   * @function handleEditComment
+   * @param {Object} comment - Comentário a ser editado
+   */
   const handleEditComment = (comment) => {
     setEditingCommentId(comment.id || comment._id);
     setEditText(comment.texto);
   };
 
+  /**
+   * Salva as alterações de um comentário em edição
+   * @async
+   * @function handleSaveEdit
+   * @param {string} commentId - ID do comentário a ser atualizado
+   * @returns {Promise<void>}
+   */
   const handleSaveEdit = async (commentId) => {
     const texto = editText.trim();
     if (!texto) return;
@@ -200,11 +319,22 @@ const CommentsPopup = ({ show, onClose, postId }) => {
     }
   };
 
+  /**
+   * Cancela a edição de um comentário
+   * @function handleCancelEdit
+   */
   const handleCancelEdit = () => {
     setEditingCommentId(null);
     setEditText("");
   };
 
+  /**
+   * Exclui um comentário após confirmação
+   * @async
+   * @function handleDeleteComment
+   * @param {Object} comment - Comentário a ser excluído
+   * @returns {Promise<void>}
+   */
   const handleDeleteComment = async (comment) => {
     if (!canDeleteComment(comment)) return;
     const ok = window.confirm("Excluir este comentário?");
