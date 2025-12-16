@@ -182,7 +182,7 @@ app.get('/usuarios', async (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Usuario'
  *       404:
- *         description: Usuário não encontrado
+ *         {description: Usuário não encontrado}
  */
 app.get('/usuarios/:id', async (req, res) => {
   try {
@@ -247,10 +247,16 @@ app.post('/usuarios', (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Usuario'
+ *       401:
+ *         description: Não autorizado
  *       403:
  *         description: Acesso negado
  *       404:
  *         description: Usuário não encontrado
+ *       400:
+ *         description: Dados inválidos
+ *       500:
+ *         description: Erro interno do servidor
  */
 app.put('/usuarios/:id', requireAuth, async (req, res) => {
   try {
@@ -298,10 +304,16 @@ app.put('/usuarios/:id', requireAuth, async (req, res) => {
  *     responses:
  *       200:
  *         description: Usuário atualizado
+ *       401:
+ *         description: Não autorizado
  *       403:
  *         description: Acesso negado
  *       404:
  *         description: Usuário não encontrado
+ *       400:
+ *         description: Dados inválidos
+ *       500:
+ *         description: Erro interno do servidor
  */
 app.patch('/usuarios/:id', requireAuth, async (req, res) => {
   try {
@@ -346,12 +358,16 @@ app.patch('/usuarios/:id', requireAuth, async (req, res) => {
  *     responses:
  *       200:
  *         description: Foto atualizada
+ *       401:
+ *         description: Não autorizado
  *       400:
  *         description: Nenhuma imagem enviada
  *       403:
- *          description: Acesso negado
+ *         description: Acesso negado
  *       404:
- *          description: Usuário não encontrado
+ *         description: Usuário não encontrado
+ *       500:
+ *         description: Erro interno do servidor
  */
 app.patch('/usuarios/:id/profile-photo', requireAuth, upload.single('profilePhoto'), async (req, res) => {
   try {
@@ -411,6 +427,8 @@ app.patch('/usuarios/:id/profile-photo', requireAuth, upload.single('profilePhot
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Post'
+ *       500:
+ *         description: Erro interno do servidor
  */
 app.get('/posts', async (req, res) => {
   try {
@@ -462,6 +480,8 @@ app.get('/posts', async (req, res) => {
  *               $ref: '#/components/schemas/Post'
  *       404:
  *         description: Post não encontrado
+ *       500:
+ *         description: Erro interno do servidor
  */
 app.get('/posts/:id', async (req, res) => {
   try {
@@ -563,10 +583,16 @@ app.post('/posts', requireAuth, upload.single('media'), async (req, res) => {
  *     responses:
  *       200:
  *         description: Post atualizado
+ *       401:
+ *         description: Não autorizado
  *       403:
  *         description: Acesso negado
  *       404:
  *         description: Post não encontrado
+ *       400:
+ *         description: Dados inválidos
+ *       500:
+ *         description: Erro interno do servidor
  */
 app.patch('/posts/:id', requireAuth, async (req, res) => {
   try {
@@ -602,10 +628,14 @@ app.patch('/posts/:id', requireAuth, async (req, res) => {
  *     responses:
  *       204:
  *         description: Post deletado
+ *       401:
+ *         description: Não autorizado
  *       403:
  *         description: Acesso negado
  *       404:
  *         description: Post não encontrado
+ *       500:
+ *         description: Erro interno do servidor
  */
 app.delete('/posts/:id', requireAuth, async (req, res) => {
   try {
@@ -627,15 +657,23 @@ app.delete('/posts/:id', requireAuth, async (req, res) => {
 // /desafios (criação/edição protegidas)
 
 /**
-* @swagger
-* /desafios:
-* get:
-* summary: Listar desafios
-* tags: [Desafios]
-* responses:
-* 200:
-*   description: Lista de desafios
-*/
+ * @swagger
+ * /desafios:
+ *   get:
+ *     summary: Listar todos os desafios
+ *     tags: [Desafios]
+ *     responses:
+ *       200:
+ *         description: Lista de desafios
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Desafio'
+ *       500:
+ *         description: Erro interno do servidor
+ */
 app.get('/desafios', async (req, res) => {
   try {
     const desafio = await Desafio.find();
@@ -646,23 +684,25 @@ app.get('/desafios', async (req, res) => {
 });
 
 /**
-* @swagger
-* /desafios/{id}:
-* get:
-* summary: Buscar desafio por ID
-* tags: [Desafios]
-* parameters:
-* - in: path
-* name: id
-* required: true
-* schema:
-* type: string
-* responses:
-* 200:
-*   description: Desafio encontrado
-* 404:
-*   description: Desafio não encontrado
-*/
+ * @swagger
+ * /desafios/{id}:
+ *   get:
+ *     summary: Buscar desafio por ID
+ *     tags: [Desafios]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Desafio encontrado
+ *       404:
+ *         description: Desafio não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
 app.get('/desafios/:id', async (req, res) => {
   try {
     const desafio = await Desafio.findById(req.params.id);
@@ -704,14 +744,14 @@ app.post('/desafios', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /desafios:
-* post:
-* summary: Criar desafio
-* tags: [Desafios]
-* security:
-* - bearerAuth: []
-* responses:
-* 201:
-* description: Desafio criado
+*   post:
+*     summary: Criar desafio
+*     tags: [Desafios]
+*     security:
+*       - bearerAuth: []
+*     responses:
+*       201:
+*         description: Desafio criado
 */
 app.post('/desafios', requireAuth, async (req, res) => {
   try {
@@ -765,24 +805,24 @@ app.post('/desafios', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /desafios/{id}:
-* delete:
-* summary: Excluir desafio
-* tags: [Desafios]
-* security:
-* - bearerAuth: []
-* parameters:
-* - in: path
-* name: id
-* required: true
-* schema:
-* type: string
-* responses:
-* 200:
-*   description: Desafio excluído
-* 403:
-*   description: Sem permissão
-* 404:
-*   description: Desafio não encontrado
+*   delete:
+*     summary: Excluir desafio
+*     tags: [Desafios]
+*     security:
+*       - bearerAuth: []
+*     parameters:
+*       - in: path
+*         name: id
+*         required: true
+*         schema:
+*           type: string
+*     responses:
+*       200:
+*         description: Desafio excluído
+*       403:
+*         description: Sem permissão
+*       404:
+*         description: Desafio não encontrado
 */
 // DELETE /desafios/:id - Excluir desafio (apenas criador ou admin)
 app.delete('/desafios/:id', requireAuth, async (req, res) => {
@@ -834,6 +874,8 @@ app.delete('/desafios/:id', requireAuth, async (req, res) => {
  *     responses:
  *       200:
  *         description: Lista de participações
+ *       500:
+ *         description: Erro interno do servidor
  */
 
 app.get('/participacoes', async (req, res) => {
@@ -858,14 +900,14 @@ app.get('/participacoes', async (req, res) => {
 /**
 * @swagger
 * /participacoes:
-* post:
-* summary: Criar participação
-* tags: [Participacoes]
-* security:
-* - bearerAuth: []
-* responses:
-* 201:
-* description: Participação criada
+*   post:
+*     summary: Criar participação
+*     tags: [Participacoes]
+*     security:
+*       - bearerAuth: []
+*     responses:
+*       201:
+*         description: Participação criada
 */
 app.post('/participacoes', requireAuth, async (req, res) => {
   try {
@@ -923,20 +965,20 @@ app.post('/participacoes', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /participacoes/{id}:
-* delete:
-* summary: Remover participação
-* tags: [Participacoes]
-* security:
-* - bearerAuth: []
-* parameters:
-* - in: path
-* name: id
-* required: true
-* schema:
-* type: string
-* responses:
-* 204:
-* description: Participação removida
+*   delete:
+*     summary: Remover participação
+*     tags: [Participacoes]
+*     security:
+*       - bearerAuth: []
+*     parameters:
+*       - in: path
+*         name: id
+*         required: true
+*         schema:
+*           type: string
+*     responses:
+*       204:
+*         description: Participação removida
 */
 app.delete('/participacoes/:id', requireAuth, async (req, res) => {
   try {
@@ -963,12 +1005,12 @@ app.delete('/participacoes/:id', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /comentarios:
-* get:
-* summary: Listar comentários
-* tags: [Comentarios]
-* responses:
-* 200:
-* description: Lista de comentários
+*   get:
+*     summary: Listar comentários
+*     tags: [Comentarios]
+*     responses:
+*       200:
+*         description: Lista de comentários
 */
 app.get('/comentarios', async (req, res) => {
   try {
@@ -1017,9 +1059,9 @@ app.get('/comentarios', async (req, res) => {
 /**
 * @swagger
 * /comentarios/{id}:
-* get:
-* summary: Buscar comentário por ID
-* tags: [Comentarios]
+*   get:
+*     summary: Buscar comentário por ID
+*     tags: [Comentarios]
 */
 app.get('/comentarios/:id', async (req, res) => {
   try {
@@ -1040,9 +1082,9 @@ app.get('/comentarios/:id', async (req, res) => {
 /**
 * @swagger
 * /comentarios/{id}/respostas:
-* get:
-* summary: Listar respostas de um comentário
-* tags: [Comentarios]
+*   get:
+*     summary: Listar respostas de um comentário
+*     tags: [Comentarios]
 */
 app.get('/comentarios/:id/respostas', async (req, res) => {
   try {
@@ -1062,11 +1104,11 @@ app.get('/comentarios/:id/respostas', async (req, res) => {
 /**
 * @swagger
 * /comentarios:
-* post:
-* summary: Criar comentário
-* tags: [Comentarios]
-* security:
-* - bearerAuth: []
+*   post:
+*     summary: Criar comentário
+*     tags: [Comentarios]
+*     security:
+*       - bearerAuth: []
 */
 app.post('/comentarios', requireAuth, async (req, res) => {
   try {
@@ -1120,11 +1162,11 @@ app.post('/comentarios', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /comentarios/{id}:
-* patch:
-* summary: Atualizar comentário (texto ou likes)
-* tags: [Comentarios]
-* security:
-* - bearerAuth: []
+*   patch:
+*     summary: Atualizar comentário (texto ou likes)
+*     tags: [Comentarios]
+*     security:
+*       - bearerAuth: []
 */
 app.patch('/comentarios/:id', requireAuth, async (req, res) => {
   try {
@@ -1167,11 +1209,11 @@ app.patch('/comentarios/:id', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /comentarios/{id}/like:
-* post:
-* summary: Dar like em comentário
-* tags: [Comentarios]
-* security:
-* - bearerAuth: []
+*   post:
+*     summary: Dar like em comentário
+*     tags: [Comentarios]
+*     security:
+*       - bearerAuth: []
 */
 app.post('/comentarios/:id/like', requireAuth, async (req, res) => {
   try {
@@ -1201,11 +1243,11 @@ app.post('/comentarios/:id/like', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /comentarios/{id}:
-* delete:
-* summary: Deletar comentário (soft delete)
-* tags: [Comentarios]
-* security:
-* - bearerAuth: []
+*   delete:
+*     summary: Deletar comentário (soft delete)
+*     tags: [Comentarios]
+*     security:
+*       - bearerAuth: []
 */
 app.delete('/comentarios/:id', requireAuth, async (req, res) => {
   try {
@@ -1237,11 +1279,11 @@ app.delete('/comentarios/:id', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /comentarios/{id}/permanent:
-* delete:
-* summary: Deletar comentário permanentemente
-* tags: [Comentarios]
-* security:
-* - bearerAuth: []
+*   delete:
+*     summary: Deletar comentário permanentemente
+*     tags: [Comentarios]
+*     security:
+*       - bearerAuth: []
 */
 app.delete('/comentarios/:id/permanent', requireAuth, async (req, res) => {
   try {
@@ -1274,9 +1316,9 @@ app.delete('/comentarios/:id/permanent', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /comentarios/count/{postId}:
-* get:
-* summary: Contar comentários de um post
-* tags: [Comentarios]
+*   get:
+*     summary: Contar comentários de um post
+*     tags: [Comentarios]
 */
 app.get('/comentarios/count/:postId', async (req, res) => {
   try {
@@ -1296,9 +1338,9 @@ app.get('/comentarios/count/:postId', async (req, res) => {
 /**
 * @swagger
 * /seguidores:
-* get:
-* summary: Listar seguidores
-* tags: [Seguidores]
+*   get:
+*     summary: Listar seguidores
+*     tags: [Seguidores]
 */
 app.get('/seguidores', async (req, res) => {
   try {
@@ -1317,11 +1359,11 @@ app.get('/seguidores', async (req, res) => {
 /**
 * @swagger
 * /seguidores:
-* post:
-* summary: Seguir usuário
-* tags: [Seguidores]
-* security:
-* - bearerAuth: []
+*   post:
+*     summary: Seguir usuário
+*     tags: [Seguidores]
+*     security:
+*       - bearerAuth: []
 */
 app.post('/seguidores', requireAuth, async (req, res) => {
   try {
@@ -1344,11 +1386,11 @@ app.post('/seguidores', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /seguidores/{id}:
-* delete:
-* summary: Deixar de seguir
-* tags: [Seguidores]
-* security:
-* - bearerAuth: []
+*   delete:
+*     summary: Deixar de seguir
+*     tags: [Seguidores]
+*     security:
+*       - bearerAuth: []
 */
 app.delete('/seguidores/:id', requireAuth, async (req, res) => {
   try {
@@ -1418,9 +1460,9 @@ app.get('/follows/is-following', async (req, res) => {
 /**
 * @swagger
 * /follows/counts/{userId}:
-* get:
-* summary: Contagem de seguidores e seguindo
-* tags: [Follows]
+*   get:
+*     summary: Contagem de seguidores e seguindo
+*     tags: [Follows]
 */
 app.get('/follows/counts/:userId', async (req, res) => {
   try {
@@ -1456,9 +1498,9 @@ app.get('/follows/counts/:userId', async (req, res) => {
 /**
 * @swagger
 * /follows/followers/{userId}:
-* get:
-* summary: Listar seguidores de um usuário
-* tags: [Follows]
+*   get:
+*     summary: Listar seguidores de um usuário
+*     tags: [Follows]
 */
 app.get('/follows/followers/:userId', async (req, res) => {
   try {
@@ -1499,9 +1541,9 @@ app.get('/follows/followers/:userId', async (req, res) => {
 /**
 * @swagger
 * /follows/following/{userId}:
-* get:
-* summary: Listar quem o usuário segue
-* tags: [Follows]
+*   get:
+*     summary: Listar quem o usuário segue
+*     tags: [Follows]
 */
 app.get('/follows/following/:userId', async (req, res) => {
   try {
@@ -1539,11 +1581,11 @@ app.get('/follows/following/:userId', async (req, res) => {
 /**
 * @swagger
 * /follows:
-* post:
-* summary: Criar follow
-* tags: [Follows]
-* security:
-* - bearerAuth: []
+*   post:
+*     summary: Criar follow
+*     tags: [Follows]
+*     security:
+*       - bearerAuth: []
 */
 app.post('/follows', requireAuth, async (req, res) => {
   try {
@@ -1587,11 +1629,11 @@ app.post('/follows', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /follows:
-* delete:
-* summary: Remover follow
-* tags: [Follows]
-* security:
-* - bearerAuth: []
+*   delete:
+*     summary: Remover follow
+*     tags: [Follows]
+*     security:
+*       - bearerAuth: []
 */
 app.delete('/follows', requireAuth, async (req, res) => {
   try {
@@ -1627,9 +1669,9 @@ app.delete('/follows', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /avaliacoes:
-* get:
-* summary: Listar avaliações
-* tags: [Avaliacoes]
+*   get:
+*     summary: Listar avaliações
+*     tags: [Avaliacoes]
 */
 app.get('/avaliacoes', async (req, res) => {
   try {
@@ -1652,9 +1694,9 @@ app.get('/avaliacoes', async (req, res) => {
 /**
 * @swagger
 * /avaliacoes/user/{usuarioId}/post/{postId}:
-* get:
-* summary: Buscar avaliação de usuário em post
-* tags: [Avaliacoes]
+*   get:
+*     summary: Buscar avaliação de usuário em post
+*     tags: [Avaliacoes]
 */
 app.get('/avaliacoes/user/:usuarioId/post/:postId', async (req, res) => {
   try {
@@ -1689,9 +1731,9 @@ app.get('/avaliacoes/user/:usuarioId/post/:postId', async (req, res) => {
 /**
 * @swagger
 * /avaliacoes/stats/{postId}:
-* get:
-* summary: Estatísticas de avaliações de um post
-* tags: [Avaliacoes]
+*   get:
+*     summary: Estatísticas de avaliações de um post
+*     tags: [Avaliacoes]
 */
 app.get('/avaliacoes/stats/:postId', async (req, res) => {
   try {
@@ -1725,9 +1767,9 @@ app.get('/avaliacoes/stats/:postId', async (req, res) => {
 /**
 * @swagger
 * /avaliacoes/{id}:
-* get:
-* summary: Buscar avaliação por ID
-* tags: [Avaliacoes]
+*   get:
+*     summary: Buscar avaliação por ID
+*     tags: [Avaliacoes]
 */
 app.get('/avaliacoes/:id', async (req, res) => {
   try {
@@ -1747,11 +1789,11 @@ app.get('/avaliacoes/:id', async (req, res) => {
 /**
 * @swagger
 * /avaliacoes:
-* post:
-* summary: Criar ou atualizar avaliação
-* tags: [Avaliacoes]
-* security:
-* - bearerAuth: []
+*   post:
+*     summary: Criar ou atualizar avaliação
+*     tags: [Avaliacoes]
+*     security:
+*       - bearerAuth: []
 */
 app.post('/avaliacoes', requireAuth, async (req, res) => {
   try {
@@ -1815,11 +1857,11 @@ app.post('/avaliacoes', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /avaliacoes/{id}:
-* patch:
-* summary: Atualizar avaliação
-* tags: [Avaliacoes]
-* security:
-* - bearerAuth: []
+*   patch:
+*     summary: Atualizar avaliação
+*     tags: [Avaliacoes]
+*     security:
+*       - bearerAuth: []
 */
 app.patch('/avaliacoes/:id', requireAuth, async (req, res) => {
   try {
@@ -1857,11 +1899,11 @@ app.patch('/avaliacoes/:id', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /avaliacoes/{id}:
-* delete:
-* summary: Deletar avaliação
-* tags: [Avaliacoes]
-* security:
-* - bearerAuth: []
+*   delete:
+*     summary: Deletar avaliação
+*     tags: [Avaliacoes]
+*     security:
+*       - bearerAuth: []
 */
 app.delete('/avaliacoes/:id', requireAuth, async (req, res) => {
   try {
@@ -1890,11 +1932,11 @@ app.delete('/avaliacoes/:id', requireAuth, async (req, res) => {
 /**
 * @swagger
 * /avaliacoes/user/{usuarioId}/post/{postId}:
-* delete:
-* summary: Deletar avaliação por usuário e post
-* tags: [Avaliacoes]
-* security:
-* - bearerAuth: []
+*   delete:
+*     summary: Deletar avaliação por usuário e post
+*     tags: [Avaliacoes]
+*     security:
+*       - bearerAuth: []
 */
 app.delete('/avaliacoes/user/:usuarioId/post/:postId', requireAuth, async (req, res) => {
   try {
