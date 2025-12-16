@@ -951,6 +951,347 @@ const UserProfile = () => {
           .view-profile-btn { padding: 6px 8px; font-size: 12px; }
           .profile-name { font-size: 18px; }
         }
+        /* ===== ESTILOS BASE DO PERFIL ===== */
+.profile-container {
+  min-height: 100vh;
+  padding: 20px 0;
+}
+
+.profile-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ===== CABEÇALHO DO PERFIL ===== */
+.profile-header {
+  position: relative;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  padding: 24px 16px 16px;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(10px) saturate(1.05);
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 840px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ===== FOTO DE PERFIL ===== */
+.profile-picture-container {
+  width: 112px;
+  height: 112px;
+  margin: 0 auto 12px;
+  position: relative;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(135deg, rgba(106, 90, 224, 0.55), rgba(140, 127, 242, 0.45));
+  box-shadow: 0 10px 24px rgba(106, 90, 224, 0.28);
+}
+
+.profile-picture {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border: 3px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+}
+
+.avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #6a5ae0, #8c7ff2);
+  font-size: 42px;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.18);
+  border: 3px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+}
+
+/* ===== INFORMAÇÕES DO PERFIL ===== */
+.profile-name {
+  text-align: center;
+  margin: 10px 0 2px;
+  color: #f3f5ff;
+  font-size: 24px;
+  font-weight: 700;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.25);
+}
+
+.profile-username {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  margin-bottom: 10px;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.22);
+  font-size: 15px;
+}
+
+/* ===== ESTATÍSTICAS ===== */
+.profile-stats {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin: 8px 0 2px;
+}
+
+.stat {
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.stat-number {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.clickable-stat {
+  cursor: pointer;
+}
+
+.clickable-stat:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+/* ===== BOTÃO DE EDIÇÃO ===== */
+.lapis {
+  border: none;
+  background: none;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lapis:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.1);
+}
+
+.lapis i {
+  font-size: 18px !important;
+}
+
+/* ===== SEÇÃO SOBRE ===== */
+.about-wrap {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.about-card {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(8px);
+  transform: translateY(8px);
+  opacity: 0;
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.about-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(106, 90, 224, 0.6), rgba(140, 127, 242, 0.45));
+  color: #fff;
+  font-size: 18px;
+  box-shadow: 0 6px 16px rgba(106, 90, 224, 0.35);
+}
+
+.about-title {
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.about-text {
+  color: #fff;
+  line-height: 1.35;
+  font-size: 14px;
+}
+
+.about-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(106, 90, 224, 0.25);
+  border: 1px solid rgba(106, 90, 224, 0.45);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgba(106, 90, 224, 0.18);
+  transition: transform 0.15s ease;
+}
+
+.chip:hover {
+  transform: translateY(-1px);
+}
+
+/* ===== CONTAINER DE POSTS ===== */
+.posts-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 20px 0;
+}
+
+.posts-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.posts-feed > .mb-3 {
+  width: 100%;
+}
+
+.posts-feed .card,
+.posts-feed [class*="post"] {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.empty-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  backdrop-filter: blur(6px);
+  margin-top: 10px;
+  padding: 40px 20px;
+}
+
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 768px) {
+  .profile-header {
+    padding: 20px 12px 16px;
+  }
+
+  .profile-picture-container {
+    width: 96px;
+    height: 96px;
+  }
+
+  .avatar-fallback {
+    font-size: 36px;
+  }
+
+  .profile-name {
+    font-size: 20px;
+  }
+
+  .profile-username {
+    font-size: 14px;
+  }
+
+  .profile-stats {
+    gap: 16px;
+  }
+
+  .stat-number {
+    font-size: 18px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+  }
+
+  .posts-container {
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .profile-header {
+    padding: 16px 8px 12px;
+  }
+
+  .profile-picture-container {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatar-fallback {
+    font-size: 32px;
+  }
+
+  .profile-name {
+    font-size: 18px;
+  }
+
+  .profile-stats {
+    gap: 12px;
+  }
+
+  .stat {
+    padding: 6px 8px;
+  }
+
+  .stat-number {
+    font-size: 16px;
+  }
+}
+        
       `}</style>
     </>
   );

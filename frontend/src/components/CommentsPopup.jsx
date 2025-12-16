@@ -581,7 +581,7 @@ const CommentsPopup = ({ show, onClose, postId }) => {
           border-radius: 16px;
           max-width: 600px;
           width: 100%;
-          max-height: 90vh;
+          max-height: 100vh;
           display: flex;
           flex-direction: column;
           box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
